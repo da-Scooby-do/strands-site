@@ -8,3 +8,5 @@ desktop.ini
 
 # Node (not used by the static site, but just in case)
 node_modules/
+
+.vercel
