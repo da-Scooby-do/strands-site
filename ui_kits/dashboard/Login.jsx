@@ -3,7 +3,7 @@
    (dashboard checks is_admin, account shows the customer their orders). */
 const { Wordmark, Input, Button, Icon, InlineAlert, DamaskPanel } = window.StrandsDesignSystem_6d0a65;
 function Login({ onSignedIn, heading }) {
-  const phone = window.useIsPhone();
+  const isPhone = window.useIsPhone();
   const [mode, setMode] = React.useState("signin"); // signin | signup
   const [email, setEmail] = React.useState("");
   const [pw, setPw] = React.useState("");
@@ -43,7 +43,7 @@ function Login({ onSignedIn, heading }) {
   }
 
   return (
-    <DamaskPanel pad={phone ? "var(--space-4)" : "var(--space-7)"} style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+    <DamaskPanel pad={isPhone ? "var(--space-4)" : "var(--space-7)"} style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
       <div style={{ width: "100%", maxWidth: 380, display: "grid", gap: "var(--space-5)", justifyItems: "center" }}>
         <Wordmark size={30} color="var(--green-tint)" />
         <div style={{ background: "var(--white)", border: "var(--border-card)", borderRadius: "var(--radius-card)", padding: "var(--space-6)", display: "grid", gap: "var(--space-4)", width: "100%" }}>
