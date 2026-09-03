@@ -1,5 +1,5 @@
 const { Wordmark, Button, IconButton, LanguageToggle } = window.StrandsDesignSystem_6d0a65;
-function Header({ onBuy, cart, lang, setLang }) {
+function Header({ onBuy, onCart, cart, lang, setLang }) {
   const phone = window.useIsPhone();
   const [stuck, setStuck] = React.useState(false);
   React.useEffect(() => {
@@ -21,7 +21,7 @@ function Header({ onBuy, cart, lang, setLang }) {
         <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
           {!phone && <LanguageToggle value={lang} onChange={setLang} />}
           {!phone && <a href="../account/index.html" style={{ borderBottom: "none", display: "inline-flex" }}><IconButton name="user" label="Account" /></a>}
-          <IconButton name="shopping-bag" label="Cart" badge={cart || undefined} />
+          <IconButton name="shopping-bag" label="Cart" badge={cart || undefined} onClick={onCart} />
           {!phone && <Button size="sm" onClick={onBuy}>Add to cart</Button>}
         </div>
       </div>

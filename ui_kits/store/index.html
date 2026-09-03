@@ -17,16 +17,17 @@
 <script type="text/babel" src="Checkout.jsx"></script>
 <script type="text/babel" data-presets="react">
 window.DSButton = window.StrandsDesignSystem_6d0a65.Button;
+const CART_KEY="strands-cart";
+function loadCart(){ try{ const v=JSON.parse(localStorage.getItem(CART_KEY)); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
 function Page(){
   const phone=window.useIsPhone();
-  const [cart,setCart]=React.useState(0);
-  const [added,setAdded]=React.useState(false);
   const [lang,setLang]=React.useState("EN");
   const [coOpen,setCoOpen]=React.useState(false);
-  const [coVariant,setCoVariant]=React.useState("1jar");
   const [product,setProduct]=React.useState(null);
   const [variants,setVariants]=React.useState(null);
   const [ship,setShip]=React.useState(null);
+  const [cart,setCart]=React.useState(loadCart);
+  React.useEffect(()=>{ try{ localStorage.setItem(CART_KEY,JSON.stringify(cart)); }catch(e){} },[cart]);
   React.useEffect(()=>{ if(!window.SB_READY) return; (async()=>{
     const [p,v,s]=await Promise.all([
       window.sb.from("products").select("*").eq("active",true).order("created_at").limit(1).maybeSingle(),
@@ -38,11 +39,16 @@ function Page(){
     if(s.data&&s.data.value) setShip(s.data.value);
   })(); },[]);
   const v1=(variants||[]).find(v=>v.jars===1)||(variants||[])[0];
-  const add=(vk)=>{setCoVariant(typeof vk==="string"?vk:"1jar");setCoOpen(true);setCart(c=>c+1);};
+  const count=cart.reduce((a,c)=>a+c.qty,0);
+  const addToCart=(key,qty)=>{ key=key||"1jar"; qty=qty||1; setCart(cs=>{ const i=cs.findIndex(c=>c.key===key); if(i>=0){ const n=cs.slice(); n[i]={...n[i],qty:n[i].qty+qty}; return n; } return [...cs,{key,qty}]; }); };
+  const setQty=(key,qty)=>setCart(cs=>qty<=0?cs.filter(c=>c.key!==key):cs.map(c=>c.key===key?{...c,qty}:c));
+  const removeItem=(key)=>setCart(cs=>cs.filter(c=>c.key!==key));
+  const clearCart=()=>setCart([]);
+  const add=(vk)=>{ addToCart(typeof vk==="string"?vk:"1jar",1); setCoOpen(true); };
   return <div data-scroll-root style={{background:'var(--cream)'}}>
-    <window.StrandsCheckout open={coOpen} onClose={()=>setCoOpen(false)} initialVariant={coVariant} variants={variants} ship={ship}/>
-    <window.StrandsHeader onBuy={add} cart={cart} lang={lang} setLang={setLang}/>
-    <window.StrandsHero onAdd={add} added={added} product={product} variants={variants}/>
+    <window.StrandsCheckout open={coOpen} onClose={()=>setCoOpen(false)} cart={cart} variants={variants} ship={ship} onSetQty={setQty} onRemove={removeItem} onClear={clearCart}/>
+    <window.StrandsHeader onBuy={add} onCart={()=>setCoOpen(true)} cart={count} lang={lang} setLang={setLang}/>
+    <window.StrandsHero onAdd={add} product={product} variants={variants}/>
     <window.StrandsStatement/>
     <window.StrandsClaimSplit/>
     <window.StrandsOverTime/>
