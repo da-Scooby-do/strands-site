@@ -6,14 +6,14 @@ function Row({ k, v }) {
     </div>
   );
 }
-function OrderDetail({ order, onBack, onAdvance, onCancel }) {
+function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
   const phone = window.useIsPhone();
   const { FLOW, NEXT_LABEL, HISTORY } = window.DASH;
-  const [note, setNote] = React.useState(order.note);
+  const [note, setNote] = React.useState(order.note || "");
   const [saved, setSaved] = React.useState(false);
   const sub = order.items.reduce((a, i) => a + i.p * i.q, 0);
   const done = order.status === "Delivered" || order.status === "Cancelled";
-  const history = HISTORY[order.id] || [{ s: "Placed", t: order.placed + " 10:00", mail: { ok: true, to: order.email } }];
+  const history = (order.events && order.events.length ? order.events : (HISTORY[order.id] || [{ s: "Placed", t: order.placed + " 10:00", mail: { ok: true, to: order.email } }]));
   return (
     <div>
       <button type="button" onClick={onBack} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: 0, color: "var(--green)", cursor: "pointer", fontSize: "var(--text-small)", marginBottom: "var(--space-4)" }}>← All orders</button>
@@ -46,7 +46,7 @@ function OrderDetail({ order, onBack, onAdvance, onCancel }) {
             </div>
             <Textarea label="Internal note" value={note} onChange={(v) => { setNote(v); setSaved(false); }} placeholder="Courier said the flat was empty, calling back tomorrow." />
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
-              <Button size="sm" variant="quiet" onClick={() => setSaved(true)}>Save note</Button>
+              <Button size="sm" variant="quiet" onClick={() => { if (onSaveNote) onSaveNote(note); setSaved(true); }}>Save note</Button>
               {saved && <InlineAlert>Note saved.</InlineAlert>}
             </div>
           </Card>

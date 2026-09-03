@@ -1,22 +1,21 @@
-const { PageHeader, Button, StatBox } = window.StrandsDesignSystem_6d0a65;
+const { PageHeader, Button, StatBox, Card } = window.StrandsDesignSystem_6d0a65;
 const TABS = ["Orders", "Details"];
-function Account({ user, isOwner, onDashboard, onSignOut }) {
+function Account({ user, isOwner, orders, onDashboard, onSignOut }) {
   const phone = window.useIsPhone();
   const [tab, setTab] = React.useState("Orders");
   const [open, setOpen] = React.useState(null);
-  const orders = window.DASH.ORDERS.filter((o) => o.customer === user).length
-    ? window.DASH.ORDERS.filter((o) => o.customer === user)
-    : window.DASH.ORDERS.slice(0, 4);
-  const live = orders.filter((o) => !["Delivered", "Cancelled"].includes(o.status)).length;
+  const list = orders || [];
+  const live = list.filter((o) => !["Delivered", "Cancelled"].includes(o.status)).length;
+  const first = (user || "there").split(" ")[0];
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)" }}>
       <window.StrandsAccountHeader isOwner={isOwner} onDashboard={onDashboard} onSignOut={onSignOut} />
       <main style={{ maxWidth: "var(--container)", margin: "0 auto", padding: phone ? "var(--space-5) var(--gutter)" : "var(--space-7) var(--gutter)" }}>
-        <PageHeader label="Your account" title={"Hello, " + user.split(" ")[0] + "."}
+        <PageHeader label="Your account" title={"Hello, " + first + "."}
           action={<Button size="sm" onClick={() => (window.location.href = "../store/index.html")}>Buy another jar</Button>} />
         <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr 1fr" : "repeat(3,220px)", gap: "var(--space-3)", marginBottom: "var(--space-6)" }}>
           <StatBox tone="green" value={live} caption="orders on the way" />
-          <StatBox value={orders.length} caption="orders in total" />
+          <StatBox value={list.length} caption="orders in total" />
           {!phone && <StatBox value="2–4 days" caption="usual delivery, cash on arrival" />}
         </div>
         <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-5)" }}>
@@ -26,7 +25,12 @@ function Account({ user, isOwner, onDashboard, onSignOut }) {
           ))}
         </div>
         {tab === "Orders"
-          ? <window.StrandsAccountOrders orders={orders} open={open} setOpen={setOpen} />
+          ? (list.length
+              ? <window.StrandsAccountOrders orders={list} open={open} setOpen={setOpen} />
+              : <Card pad="var(--space-6)" style={{ textAlign: "center", color: "var(--ink-2)", display: "grid", gap: "var(--space-3)" }}>
+                  <span>You have no orders yet.</span>
+                  <span><Button size="sm" onClick={() => (window.location.href = "../store/index.html")}>Shop the masque</Button></span>
+                </Card>)
           : <window.StrandsAccountDetails />}
       </main>
     </div>

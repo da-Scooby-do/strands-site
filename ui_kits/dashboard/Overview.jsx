@@ -1,6 +1,11 @@
 const { PageHeader, StatBox, DataTable, StatusPill, Button } = window.StrandsDesignSystem_6d0a65;
 function Overview({ orders, onOpen, goOrders }) {
   const phone = window.useIsPhone();
+  const [stock, setStock] = React.useState(null);
+  React.useEffect(() => {
+    if (!window.SB_READY) return;
+    window.sb.from("products").select("stock").order("created_at").limit(1).maybeSingle().then(({ data }) => { if (data) setStock(data.stock); });
+  }, []);
   const toAction = orders.filter((o) => !["Delivered", "Cancelled"].includes(o.status)).length;
   const last30 = orders.length;
   const revenue = orders.filter((o) => o.status !== "Cancelled").reduce((s, o) => s + o.items.reduce((a, i) => a + i.p * i.q, 0) + o.shipping, 0);
@@ -11,7 +16,7 @@ function Overview({ orders, onOpen, goOrders }) {
         <StatBox tone="green" value={toAction} caption="orders to action" />
         <StatBox value={last30} caption="orders, last 30 days" />
         <StatBox value={revenue.toLocaleString("en-US")} caption="EGP revenue, last 30 days" />
-        <StatBox value={88} caption="jars in stock" />
+        <StatBox value={stock == null ? "—" : stock} caption="jars in stock" />
       </div>
       <h2 style={{ fontSize: 22, marginBottom: "var(--space-4)" }}>The ten newest orders.</h2>
       <DataTable onRowClick={onOpen} rows={orders.slice(0, 10)} columns={[

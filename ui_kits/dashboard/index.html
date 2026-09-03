@@ -1,6 +1,6 @@
 <!-- @dsCard group="Dashboard" viewport="1280x900" name="Owner dashboard" subtitle="Sign in, then the eight admin screens" -->
 <!-- @startingPoint section="Dashboard" subtitle="Single-owner store admin — orders, product, promos, emails" viewport="1280x900" -->
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Strands — dashboard</title><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="../../_ds_bundle.js"></script>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Strands — dashboard</title><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.114.0/dist/umd/supabase.js"></script><script src="../../_ds_bundle.js"></script><script src="../../_supabase.js"></script>
 <style>html,body{margin:0}</style></head><body><div id="root"></div>
 <script type="text/babel" src="responsive.jsx"></script>
 <script type="text/babel" src="data.jsx"></script>
@@ -15,27 +15,93 @@
 <script type="text/babel" src="Waitlist.jsx"></script>
 <script type="text/babel" src="Emails.jsx"></script>
 <script type="text/babel" data-presets="react">
+const ST_LABEL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",with_courier:"With courier",delivered:"Delivered",cancelled:"Cancelled"};
+const ST_KEY={"Placed":"placed","Confirmed":"confirmed","Packed":"packed","With courier":"with_courier","Delivered":"delivered","Cancelled":"cancelled"};
+const FLOW_KEYS=["placed","confirmed","packed","with_courier","delivered"];
+function pad2(n){return (n<10?"0":"")+n;}
+function fmtDate(d){try{const x=new Date(d);return pad2(x.getDate())+"/"+pad2(x.getMonth()+1)+"/"+x.getFullYear();}catch(e){return "";}}
+function fmtDT(d){try{const x=new Date(d);return fmtDate(d)+" "+pad2(x.getHours())+":"+pad2(x.getMinutes());}catch(e){return "";}}
+function mapOrder(o){
+  const items=(o.order_items||[]).map(i=>({n:i.title_en,q:i.qty,p:i.unit_price}));
+  const events=(o.order_events||[]).slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).map(e=>{
+    const okv=e.notify_result&&/(ok|sent|true|delivered)/i.test(e.notify_result);
+    return {s:ST_LABEL[e.status]||e.status,t:fmtDT(e.created_at),mail:e.notify_result?(okv?{ok:true,to:e.notified_email||o.email}:{ok:false,why:e.notify_result}):{ok:true,to:e.notified_email||o.email||"the customer"}};
+  });
+  return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,
+    items,shipping:o.shipping||0,discount:o.discount||0,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events};
+}
+
+function Splash({msg}){return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",color:"var(--ink-2)",fontFamily:"var(--font-sans)"}}>{msg}</div>;}
+function NotAdmin({email,onSignOut}){
+  return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",padding:24}}>
+    <div style={{maxWidth:420,textAlign:"center",display:"grid",gap:12}}>
+      <h1 style={{fontSize:26}}>This isn’t an owner account.</h1>
+      <p style={{color:"var(--ink-2)"}}>{email} is signed in, but it isn’t on the admin list, so the dashboard is hidden.</p>
+      <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+        <a href="../account/index.html" style={{color:"var(--green)"}}>Go to your account</a>
+        <button type="button" onClick={onSignOut} style={{font:"inherit",fontFamily:"var(--font-sans)",background:"none",border:"none",color:"var(--ink-2)",cursor:"pointer"}}>Sign out</button>
+      </div>
+    </div>
+  </div>;
+}
+
 function App(){
-  const [signedIn,setSignedIn]=React.useState(false);
+  const [ready,setReady]=React.useState(false);
+  const [session,setSession]=React.useState(null);
+  const [admin,setAdmin]=React.useState(null);
   const [page,setPage]=React.useState("Overview");
-  const [orders,setOrders]=React.useState(window.DASH.ORDERS);
+  const [orders,setOrders]=React.useState([]);
   const [openId,setOpenId]=React.useState(null);
-  const order=orders.find(o=>o.id===openId);
-  const move=(id,status)=>setOrders(os=>os.map(o=>o.id===id?{...o,status}:o));
-  const advance=()=>{const F=window.DASH.FLOW;move(order.id,F[Math.min(F.length-1,F.indexOf(order.status)+1)]);};
-  if(!signedIn) return <window.DashLogin onSignIn={()=>setSignedIn(true)}/>;
+
+  React.useEffect(()=>{
+    if(!window.SB_READY){ setReady(true); return; }
+    window.sb.auth.getSession().then(({data})=>{ setSession(data.session||null); setReady(true); });
+    const {data:sub}=window.sb.auth.onAuthStateChange((_e,s)=>setSession(s||null));
+    return ()=>{ sub&&sub.subscription&&sub.subscription.unsubscribe(); };
+  },[]);
+
+  React.useEffect(()=>{
+    if(!session){ setAdmin(null); setOrders([]); return; }
+    (async()=>{
+      const r=await window.sb.rpc("is_admin");
+      const ok=!r.error && r.data===true;
+      setAdmin(ok);
+      if(ok) loadOrders();
+    })();
+  },[session]);
+
+  async function loadOrders(){
+    const {data,error}=await window.sb.from("orders").select("*, order_items(*), order_events(*)").order("created_at",{ascending:false});
+    if(!error && data) setOrders(data.map(mapOrder));
+  }
+  const order=orders.find(o=>o.uuid===openId);
+  async function setStatus(o,key){
+    await window.sb.from("orders").update({status:key}).eq("id",o.uuid);
+    await window.sb.from("order_events").insert({order_id:o.uuid,status:key,note_en:ST_LABEL[key]});
+    await loadOrders();
+  }
+  async function advance(){ if(!order) return; const idx=FLOW_KEYS.indexOf(ST_KEY[order.status]); await setStatus(order,FLOW_KEYS[Math.min(FLOW_KEYS.length-1,idx+1)]); }
+  async function cancel(){ if(order) await setStatus(order,"cancelled"); }
+  async function saveNote(text){ if(order){ await window.sb.from("orders").update({admin_note:text}).eq("id",order.uuid); await loadOrders(); } }
+
+  if(!ready) return <Splash msg="Loading…"/>;
+  if(!window.SB_READY) return <Splash msg="Could not reach the database. Check your connection and refresh."/>;
+  if(!session) return <window.DashLogin heading="Owner sign in." onSignedIn={(s)=>setSession(s)}/>;
+  if(admin===null) return <Splash msg="Checking your access…"/>;
+  if(admin===false) return <NotAdmin email={session.user.email} onSignOut={()=>window.sb.auth.signOut()}/>;
+
   const go=(p)=>{setOpenId(null);setPage(p);};
   let body;
-  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onCancel={()=>move(order.id,"Cancelled")}/>;
-  else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.id);}} goOrders={()=>go("Orders")}/>;
-  else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.id)}/>;
+  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onCancel={cancel} onSaveNote={saveNote}/>;
+  else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/>;
+  else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
   else if(page==="Promo codes") body=<window.DashPromos/>;
   else if(page==="Reviews") body=<window.DashReviews/>;
   else if(page==="Gulf waitlist") body=<window.DashWaitlist/>;
   else body=<window.DashEmails/>;
-  return <window.DashShell page={page} setPage={go} onSignOut={()=>{setSignedIn(false);setPage("Overview");setOpenId(null);}}>{body}</window.DashShell>;
+  return <window.DashShell page={page} setPage={go} onSignOut={()=>{window.sb.auth.signOut();setPage("Overview");setOpenId(null);}}>{body}</window.DashShell>;
 }
-const mount=()=>{ if(!window.DashEmails||!window.DASH){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
+const mount=()=>{ if(!window.DashEmails||!window.DASH||!window.DashProduct){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
 mount();
 </script></body></html>
