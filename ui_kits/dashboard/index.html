@@ -78,6 +78,7 @@ function App(){
   async function setStatus(o,key){
     await window.sb.from("orders").update({status:key}).eq("id",o.uuid);
     await window.sb.from("order_events").insert({order_id:o.uuid,status:key,note_en:ST_LABEL[key]});
+    try{ await window.sb.functions.invoke("notify-order",{body:{order_id:o.uuid,status:key}}); }catch(e){ console.warn("email notify failed",e); }
     await loadOrders();
   }
   async function advance(){ if(!order) return; const idx=FLOW_KEYS.indexOf(ST_KEY[order.status]); await setStatus(order,FLOW_KEYS[Math.min(FLOW_KEYS.length-1,idx+1)]); }

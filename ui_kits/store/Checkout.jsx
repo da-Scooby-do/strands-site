@@ -95,7 +95,14 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
         items: lines.map((l) => ({ variant_key: l.key, qty: l.qty })),
       };
       const r = await window.sbRpc("place_order", payload);
-      if (r && r.ok) { setDone(r); if (onClear) onClear(); }
+      if (r && r.ok) {
+        setDone(r); if (onClear) onClear();
+        // Fire the "order received" email (function allows the order's owner for 'placed').
+        try {
+          const { data: o } = await window.sb.from("orders").select("id").eq("order_number", r.order_number).maybeSingle();
+          if (o) window.sb.functions.invoke("notify-order", { body: { order_id: o.id, status: "placed" } });
+        } catch (e) { /* non-blocking */ }
+      }
       else {
         const map = { auth_required: "Please sign in to place your order.", name_required: "Enter your full name.", phone_invalid: "Enter a valid phone number.", governorate_required: "Choose your governorate.", address_required: "Enter your street address.", cart_empty: "Your cart is empty." };
         setErr((r && map[r.error]) || (r && r.error) || "Could not place the order.");
