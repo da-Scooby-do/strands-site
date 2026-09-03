@@ -1,0 +1,12 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Commerce" subtitle="Gallery, price, bundle, rating, feature column, ingredient & review cards" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="../../_ds_bundle.js"></script><style>body{padding:20px 24px;background:var(--cream)}</style></head><body><div id="root"></div><script type="text/babel">
+const { ProductGallery, PriceBlock, BundleCard, StarRating, FeatureColumn, IngredientCard, ReviewCard } = window.StrandsDesignSystem_6d0a65;
+ReactDOM.createRoot(document.getElementById('root')).render(<div style={{display:'grid',gridTemplateColumns:'180px 1fr',gap:28,alignItems:'start'}}>
+<div style={{display:'grid',gap:16}}><ProductGallery images={[{label:'The jar'},{label:'The box'},{label:'Texture'}]}/></div>
+<div style={{display:'grid',gap:18}}>
+<div style={{display:'flex',gap:32,alignItems:'flex-start',flexWrap:'wrap'}}><PriceBlock price={380} was={430} note="Cash on delivery, 2–4 days."/><div style={{display:'grid',gap:8}}><StarRating value={4.6} count={38}/><StarRating value={3} size={13}/></div></div>
+<BundleCard title="2 jars — save 50 EGP" saving="Free delivery" price="710 EGP"/>
+<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}><FeatureColumn icon="droplet" tone="light" title="Pre-wash">Damp hair, up to 2 hours, then shampoo.</FeatureColumn><IngredientCard name="Mango butter" arabic="زبدة المانجو">Softens and seals the cuticle.</IngredientCard></div>
+<ReviewCard name="Nour H." rating={5} date="12/08/2026" title="My hair felt soft for days" helpful={12} notHelpful={0}>I used it as a pre-wash mask twice and the difference held through the week.</ReviewCard>
+</div></div>);
+</script></body></html>

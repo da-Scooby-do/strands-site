@@ -1,0 +1,9 @@
+<!-- @dsCard group="Components" viewport="700x260" name="Brand marks" subtitle="Wordmark, monogram, damask panel, display band" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="../../_ds_bundle.js"></script><style>body{padding:0;background:var(--cream)}.top{display:flex;align-items:center;gap:40px;padding:22px 24px}</style></head><body><div id="root"></div><script type="text/babel">
+const { Wordmark, Monogram, DamaskPanel, DisplayBand, Eyebrow } = window.StrandsDesignSystem_6d0a65;
+ReactDOM.createRoot(document.getElementById('root')).render(<div>
+<div className="top"><Wordmark size={34}/><Monogram size={64}/><div style={{display:'grid',gap:8}}><Eyebrow>Never</Eyebrow><span style={{fontSize:13,color:'var(--ink-2)',maxWidth:'30ch'}}>The logotype is never purple, never white, never reversed out.</span></div></div>
+<DamaskPanel pad="20px 24px"><div style={{display:'flex',alignItems:'center',gap:24}}><Wordmark size={26} color="var(--green-tint)"/><span style={{color:'var(--lilac)',fontSize:13}}>On the damask, the mark switches to green-tint — green loses legibility.</span></div></DamaskPanel>
+<DisplayBand size={72}>HAIR CARE</DisplayBand>
+</div>);
+</script></body></html>

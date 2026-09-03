@@ -1,0 +1,54 @@
+:root{
+  /* Brand — the two signature colours. Neither works alone. */
+  --purple:#653467;
+  --purple-light:#6D3870;
+  --lilac:#BEA8D1;
+  --green:#577537;
+  --green-bright:#7FA84E; /* the brand green lifted just far enough to read on purple — icons and marks on anchor grounds */
+
+  /* Grounds */
+  --green-tint:#EDF0E7;
+  --purple-tint:#F1EAF2;
+  --cream:#FBF6EE;
+  --white:#FFFFFF;
+
+  /* Ink */
+  --ink:#2A2130;
+  --ink-2:#615468;
+  --near-black:#231F20;
+  --rule:#E6D9CB;
+
+  /* Semantic aliases */
+  --page-ground:var(--cream);
+  --surface-card:var(--white);
+  --surface-quiet:var(--purple-tint);
+  --surface-alt:var(--green-tint);
+  --surface-anchor:var(--purple);
+  --surface-anchor-panel:var(--purple-light);
+
+  --text-body:var(--ink);
+  --text-muted:var(--ink-2);
+  --text-fine:var(--near-black);
+  --text-heading:var(--ink);
+  --text-eyebrow:var(--green);
+  --icon-on-light:var(--green-bright);
+  --icon-on-anchor:var(--green-bright);
+  --text-on-anchor:var(--white);
+  --text-on-anchor-muted:var(--lilac);
+  --text-link:var(--green);
+  --text-link-hover:var(--purple);
+
+  --border-hairline:var(--rule);
+  --border-hairline-anchor:rgba(190,168,209,.32);
+
+  --action-fill:var(--purple);
+  --action-fill-hover:#542956;
+  --action-fill-active:#48224A;
+  --action-fill-text:var(--white);
+  --action-quiet-border:var(--purple);
+  --mark-yes:var(--green);
+  --mark-no:transparent;
+  --data-highlight:var(--green);
+  --data-flat:#B9B2AA;
+  --focus-ring:var(--green);
+}

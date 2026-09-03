@@ -1,0 +1,33 @@
+:root{
+  --font-display:"Bodoni Moda",Didot,"Times New Roman",serif;
+  --font-sans:"Jost","Century Gothic",system-ui,sans-serif;
+  --font-arabic:"Noto Kufi Arabic","Jost",system-ui,sans-serif;
+  /* Hand annotations over photography only — never for UI text or headings. */
+  --font-hand:"Caveat","Bradley Hand",cursive;
+
+  /* Display serif — headlines, logotype */
+  --display-1:56px;
+  --display-2:44px;
+  --display-3:32px;
+  --display-lh:1.15; /* @kind other */
+  --display-weight:400;
+  --logotype-tracking:.14em;
+
+  /* Sans scale */
+  --text-lead:20px;
+  --text-body-size:16px;
+  --text-small:14px;
+  --text-fine-size:12px;
+  --text-eyebrow-size:10px;
+  --body-lh:1.7; /* @kind other */
+  --tight-lh:1.4; /* @kind other */
+
+  /* Tracking */
+  --track-descriptor:.35em;
+  --track-eyebrow:.18em;
+  --track-product-name:.06em;
+  --track-caps:.12em;
+
+  --measure:65ch;
+  --font-numeric:"Jost",system-ui,sans-serif;
+}

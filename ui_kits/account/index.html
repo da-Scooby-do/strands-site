@@ -1,0 +1,31 @@
+<!-- @dsCard group="Store" viewport="1280x900" name="Customer account" subtitle="Sign in, then orders and their status — the owner sees one extra button" -->
+<!-- @startingPoint section="Store" subtitle="Customer account: orders, tracking, details" viewport="1280x900" -->
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Strands — your account</title><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0}</style></head><body><div id="root"></div>
+<script type="text/babel" src="../dashboard/responsive.jsx"></script>
+<script type="text/babel" src="../dashboard/data.jsx"></script>
+<script type="text/babel" src="../dashboard/Login.jsx"></script>
+<script type="text/babel" src="AccountHeader.jsx"></script>
+<script type="text/babel" src="OrderTimeline.jsx"></script>
+<script type="text/babel" src="AccountOrders.jsx"></script>
+<script type="text/babel" src="AccountDetails.jsx"></script>
+<script type="text/babel" src="Account.jsx"></script>
+<script type="text/babel" data-presets="react">
+function App(){
+  const [signedIn,setSignedIn]=React.useState(false);
+  const [isOwner,setIsOwner]=React.useState(false);
+  if(!signedIn) return <div>
+    <window.DashLogin onSignIn={()=>setSignedIn(true)}/>
+    <div style={{position:'fixed',insetInline:0,bottom:0,padding:'10px 16px',background:'var(--white)',borderTop:'1px solid var(--rule)',display:'flex',justifyContent:'center',gap:16,alignItems:'center',fontSize:12,color:'var(--ink-2)',fontFamily:'var(--font-sans)'}}>
+      <span>Preview as</span>
+      <button type="button" onClick={()=>setIsOwner(false)} style={{font:'inherit',padding:'4px 12px',borderRadius:999,cursor:'pointer',border:'1px solid '+(isOwner?'var(--rule)':'var(--purple)'),background:isOwner?'transparent':'var(--purple)',color:isOwner?'var(--ink-2)':'var(--white)'}}>Customer</button>
+      <button type="button" onClick={()=>setIsOwner(true)} style={{font:'inherit',padding:'4px 12px',borderRadius:999,cursor:'pointer',border:'1px solid '+(isOwner?'var(--purple)':'var(--rule)'),background:isOwner?'var(--purple)':'transparent',color:isOwner?'var(--white)':'var(--ink-2)'}}>Owner</button>
+    </div>
+  </div>;
+  return <window.StrandsAccount user={isOwner?"Nour Hassan":"Mariam Adel"} isOwner={isOwner}
+    onDashboard={()=>{window.location.href="../dashboard/index.html";}}
+    onSignOut={()=>setSignedIn(false)}/>;
+}
+const mount=()=>{ if(!window.StrandsAccount||!window.DASH){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
+mount();
+</script></body></html>
