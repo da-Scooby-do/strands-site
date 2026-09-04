@@ -19,6 +19,17 @@ const ST_LABEL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",with_couri
 const ST_KEY={"Placed":"placed","Confirmed":"confirmed","Packed":"packed","With courier":"with_courier","Delivered":"delivered","Cancelled":"cancelled"};
 const FLOW_KEYS=["placed","confirmed","packed","with_courier","delivered"];
 function pad2(n){return (n<10?"0":"")+n;}
+function csvCell(v){ v = (v==null)?"":String(v); return /[",\n\r]/.test(v) ? ('"'+v.replace(/"/g,'""')+'"') : v; }
+function downloadCSV(filename, headers, rows){
+  const lines = [headers.map(csvCell).join(",")].concat(rows.map(r=>r.map(csvCell).join(",")));
+  // BOM so Excel opens UTF-8 (Arabic names) correctly.
+  const blob = new Blob(["﻿"+lines.join("\r\n")], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+window.downloadCSV = downloadCSV;
 function fmtDate(d){try{const x=new Date(d);return pad2(x.getDate())+"/"+pad2(x.getMonth()+1)+"/"+x.getFullYear();}catch(e){return "";}}
 function fmtDT(d){try{const x=new Date(d);return fmtDate(d)+" "+pad2(x.getHours())+":"+pad2(x.getMinutes());}catch(e){return "";}}
 /* Human-readable email outcome for an order_events.notify_result value. */

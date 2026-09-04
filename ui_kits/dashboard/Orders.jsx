@@ -8,9 +8,18 @@ function Orders({ orders, onOpen }) {
     const s = (o.id + o.customer + o.phone).toLowerCase().includes(q.toLowerCase());
     return f && s;
   });
+  const exportCSV = () => {
+    const headers = ["Order", "Customer", "Phone", "Email", "Governorate", "Area", "Street", "Landmark", "Items", "Subtotal", "Shipping", "Discount", "Total", "Status", "Placed", "Note"];
+    const data = rows.map((o) => {
+      const sub = o.items.reduce((a, i) => a + i.p * i.q, 0);
+      const items = o.items.map((i) => i.n + " x" + i.q).join(" | ");
+      return [o.id, o.customer, o.phone, o.email, o.gov, o.area, o.street, o.landmark, items, sub, o.shipping, o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note];
+    });
+    window.downloadCSV("strands-orders.csv", headers, data);
+  };
   return (
     <div>
-      <PageHeader label="Orders" title="What needs packing." action={<Button size="sm">Export CSV</Button>} />
+      <PageHeader label="Orders" title="What needs packing." action={<Button size="sm" onClick={exportCSV}>Export CSV</Button>} />
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginBottom: "var(--space-4)" }}>
         {FILTERS.map((f) => (
           <button key={f} type="button" onClick={() => setFilter(f)}

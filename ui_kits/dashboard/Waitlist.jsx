@@ -12,7 +12,7 @@ function Waitlist() {
   }, []);
   return (
     <div>
-      <PageHeader label="Gulf waitlist" title="People waiting outside Egypt." />
+      <PageHeader label="Gulf waitlist" title="People waiting outside Egypt." action={<Button size="sm" onClick={() => window.downloadCSV("strands-waitlist.csv", ["Name", "Email", "City", "Country", "Joined"], rows.map((w) => [w.name, w.email, w.city, w.country, w.joined]))}>Export CSV</Button>} />
       <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "220px 1fr"), gap: "var(--space-5)", alignItems: "start" }}>
         <StatBox value={rows.length} caption="people on the list" />
         <DataTable rows={rows} empty="Nobody has joined yet." columns={[
