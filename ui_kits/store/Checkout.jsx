@@ -106,6 +106,8 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           governorate_required: T("Choose your governorate.", "اختاري المحافظة."),
           address_required: T("Enter your street address.", "اكتبي عنوان الشارع."),
           cart_empty: T("Your cart is empty.", "سلتك فاضية."),
+          too_fast: T("You just placed an order — give it a moment before trying again.", "لسه دلوقتي عملتي طلب — استني شوية قبل ما تحاولي تاني."),
+          rate_limited: T("Too many orders in a short time. Please try again later.", "طلبات كتير في وقت قصير. حاولي تاني بعد شوية."),
         };
         setErr((r && map[r.error]) || (r && r.error) || T("Could not place the order.", "معرفناش نكمّل الطلب."));
       }
