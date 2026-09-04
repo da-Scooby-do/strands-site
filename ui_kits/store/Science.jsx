@@ -1,22 +1,23 @@
 const { Eyebrow, IngredientCard } = window.StrandsDesignSystem_6d0a65;
 function Science() {
   const phone = window.useIsPhone();
+  const ar = window.useLang() === "AR";
   return (
     <section id="ingredients" style={{ background: "var(--cream)" }}>
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: phone ? "var(--section-y-mobile) var(--gutter)" : "var(--section-y) var(--gutter)", display: "grid", gap: phone ? "var(--space-6)" : "var(--space-7)" }}>
         <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr"), gap: phone ? "var(--space-4)" : "var(--space-8)", alignItems: "end" }}>
           <div style={{ display: "grid", gap: "var(--space-3)" }}>
-            <Eyebrow>Nine ingredients</Eyebrow>
-            <h2 style={{ fontSize: phone ? "var(--display-3)" : "var(--display-2)" }}>Softness that holds through the week.</h2>
+            <Eyebrow>{ar ? "تسع مكونات" : "Nine ingredients"}</Eyebrow>
+            <h2 style={{ fontSize: phone ? "var(--display-3)" : "var(--display-2)" }}>{ar ? "نعومة تفضل طول الأسبوع." : "Softness that holds through the week."}</h2>
           </div>
           <p style={{ color: "var(--ink-2)", maxWidth: "var(--measure)" }}>
-            Three of the nine do most of the work: one softens, one seals, one holds water in the cuticle. The rest support them. Nothing in the jar is there to thicken the texture.
+            {ar ? "تلاتة من التسعة بيعملوا معظم الشغل: واحد بينعّم، واحد بيقفل الشعرة، وواحد بيحبس المياه جواها. الباقي بيدعمهم. مفيش حاجة في العلبة موجودة عشان تتقّل القوام." : "Three of the nine do most of the work: one softens, one seals, one holds water in the cuticle. The rest support them. Nothing in the jar is there to thicken the texture."}
           </p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "repeat(3,1fr)"), gap: "var(--space-4)" }}>
-          <IngredientCard name="Mango butter" arabic="زبدة المانجو" image="../../assets/photography/ingredient-mango-butter.jpg">Softens the strand and seals the cuticle after washing.</IngredientCard>
-          <IngredientCard name="Flaxseed gel" arabic="جل بذور الكتان" image="../../assets/photography/ingredient-flaxseed.jpg">Holds water against the hair so the curl keeps its shape.</IngredientCard>
-          <IngredientCard name="Hibiscus extract" arabic="منقوع الكركديه" image="../../assets/photography/ingredient-hibiscus.jpg">Keeps the scalp comfortable and the ends from splitting further.</IngredientCard>
+          <IngredientCard name={ar ? "زبدة المانجو" : "Mango butter"} arabic={ar ? "" : "زبدة المانجو"} image="../../assets/photography/ingredient-mango-butter.jpg">{ar ? "بتنعّم الشعرة وبتقفل الطبقة الخارجية بعد الغسيل." : "Softens the strand and seals the cuticle after washing."}</IngredientCard>
+          <IngredientCard name={ar ? "جل بذور الكتان" : "Flaxseed gel"} arabic={ar ? "" : "جل بذور الكتان"} image="../../assets/photography/ingredient-flaxseed.jpg">{ar ? "بيحبس المياه في الشعر فالكيرلة تحافظ على شكلها." : "Holds water against the hair so the curl keeps its shape."}</IngredientCard>
+          <IngredientCard name={ar ? "منقوع الكركديه" : "Hibiscus extract"} arabic={ar ? "" : "منقوع الكركديه"} image="../../assets/photography/ingredient-hibiscus.jpg">{ar ? "بيريّح فروة الرأس ويمنع الأطراف من التقصّف أكتر." : "Keeps the scalp comfortable and the ends from splitting further."}</IngredientCard>
         </div>
       </div>
     </section>
