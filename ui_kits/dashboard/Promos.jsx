@@ -29,11 +29,20 @@ function Promos() {
     if (!c) return setMsg({ ok: false, msg: "Nothing was created — the code cannot be empty." });
     if (list.some((p) => p.code.toUpperCase() === c)) return setMsg({ ok: false, msg: "Nothing was created — that code already exists." });
     const dbKind = KIND_TO_DB[kind];
+    const digits = (s) => parseInt(String(s == null ? "" : s).replace(/[^0-9]/g, ""), 10);
+    const val = digits(value);
+    if (dbKind !== "free_shipping" && (!val || val <= 0)) {
+      return setMsg({ ok: false, msg: kind === "Percent off" ? "Nothing was created — enter a percentage, e.g. 20." : "Nothing was created — enter an amount in EGP." });
+    }
+    if (dbKind === "percent" && val > 100) {
+      return setMsg({ ok: false, msg: "Nothing was created — a percentage can’t be over 100." });
+    }
+    const capN = cap.trim() === "" ? null : digits(cap);
     const row = {
       code: c, kind: dbKind,
-      value: dbKind === "free_shipping" ? 0 : Number(value || 0),
-      min_subtotal: Number(min || 0),
-      max_uses: cap.trim() === "" ? null : Number(cap),
+      value: dbKind === "free_shipping" ? 0 : val,
+      min_subtotal: digits(min) || 0,
+      max_uses: capN || null,
       active: true,
     };
     setBusy(true);

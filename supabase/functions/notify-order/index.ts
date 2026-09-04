@@ -1,15 +1,8 @@
 // Strands — transactional order emails.
-// Called by the dashboard whenever the owner advances an order's status, and by
-// the storefront right after a customer places an order ('placed'). Renders the
-// branded template for the status and sends it through Resend, then logs the
-// result on the matching order_events row (notified_email / notify_result).
-//
-// Secrets used (set with `supabase secrets set` or in the dashboard):
-//   RESEND_API_KEY  – required to actually send; without it the status still
-//                     changes and the event is logged as 'no_provider'.
-//   STRANDS_FROM    – e.g. "Strands <orders@strandsbynour.com>" (verified domain).
-//                     Defaults to Resend's onboarding sender.
-//   SITE_URL        – public site origin for the buttons. Defaults to the Vercel URL.
+// Subject + body per status are OWNER-EDITABLE, stored in settings.emails
+// ({status: {subject_en, body_en, subject_ar, body_ar}}); the headline, order
+// card, totals and button stay fixed for a consistent look. Placeholders in the
+// copy: {name} {order} {total}. Sent through Resend; result logged on the event.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -24,56 +17,49 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
-function esc(s: unknown) {
-  return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
-}
-function money(n: number) { return (Math.round(Number(n) || 0)).toLocaleString("en-US") + " EGP"; }
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function money(n, lang) { return (Math.round(Number(n) || 0)).toLocaleString("en-US") + (lang === "ar" ? " ج.م" : " EGP"); }
 
 const PLUM = "#45254A", CREAM = "#FBF6EE", INK = "#2A2130", MUTED = "#615468", RULE = "#E6D9CB", LILAC = "#BEA8D1";
 const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
 const SERIF = "Georgia,'Times New Roman',serif";
+const track = SITE_URL + "/ui_kits/account/", shopHref = SITE_URL + "/", igHref = "https://instagram.com/nourscoils";
 
-const track = SITE_URL + "/ui_kits/account/";
-const shopHref = SITE_URL + "/";
-const igHref = "https://instagram.com/nourscoils";
-
-const h1 = (t: string) => `<h1 style="font-family:${SERIF};color:${INK};font-size:34px;line-height:1.15;margin:0 0 18px;font-weight:400;">${t}</h1>`;
-const p = (t: string) => `<p style="font-family:${SANS};color:${MUTED};font-size:17px;line-height:1.6;margin:0 0 6px;">${t}</p>`;
-const numberCard = (num: string) => `
+const h1 = (t, rtl) => `<h1 style="font-family:${SERIF};color:${INK};font-size:34px;line-height:1.15;margin:0 0 18px;font-weight:400;${rtl ? "direction:rtl;text-align:right;" : ""}">${t}</h1>`;
+const p = (t, rtl) => `<p style="font-family:${SANS};color:${MUTED};font-size:17px;line-height:1.6;margin:0 0 6px;${rtl ? "direction:rtl;text-align:right;" : ""}">${t}</p>`;
+const numberCard = (num, label) => `
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin:26px 0;"><tr><td style="background:#FFFFFF;border:1px solid ${RULE};padding:16px 22px;">
-    <div style="font-family:${SANS};color:${MUTED};font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Order number</div>
+    <div style="font-family:${SANS};color:${MUTED};font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${label}</div>
     <div style="font-family:${SANS};color:${INK};font-size:26px;font-weight:700;margin-top:4px;">${esc(num)}</div>
   </td></tr></table>`;
-const button = (label: string, href: string) => `
+const button = (label, href) => `
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 4px;"><tr><td style="background:${PLUM};">
-    <a href="${href}" style="display:inline-block;padding:15px 32px;font-family:${SANS};color:#FFFFFF;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:.01em;">${label}</a>
+    <a href="${href}" style="display:inline-block;padding:15px 32px;font-family:${SANS};color:#FFFFFF;font-size:15px;font-weight:700;text-decoration:none;">${label}</a>
   </td></tr></table>`;
-const green = (t: string) => `
-  <div style="background:#EDF0E7;padding:18px 20px;margin:24px 0;font-family:${SANS};color:#4C6531;font-size:16px;line-height:1.55;">${t}</div>`;
+const green = (t, rtl) => `<div style="background:#EDF0E7;padding:18px 20px;margin:24px 0;font-family:${SANS};color:#4C6531;font-size:16px;line-height:1.55;${rtl ? "direction:rtl;text-align:right;" : ""}">${t}</div>`;
 
-function itemsTable(order: any) {
-  const row = (k: string, v: string, bold = false) =>
-    `<tr>
-       <td style="padding:12px 0;border-top:1px solid ${RULE};font-family:${SANS};color:${bold ? INK : MUTED};font-size:16px;${bold ? "font-weight:700;" : ""}">${k}</td>
-       <td align="right" style="padding:12px 0;border-top:1px solid ${RULE};font-family:${SANS};color:${bold ? INK : MUTED};font-size:16px;${bold ? "font-weight:700;" : ""}">${v}</td>
-     </tr>`;
-  const items = (order.order_items || []).map((i: any) => row(`${esc(i.title_en)} × ${i.qty}`, money(i.line_total))).join("");
-  const disc = order.discount ? row("Discount", "– " + money(order.discount)) : "";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-collapse:collapse;">
-    ${items}${row("Subtotal", money(order.subtotal))}${disc}${row("Shipping", order.shipping ? money(order.shipping) : "Free")}${row("Total", money(order.total), true)}
+function itemsTable(order, lang) {
+  const rtl = lang === "ar";
+  const row = (k, v, bold = false) =>
+    `<tr><td style="padding:12px 0;border-top:1px solid ${RULE};font-family:${SANS};color:${bold ? INK : MUTED};font-size:16px;${bold ? "font-weight:700;" : ""}${rtl ? "text-align:right;" : ""}">${k}</td>
+       <td align="${rtl ? "left" : "right"}" style="padding:12px 0;border-top:1px solid ${RULE};font-family:${SANS};color:${bold ? INK : MUTED};font-size:16px;${bold ? "font-weight:700;" : ""}">${v}</td></tr>`;
+  const items = (order.order_items || []).map((i) => row(`${esc(rtl ? (i.title_ar || i.title_en) : i.title_en)} × ${i.qty}`, money(i.line_total, lang))).join("");
+  const L = rtl
+    ? { sub: "الإجمالي الفرعي", disc: "خصم", ship: "الشحن", free: "مجاني", total: "الإجمالي" }
+    : { sub: "Subtotal", disc: "Discount", ship: "Shipping", free: "Free", total: "Total" };
+  const disc = order.discount ? row(L.disc, "– " + money(order.discount, lang)) : "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-collapse:collapse;${rtl ? "direction:rtl;" : ""}">
+    ${items}${row(L.sub, money(order.subtotal, lang))}${disc}${row(L.ship, order.shipping ? money(order.shipping, lang) : L.free)}${row(L.total, money(order.total, lang), true)}
   </table>`;
 }
 
-function shell(inner: string) {
+function shell(inner) {
   return `<!doctype html><html><body style="margin:0;padding:0;background:${CREAM};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};"><tr><td align="center" style="padding:0;">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;">
-      <tr><td style="background:${PLUM};padding:26px 36px;">
-        <div style="font-family:${SERIF};color:#FFFFFF;font-size:24px;letter-spacing:.24em;">STRANDS</div>
-      </td></tr>
+      <tr><td style="background:${PLUM};padding:26px 36px;"><div style="font-family:${SERIF};color:#FFFFFF;font-size:24px;letter-spacing:.24em;">STRANDS</div></td></tr>
       <tr><td style="padding:40px 36px;">${inner}</td></tr>
       <tr><td style="background:${PLUM};padding:28px 36px;">
         <div style="font-family:${SERIF};color:#FFFFFF;font-size:20px;letter-spacing:.24em;">STRANDS</div>
@@ -84,47 +70,52 @@ function shell(inner: string) {
   </td></tr></table></body></html>`;
 }
 
-function renderEmail(status: string, order: any): { subject: string; html: string } | null {
-  const first = esc(String(order.full_name || "there").split(" ")[0]);
+const HEADLINE = {
+  placed: { en: "Thank you {first} — we have your order.", ar: "شكرًا {first} — وصلنا طلبك." },
+  confirmed: { en: "We have confirmed your order.", ar: "أكّدنا طلبك." },
+  packed: { en: "Your order is packed.", ar: "طلبك اتجهّز." },
+  with_courier: { en: "Your order is with the courier.", ar: "طلبك مع المندوب." },
+  delivered: { en: "Your order arrived.", ar: "طلبك وصل." },
+  cancelled: { en: "Your order was cancelled.", ar: "طلبك اتلغى." },
+};
+const BTN = {
+  track: { en: "Track your order", ar: "تابعي طلبك" },
+  share: { en: "Share your result", ar: "شاركي نتيجتك" },
+  shop: { en: "Back to the shop", ar: "رجوع للمتجر" },
+  orderNo: { en: "Order number", ar: "رقم الطلب" },
+};
+const GREEN = {
+  placed: { en: "You pay {total} in cash to the courier when the box arrives.", ar: "بتدفعي {total} كاش للمندوب لما العلبة توصل." },
+  with_courier: { en: "Have {total} in cash ready for the courier.", ar: "جهّزي {total} كاش للمندوب." },
+};
+
+function fill(s, order, lang, doEsc) {
+  const first = String(order.full_name || "there").split(" ")[0] || "there";
+  let out = doEsc ? esc(String(s || "")) : String(s || "");
+  return out.replace(/\{name\}/g, doEsc ? esc(first) : first)
+            .replace(/\{first\}/g, doEsc ? esc(first) : first)
+            .replace(/\{order\}/g, doEsc ? esc(order.order_number) : order.order_number)
+            .replace(/\{total\}/g, money(order.total, lang));
+}
+
+function renderEmail(status, order, tmpl, lang) {
+  if (!HEADLINE[status]) return null;
+  const rtl = lang === "ar";
   const num = order.order_number;
-  const total = order.total;
-  switch (status) {
-    case "placed":
-      return { subject: `We have your order, ${first} — ${num}`, html: shell(
-        h1(`Thank you ${first} — we have your order.`) +
-        p("Nour will confirm on WhatsApp within a few hours. Have your phone nearby when the courier calls.") +
-        numberCard(num) + itemsTable(order) +
-        green(`You pay ${money(total)} in cash to the courier when the box arrives.`) +
-        button("Track your order", track)) };
-    case "confirmed":
-      return { subject: "Your Strands order is confirmed", html: shell(
-        h1("We have confirmed your order.") +
-        p(`Order ${esc(num)} is confirmed and we are getting it ready. You will pay ${money(total)} in cash to the courier when it arrives.`) +
-        numberCard(num) + button("Track your order", track)) };
-    case "packed":
-      return { subject: "Your jar is packed", html: shell(
-        h1("Your order is packed.") +
-        p("Your jar is boxed and waiting for the courier. We will write again the moment it goes out for delivery.") +
-        numberCard(num) + button("Track your order", track)) };
-    case "with_courier":
-      return { subject: "On its way to you", html: shell(
-        h1("Your order is with the courier.") +
-        p(`It is out for delivery. Keep your phone nearby — the courier will call — and have ${money(total)} in cash ready.`) +
-        numberCard(num) + green(`Have ${money(total)} in cash ready for the courier.`) +
-        button("Track your order", track)) };
-    case "delivered":
-      return { subject: "Thank you for being part of our Strands family", html: shell(
-        h1("Your order arrived.") +
-        p("We hope you love it. If you do, tag us — we like seeing your hair.") +
-        numberCard(num) + button("Share your result", igHref)) };
-    case "cancelled":
-      return { subject: "Your Strands order was cancelled", html: shell(
-        h1("Your order was cancelled.") +
-        p(`Order ${esc(num)} has been cancelled and nothing will be charged. If that is not right, message us and we will fix it.`) +
-        numberCard(num) + button("Back to the shop", shopHref)) };
-    default:
-      return null;
-  }
+  tmpl = tmpl || {};
+  const subject = fill(tmpl["subject_" + lang] || tmpl.subject_en || "", order, lang, false) || (rtl ? "طلبك من Strands" : "Your Strands order");
+  const bodyText = fill(tmpl["body_" + lang] || tmpl.body_en || "", order, lang, true);
+  const head = fill(HEADLINE[status][lang] || HEADLINE[status].en, order, lang, true);
+  const orderLabel = BTN.orderNo[lang];
+
+  let inner = h1(head, rtl) + p(bodyText, rtl) + numberCard(num, orderLabel);
+  if (status === "placed") inner += itemsTable(order, lang) + green(fill(GREEN.placed[lang], order, lang, false), rtl) + button(BTN.track[lang], track);
+  else if (status === "with_courier") inner += green(fill(GREEN.with_courier[lang], order, lang, false), rtl) + button(BTN.track[lang], track);
+  else if (status === "delivered") inner += button(BTN.share[lang], igHref);
+  else if (status === "cancelled") inner += button(BTN.shop[lang], shopHref);
+  else inner += button(BTN.track[lang], track);
+
+  return { subject, html: shell(inner) };
 }
 
 Deno.serve(async (req) => {
@@ -132,7 +123,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
   try {
     const auth = req.headers.get("Authorization") || "";
-    const { order_id, status } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const order_id = body.order_id, status = body.status;
     if (!order_id || !status) return json({ ok: false, error: "missing_order_id_or_status" }, 400);
 
     const asCaller = createClient(SUPABASE_URL, ANON, { global: { headers: { Authorization: auth } } });
@@ -147,13 +139,15 @@ Deno.serve(async (req) => {
     const allowed = isAdmin === true || (status === "placed" && uid && uid === order.user_id);
     if (!allowed) return json({ ok: false, error: "forbidden" }, 403);
 
-    const tpl = renderEmail(status, order);
+    const lang = order.lang === "ar" ? "ar" : "en";
+    const { data: st } = await admin.from("settings").select("value").eq("key", "emails").maybeSingle();
+    const templates = (st && st.value) || {};
+    const tpl = renderEmail(status, order, templates[status], lang);
     if (!tpl) return json({ ok: false, error: "unknown_status" }, 400);
 
     let notify = "no_provider";
-    if (!order.email) {
-      notify = "no_email";
-    } else if (RESEND_API_KEY) {
+    if (!order.email) notify = "no_email";
+    else if (RESEND_API_KEY) {
       const r = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
@@ -162,13 +156,12 @@ Deno.serve(async (req) => {
       notify = r.ok ? "sent" : ("error:" + (await r.text()).slice(0, 200));
     }
 
-    // Log the outcome on the most recent event for this order + status.
     const { data: ev } = await admin.from("order_events").select("id")
       .eq("order_id", order_id).eq("status", status).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (ev) await admin.from("order_events").update({ notified_email: order.email, notify_result: notify }).eq("id", ev.id);
 
     return json({ ok: true, sent: notify === "sent", notify_result: notify });
   } catch (e) {
-    return json({ ok: false, error: String((e as Error)?.message || e) }, 500);
+    return json({ ok: false, error: String((e && e.message) || e) }, 500);
   }
 });
