@@ -46,11 +46,21 @@ function Emails() {
     setMsg(error ? { ok: false, msg: error.message + " — are you signed in as the owner?" } : { ok: true, msg: "Saved. New orders at this status use this wording." });
   }
 
+  async function sendTest() {
+    setBusy(true); setMsg(null);
+    const { data, error } = await window.sb.functions.invoke("notify-order", { body: { test: true, status: which, lang, template: cur } });
+    setBusy(false);
+    if (error) return setMsg({ ok: false, msg: "Couldn’t send the test — " + error.message });
+    if (data && data.sent) return setMsg({ ok: true, msg: "Test sent to " + (data.to || "your inbox") + ". Check your email." });
+    if (data && data.notify_result === "no_provider") return setMsg({ ok: false, msg: "No email key set yet. Set RESEND_API_KEY on the function, then try again." });
+    setMsg({ ok: false, msg: "Test not sent — " + ((data && data.notify_result) || (data && data.error) || "unknown error") + "." });
+  }
+
   if (!emails) return <div style={{ color: "var(--ink-2)" }}>Loading the emails…</div>;
 
   return (
     <div>
-      <PageHeader label="Emails" title="What each status email says." action={<Button size="sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button>} />
+      <PageHeader label="Emails" title="What each status email says." action={<span style={{ display: "inline-flex", gap: "var(--space-2)" }}><Button size="sm" variant="quiet" onClick={sendTest} disabled={busy}>Send a test to me</Button><Button size="sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button></span>} />
       <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)", marginBottom: "var(--space-5)", maxWidth: "var(--measure)" }}>
         Edit the subject and message for each order status. Use <code>{"{name}"}</code>, <code>{"{order}"}</code> and <code>{"{total}"}</code> — they’re filled in automatically. The header, order card and button are added for you.
       </p>

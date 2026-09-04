@@ -124,15 +124,35 @@ Deno.serve(async (req) => {
   try {
     const auth = req.headers.get("Authorization") || "";
     const body = await req.json().catch(() => ({}));
-    const order_id = body.order_id, status = body.status;
-    if (!order_id || !status) return json({ ok: false, error: "missing_order_id_or_status" }, 400);
+    const status = body.status;
 
     const asCaller = createClient(SUPABASE_URL, ANON, { global: { headers: { Authorization: auth } } });
     const { data: userData } = await asCaller.auth.getUser();
     const uid = userData?.user?.id || null;
     const { data: isAdmin } = await asCaller.rpc("is_admin");
-
     const admin = createClient(SUPABASE_URL, SERVICE);
+
+    // Test send: the owner previews a status email in their own inbox, using the
+    // copy from the editor (body.template) or the saved template. Never touches a
+    // real order, and only ever sends to the caller's own address.
+    if (body.test === true) {
+      if (isAdmin !== true) return json({ ok: false, error: "forbidden" }, 403);
+      const to = userData?.user?.email;
+      if (!to) return json({ ok: false, error: "no_email" }, 400);
+      const lang = body.lang === "ar" ? "ar" : "en";
+      const sampleOrder = { order_number: "STR-TEST", full_name: "Nour Hassan", total: 230, subtotal: 150, shipping: 80, discount: 0, lang, order_items: [{ title_en: "Velvet Touch Masque", title_ar: "ماسك فيلفيت تاتش", qty: 1, line_total: 150 }] };
+      let tmpl = (body.template && typeof body.template === "object") ? body.template : null;
+      if (!tmpl) { const { data: st } = await admin.from("settings").select("value").eq("key", "emails").maybeSingle(); tmpl = ((st && st.value) || {})[status]; }
+      const tpl = renderEmail(status, sampleOrder, tmpl, lang);
+      if (!tpl) return json({ ok: false, error: "unknown_status" }, 400);
+      if (!RESEND_API_KEY) return json({ ok: true, sent: false, notify_result: "no_provider" });
+      const rr = await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: FROM, to: [to], subject: "[Test] " + tpl.subject, html: tpl.html }) });
+      const nres = rr.ok ? "sent" : ("error:" + (await rr.text()).slice(0, 200));
+      return json({ ok: true, sent: nres === "sent", notify_result: nres, to });
+    }
+
+    const order_id = body.order_id;
+    if (!order_id || !status) return json({ ok: false, error: "missing_order_id_or_status" }, 400);
     const { data: order, error: oErr } = await admin.from("orders").select("*, order_items(*)").eq("id", order_id).maybeSingle();
     if (oErr || !order) return json({ ok: false, error: "order_not_found" }, 404);
 
