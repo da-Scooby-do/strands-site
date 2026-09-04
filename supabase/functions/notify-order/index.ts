@@ -140,7 +140,9 @@ Deno.serve(async (req) => {
       const to = userData?.user?.email;
       if (!to) return json({ ok: false, error: "no_email" }, 400);
       const lang = body.lang === "ar" ? "ar" : "en";
-      const sampleOrder = { order_number: "STR-TEST", full_name: "Nour Hassan", total: 230, subtotal: 150, shipping: 80, discount: 0, lang, order_items: [{ title_en: "Velvet Touch Masque", title_ar: "ماسك فيلفيت تاتش", qty: 1, line_total: 150 }] };
+      const { data: prof } = await admin.from("profiles").select("full_name").eq("user_id", uid).maybeSingle();
+      const sampleName = (prof && prof.full_name) || String(to).split("@")[0] || "there";
+      const sampleOrder = { order_number: "STR-TEST", full_name: sampleName, total: 230, subtotal: 150, shipping: 80, discount: 0, lang, order_items: [{ title_en: "Velvet Touch Masque", title_ar: "ماسك فيلفيت تاتش", qty: 1, line_total: 150 }] };
       let tmpl = (body.template && typeof body.template === "object") ? body.template : null;
       if (!tmpl) { const { data: st } = await admin.from("settings").select("value").eq("key", "emails").maybeSingle(); tmpl = ((st && st.value) || {})[status]; }
       const tpl = renderEmail(status, sampleOrder, tmpl, lang);
