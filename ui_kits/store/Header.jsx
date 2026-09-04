@@ -27,7 +27,7 @@ function Header({ onBuy, onCart, cart }) {
         </nav>
         <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
           {!phone && <LanguageToggle value={window.langToggleValue()} onChange={window.setStrandsLang} />}
-          {!phone && <a href="../account/index.html" style={{ borderBottom: "none", display: "inline-flex" }}><IconButton name="user" label={ar ? "حسابك" : "Account"} /></a>}
+          <a href="../account/index.html" style={{ borderBottom: "none", display: "inline-flex" }}><IconButton name="user" label={ar ? "حسابك" : "Account"} /></a>
           <IconButton name="shopping-bag" label={ar ? "السلة" : "Cart"} badge={cart || undefined} onClick={onCart} />
           {phone && <LanguageToggle value={window.langToggleValue()} onChange={window.setStrandsLang} />}
           {!phone && <Button size="sm" onClick={onBuy}>{ar ? "أضيفي للسلة" : "Add to cart"}</Button>}
