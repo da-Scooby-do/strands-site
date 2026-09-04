@@ -94,7 +94,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
         promo_code: promo ? promo.code : null,
         items: lines.map((l) => ({ variant_key: l.key, qty: l.qty })),
       };
-      const r = await window.sbRpc("place_order", payload);
+      const r = await window.sbRpc("place_order", { payload });
       if (r && r.ok) {
         setDone(r); if (onClear) onClear();
         // Fire the "order received" email (function allows the order's owner for 'placed').
