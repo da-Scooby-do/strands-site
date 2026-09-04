@@ -80,6 +80,12 @@ function App(){
     })();
   },[session]);
 
+  // One sign-in for everyone: the dashboard has no login of its own. A visit
+  // without a session goes to the shared account sign-in; a signed-in non-owner
+  // is sent to their account (the owner reaches here via the Dashboard button).
+  React.useEffect(()=>{ if(ready && window.SB_READY && !session){ window.location.replace("../account/index.html"); } },[ready,session]);
+  React.useEffect(()=>{ if(admin===false){ window.location.replace("../account/index.html"); } },[admin]);
+
   async function loadOrders(){
     const {data,error}=await window.sb.from("orders").select("*, order_items(*), order_events(*)").order("created_at",{ascending:false});
     if(!error && data) setOrders(data.map(mapOrder));
@@ -97,9 +103,9 @@ function App(){
 
   if(!ready) return <Splash msg="Loading…"/>;
   if(!window.SB_READY) return <Splash msg="Could not reach the database. Check your connection and refresh."/>;
-  if(!session) return <window.DashLogin heading="Owner sign in." onSignedIn={(s)=>setSession(s)}/>;
+  if(!session) return <Splash msg="Taking you to sign in…"/>;
   if(admin===null) return <Splash msg="Checking your access…"/>;
-  if(admin===false) return <NotAdmin email={session.user.email} onSignOut={()=>window.sb.auth.signOut()}/>;
+  if(admin===false) return <Splash msg="Taking you to your account…"/>;
 
   const go=(p)=>{setOpenId(null);setPage(p);};
   let body;
