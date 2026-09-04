@@ -65,17 +65,25 @@ function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
           <Card pad="var(--space-5)">
             <h2 style={{ fontSize: 22, marginBottom: "var(--space-4)" }}>History.</h2>
             <div style={{ display: "grid", gap: "var(--space-4)" }}>
-              {history.map((h) => (
-                <div key={h.s} style={{ display: "grid", gap: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", fontSize: "var(--text-small)" }}>
-                    <span style={{ fontWeight: 500 }}>{h.s}</span>
-                    <span style={{ fontFamily: "var(--font-numeric)", fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{h.t}</span>
+              {history.map((h, idx) => {
+                const notify = ("notify" in h) ? h.notify : (h.mail ? (h.mail.ok ? "sent" : (h.mail.why || "failed")) : null);
+                const to = h.to || (h.mail && h.mail.to);
+                const es = window.emailStatusOf ? window.emailStatusOf(notify) : { label: notify || "Not sent", color: "var(--ink-2)", bg: "var(--purple-tint)" };
+                return (
+                  <div key={idx} style={{ display: "grid", gap: 6 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", fontSize: "var(--text-small)" }}>
+                      <span style={{ fontWeight: 500 }}>{h.s}</span>
+                      <span style={{ fontFamily: "var(--font-numeric)", fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{h.t}</span>
+                    </div>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: "var(--text-fine-size)", flexWrap: "wrap" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 9px", borderRadius: "var(--radius-pill)", background: es.bg, color: es.color, fontFamily: "var(--font-sans)" }}>
+                        {notify === "sent" && <Icon name="check" size={11} />}{notify === "sent" ? "Emailed" : es.label}
+                      </span>
+                      {notify === "sent" && to && <span style={{ color: "var(--ink-2)" }}>{to}</span>}
+                    </span>
                   </div>
-                  {h.mail.ok
-                    ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "var(--text-fine-size)", color: "var(--green)" }}><Icon name="check" size={12} />Emailed {h.mail.to}</span>
-                    : <span style={{ fontSize: "var(--text-fine-size)", color: "#8A2B2B", lineHeight: 1.5 }}>{h.mail.why}</span>}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>

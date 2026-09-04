@@ -27,6 +27,7 @@ function Orders({ orders, onOpen }) {
         { key: "address", label: "Address", maxWidth: "220px", render: (r) => r.street + ", " + r.area },
         { key: "total", label: "Total", numeric: true, align: "end", render: (r) => (r.items.reduce((a, i) => a + i.p * i.q, 0) + r.shipping).toLocaleString("en-US") + " EGP" },
         { key: "status", label: "Status", render: (r) => <StatusPill status={r.status} /> },
+        { key: "email", label: "Email", render: (r) => { const s = window.emailStatusOf(r.emailResult); return <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, padding: "3px 9px", borderRadius: "var(--radius-pill)", background: s.bg, color: s.color, whiteSpace: "nowrap" }}>{s.label}</span>; } },
         { key: "placed", label: "Placed", numeric: true, align: "end" },
       ]} />
     </div>

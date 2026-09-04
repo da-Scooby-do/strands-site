@@ -21,14 +21,24 @@ const FLOW_KEYS=["placed","confirmed","packed","with_courier","delivered"];
 function pad2(n){return (n<10?"0":"")+n;}
 function fmtDate(d){try{const x=new Date(d);return pad2(x.getDate())+"/"+pad2(x.getMonth()+1)+"/"+x.getFullYear();}catch(e){return "";}}
 function fmtDT(d){try{const x=new Date(d);return fmtDate(d)+" "+pad2(x.getHours())+":"+pad2(x.getMinutes());}catch(e){return "";}}
+/* Human-readable email outcome for an order_events.notify_result value. */
+function emailStatusOf(nr){
+  if(!nr) return {label:"Not sent", color:"var(--ink-2)", bg:"var(--purple-tint)"};
+  if(nr==="sent") return {label:"Sent", color:"#4C6531", bg:"#EDF0E7"};
+  if(nr==="no_provider") return {label:"No email key", color:"#7A5200", bg:"#FBEFD8"};
+  if(nr==="no_email") return {label:"No address", color:"var(--ink-2)", bg:"var(--purple-tint)"};
+  if(nr==="needs_verified_domain"||/verify a domain|verified domain/i.test(nr)) return {label:"Verify domain", color:"#7A5200", bg:"#FBEFD8"};
+  return {label:"Failed", color:"#8A2B2B", bg:"#F6E5E5"};
+}
+window.emailStatusOf=emailStatusOf;
 function mapOrder(o){
   const items=(o.order_items||[]).map(i=>({n:i.title_en,q:i.qty,p:i.unit_price}));
-  const events=(o.order_events||[]).slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).map(e=>{
-    const okv=e.notify_result&&/(ok|sent|true|delivered)/i.test(e.notify_result);
-    return {s:ST_LABEL[e.status]||e.status,t:fmtDT(e.created_at),mail:e.notify_result?(okv?{ok:true,to:e.notified_email||o.email}:{ok:false,why:e.notify_result}):{ok:true,to:e.notified_email||o.email||"the customer"}};
-  });
+  const events=(o.order_events||[]).slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).map(e=>(
+    {s:ST_LABEL[e.status]||e.status,t:fmtDT(e.created_at),notify:e.notify_result||null,to:e.notified_email||o.email}
+  ));
+  const emailResult=events.length?events[events.length-1].notify:null;
   return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,
-    items,shipping:o.shipping||0,discount:o.discount||0,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events};
+    items,shipping:o.shipping||0,discount:o.discount||0,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
 }
 
 function Splash({msg}){return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",color:"var(--ink-2)",fontFamily:"var(--font-sans)"}}>{msg}</div>;}
