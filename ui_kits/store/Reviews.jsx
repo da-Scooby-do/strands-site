@@ -60,7 +60,7 @@ function Reviews() {
             {list.map((q, i) => (
               <figure key={i} style={{ flex: "0 0 auto", width: cardW, scrollSnapAlign: "start", margin: 0, background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: phone ? "var(--space-5)" : "var(--space-6)", display: "grid", gap: "var(--space-4)", alignContent: "start", minHeight: phone ? 180 : 230 }}>
                 <span aria-hidden style={{ fontFamily: "var(--font-display)", fontSize: 44, lineHeight: 0.6, color: "var(--green)", height: 22 }}>{ar ? "”" : "“"}</span>
-                <blockquote style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: phone ? 20 : 22, lineHeight: 1.4, color: "var(--ink)" }}>{ar ? q.quote_ar : q.quote_en}</blockquote>
+                <blockquote style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: phone ? 20 : 22, lineHeight: 1.4, color: "var(--green)" }}>{ar ? q.quote_ar : q.quote_en}</blockquote>
                 <figcaption style={{ fontSize: "var(--text-fine-size)", letterSpacing: ".08em", textTransform: "uppercase", color: "var(--green)" }}>{(ar ? q.city_ar : q.city_en) || ""}</figcaption>
               </figure>
             ))}
