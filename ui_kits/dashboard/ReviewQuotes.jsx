@@ -40,6 +40,11 @@ function Reviews() {
       <div style={{ display: "grid", gap: "var(--space-4)" }}>
         {list.map((q) => (
           <Card key={q.id} pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: "var(--radius-pill)", fontFamily: "var(--font-sans)", background: q.published ? "#EDF0E7" : "var(--purple-tint)", color: q.published ? "#4C6531" : "var(--ink-2)" }}>
+                {q.published ? "● On the shop" : "○ Hidden — not on the shop"}
+              </span>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr"), gap: "var(--space-4)" }}>
               <Textarea label="Quote (EN)" rows={2} value={q.quote_en || ""} onChange={(v) => setLocal(q.id, "quote_en", v)} />
               <Textarea label="Quote (AR)" rows={2} dir="rtl" value={q.quote_ar || ""} onChange={(v) => setLocal(q.id, "quote_ar", v)} />
