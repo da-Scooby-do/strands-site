@@ -25,7 +25,7 @@ function money(n, lang) { return (Math.round(Number(n) || 0)).toLocaleString("en
 const PLUM = "#45254A", CREAM = "#FBF6EE", INK = "#2A2130", MUTED = "#615468", RULE = "#E6D9CB", LILAC = "#BEA8D1";
 const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
 const SERIF = "Georgia,'Times New Roman',serif";
-const track = SITE_URL + "/ui_kits/account/", shopHref = SITE_URL + "/", igHref = "https://instagram.com/nourscoils";
+const track = SITE_URL + "/ui_kits/account/", shopHref = SITE_URL + "/", igHref = "https://www.instagram.com/strandsbynour";
 
 const h1 = (t, rtl) => `<h1 style="font-family:${SERIF};color:${INK};font-size:34px;line-height:1.15;margin:0 0 18px;font-weight:400;${rtl ? "direction:rtl;text-align:right;" : ""}">${t}</h1>`;
 const p = (t, rtl) => `<p style="font-family:${SANS};color:${MUTED};font-size:17px;line-height:1.6;margin:0 0 6px;${rtl ? "direction:rtl;text-align:right;" : ""}">${t}</p>`;
@@ -64,7 +64,7 @@ function shell(inner) {
       <tr><td style="background:${PLUM};padding:28px 36px;">
         <div style="font-family:${SERIF};color:#FFFFFF;font-size:20px;letter-spacing:.24em;">STRANDS</div>
         <div style="font-family:${SANS};color:${LILAC};font-size:13px;margin-top:8px;">Perfection for every strand</div>
-        <div style="font-family:${SANS};color:#9C86AE;font-size:12px;margin-top:12px;">© 2026 Strands. Cairo, Egypt. &nbsp;·&nbsp; @nourscoils</div>
+        <div style="font-family:${SANS};color:#9C86AE;font-size:12px;margin-top:12px;">© 2026 Strands. Cairo, Egypt. &nbsp;·&nbsp; @strandsbynour</div>
       </td></tr>
     </table>
   </td></tr></table></body></html>`;

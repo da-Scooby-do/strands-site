@@ -1,4 +1,6 @@
-const { DamaskPanel, Wordmark, NewsletterField, DisplayBand } = window.StrandsDesignSystem_6d0a65;
+const { DamaskPanel, Wordmark, NewsletterField, DisplayBand, Icon } = window.StrandsDesignSystem_6d0a65;
+const IG_URL = "https://www.instagram.com/strandsbynour";
+const IG_HANDLE = "@strandsbynour";
 function Footer() {
   const phone = window.useIsPhone();
   const ar = window.useLang() === "AR";
@@ -19,6 +21,9 @@ function Footer() {
             <div style={{ display: "grid", gap: "var(--space-4)", alignContent: "start" }}>
               <Wordmark size={24} color="var(--green-tint)" align="start" />
               <p style={{ color: "var(--lilac)", fontSize: "var(--text-small)", maxWidth: "26ch" }}>{ar ? "إدارة صاحبة العلامة في القاهرة. ماسك واحد، مصنوع بعناية." : "Owner-run in Cairo. One masque, made carefully."}</p>
+              <a href={IG_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--white)", borderBottom: "none", fontSize: "var(--text-small)" }}>
+                <Icon name="instagram" size={18} /> {IG_HANDLE}
+              </a>
             </div>
             {cols.map((c) => (
               <div key={c.h} style={{ display: "grid", gap: "var(--space-3)", alignContent: "start" }}>
@@ -32,7 +37,7 @@ function Footer() {
             </div>
           </div>
           <div style={{ borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-4)", display: "flex", flexWrap: "wrap", gap: "var(--space-3) var(--space-5)", fontSize: "var(--text-fine-size)", color: "var(--lilac)" }}>
-            <span>© 2026 Strands Hair Care</span><span>@strands.eg</span><span style={{ marginInlineStart: "auto" }}>{ar ? "الخصوصية · الشروط" : "Privacy · Terms"}</span>
+            <span>© 2026 Strands Hair Care</span><a href={IG_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--lilac)", borderBottom: "none" }}>{IG_HANDLE}</a><span style={{ marginInlineStart: "auto" }}>{ar ? "الخصوصية · الشروط" : "Privacy · Terms"}</span>
           </div>
         </div>
       </DamaskPanel>
