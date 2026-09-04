@@ -24,7 +24,7 @@ function Reviews() {
           <p style={{ color: "var(--ink-2)", maxWidth: "48ch" }}>{ar ? "كلمات من عميلات اخترنا ننشرها. مش تقييمات مُرسلة تلقائيًا." : "Words from customers we’ve chosen to publish."}</p>
         </div>
         {list.length ? (
-          <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "repeat(auto-fit,minmax(280px,1fr))"), gap: phone ? "var(--space-4)" : "var(--space-5)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "repeat(3, 1fr)", gap: phone ? "var(--space-4)" : "var(--space-5)" }}>
             {list.map((q, i) => (
               <figure key={i} style={{ margin: 0, background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: phone ? "var(--space-5)" : "var(--space-6)", display: "grid", gap: "var(--space-4)", alignContent: "start" }}>
                 <span aria-hidden style={{ fontFamily: "var(--font-display)", fontSize: 44, lineHeight: 0.6, color: "var(--green)", height: 22 }}>{ar ? "”" : "“"}</span>
