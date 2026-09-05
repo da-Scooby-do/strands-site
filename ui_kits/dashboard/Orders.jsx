@@ -4,6 +4,7 @@ function Orders({ orders, onOpen, onReload }) {
   const [filter, setFilter] = React.useState("To action");
   const [q, setQ] = React.useState("");
   const [newOpen, setNewOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
   const rows = orders.filter((o) => {
     const f = filter === "All" ? true : filter === "To action" ? !["Delivered", "Cancelled"].includes(o.status) : o.status === filter;
     const s = (o.id + o.customer + o.phone).toLowerCase().includes(q.toLowerCase());
@@ -21,7 +22,8 @@ function Orders({ orders, onOpen, onReload }) {
   return (
     <div>
       <window.DashNewOrder open={newOpen} onClose={() => setNewOpen(false)} onCreated={() => { if (onReload) onReload(); }} />
-      <PageHeader label="Orders" title="What needs packing." action={<span style={{ display: "inline-flex", gap: "var(--space-2)" }}><Button size="sm" onClick={() => setNewOpen(true)}>New order</Button><Button size="sm" variant="quiet" onClick={exportCSV}>Export CSV</Button></span>} />
+      <window.DashImportOrders open={importOpen} onClose={() => setImportOpen(false)} onDone={() => { if (onReload) onReload(); }} />
+      <PageHeader label="Orders" title="What needs packing." action={<span style={{ display: "inline-flex", gap: "var(--space-2)", flexWrap: "wrap" }}><Button size="sm" onClick={() => setNewOpen(true)}>New order</Button><Button size="sm" variant="quiet" onClick={() => setImportOpen(true)}>Import CSV</Button><Button size="sm" variant="quiet" onClick={exportCSV}>Export CSV</Button></span>} />
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginBottom: "var(--space-4)" }}>
         {FILTERS.map((f) => (
           <button key={f} type="button" onClick={() => setFilter(f)}
