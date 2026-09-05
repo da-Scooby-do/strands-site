@@ -5,11 +5,11 @@ const { StarRating, Button, Input, Textarea, InlineAlert, Icon } = window.Strand
 
 function StarInput({ value, onChange, ar }) {
   return (
-    <div style={{ display: "flex", gap: 4 }} role="radiogroup" aria-label={ar ? "التقييم" : "Rating"}>
+    <div style={{ display: "flex", gap: 6 }} role="radiogroup" aria-label={ar ? "التقييم" : "Rating"}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <button key={n} type="button" aria-label={n + (ar ? " نجوم" : " stars")} onClick={() => onChange(n)}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "var(--green)", lineHeight: 1 }}>
-          <Icon name="star" size={26} fill={n <= value ? "var(--green)" : "none"} />
+        <button key={n} type="button" aria-label={n + (ar ? " نجوم" : " stars")} aria-pressed={n <= value} onClick={() => onChange(n)}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 32, lineHeight: 1, color: "var(--green)" }}>
+          {n <= value ? "★" : "☆"}
         </button>
       ))}
     </div>
