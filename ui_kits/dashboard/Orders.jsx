@@ -1,8 +1,9 @@
 const { PageHeader, DataTable, StatusPill, SearchField, Button } = window.StrandsDesignSystem_6d0a65;
 const FILTERS = ["To action", "All", "Placed", "Confirmed", "Packed", "With courier", "Delivered", "Cancelled"];
-function Orders({ orders, onOpen }) {
+function Orders({ orders, onOpen, onReload }) {
   const [filter, setFilter] = React.useState("To action");
   const [q, setQ] = React.useState("");
+  const [newOpen, setNewOpen] = React.useState(false);
   const rows = orders.filter((o) => {
     const f = filter === "All" ? true : filter === "To action" ? !["Delivered", "Cancelled"].includes(o.status) : o.status === filter;
     const s = (o.id + o.customer + o.phone).toLowerCase().includes(q.toLowerCase());
@@ -19,7 +20,8 @@ function Orders({ orders, onOpen }) {
   };
   return (
     <div>
-      <PageHeader label="Orders" title="What needs packing." action={<Button size="sm" onClick={exportCSV}>Export CSV</Button>} />
+      <window.DashNewOrder open={newOpen} onClose={() => setNewOpen(false)} onCreated={() => { if (onReload) onReload(); }} />
+      <PageHeader label="Orders" title="What needs packing." action={<span style={{ display: "inline-flex", gap: "var(--space-2)" }}><Button size="sm" onClick={() => setNewOpen(true)}>New order</Button><Button size="sm" variant="quiet" onClick={exportCSV}>Export CSV</Button></span>} />
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginBottom: "var(--space-4)" }}>
         {FILTERS.map((f) => (
           <button key={f} type="button" onClick={() => setFilter(f)}
@@ -32,6 +34,7 @@ function Orders({ orders, onOpen }) {
       <DataTable onRowClick={onOpen} rows={rows} empty="No orders match that filter." columns={[
         { key: "id", label: "Order", numeric: true },
         { key: "customer", label: "Customer" },
+        { key: "source", label: "From", render: (r) => (r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--purple)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span> },
         { key: "phone", label: "Phone", numeric: true },
         { key: "address", label: "Address", maxWidth: "220px", render: (r) => r.street + ", " + r.area },
         { key: "total", label: "Total", numeric: true, align: "end", render: (r) => (r.items.reduce((a, i) => a + i.p * i.q, 0) + r.shipping).toLocaleString("en-US") + " EGP" },

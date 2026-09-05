@@ -8,6 +8,7 @@
 <script type="text/babel" src="Login.jsx"></script>
 <script type="text/babel" src="Overview.jsx"></script>
 <script type="text/babel" src="Orders.jsx"></script>
+<script type="text/babel" src="NewOrder.jsx"></script>
 <script type="text/babel" src="OrderDetail.jsx"></script>
 <script type="text/babel" src="Product.jsx"></script>
 <script type="text/babel" src="Promos.jsx"></script>
@@ -49,7 +50,7 @@ function mapOrder(o){
   ));
   const emailResult=events.length?events[events.length-1].notify:null;
   return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,
-    items,shipping:o.shipping||0,discount:o.discount||0,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
+    source:o.source||"website",items,shipping:o.shipping||0,discount:o.discount||0,total:o.total,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
 }
 
 function Splash({msg}){return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",color:"var(--ink-2)",fontFamily:"var(--font-sans)"}}>{msg}</div>;}
@@ -122,7 +123,7 @@ function App(){
   let body;
   if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onCancel={cancel} onSaveNote={saveNote}/>;
   else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/>;
-  else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)}/>;
+  else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
   else if(page==="Promo codes") body=<window.DashPromos/>;
   else if(page==="Reviews") body=<window.DashReviews/>;
