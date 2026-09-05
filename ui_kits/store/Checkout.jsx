@@ -19,7 +19,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   const [email, setEmail] = React.useState("");
   const [pw, setPw] = React.useState("");
 
-  const [form, setForm] = React.useState({ full_name: "", phone: "", governorate: "", area: "", street: "", landmark: "" });
+  const [form, setForm] = React.useState({ full_name: "", phone: "", phone2: "", governorate: "", area: "", street: "", landmark: "" });
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState("");
   const [done, setDone] = React.useState(null);
@@ -86,7 +86,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
     if (busy) return; setErr(""); setBusy(true);
     try {
       const payload = {
-        lang: ar ? "ar" : "en", full_name: form.full_name, phone: form.phone,
+        lang: ar ? "ar" : "en", full_name: form.full_name, phone: form.phone, phone2: form.phone2,
         governorate: form.governorate, area: form.area, street: form.street, landmark: form.landmark,
         promo_code: promo ? promo.code : null,
         items: lines.map((l) => ({ variant_key: l.key, qty: l.qty })),
@@ -207,8 +207,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                 <Input label={T("Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
                 <div style={row2}>
                   <Input label={T("Phone", "التليفون")} type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-                  <Select label={T("Governorate", "المحافظة")} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: T("Choose…", "اختاري…") }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
+                  <Input label={T("WhatsApp (optional)", "واتساب (اختياري)")} type="tel" value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} hint={T("to reach you if needed", "للتواصل معك لو لزم")} />
                 </div>
+                <Select label={T("Governorate", "المحافظة")} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: T("Choose…", "اختاري…") }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
                 <Input label={T("Street address", "عنوان الشارع")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} placeholder={T("Building, street", "العمارة، الشارع")} />
                 <div style={row2}>
                   <Input label={T("Area (optional)", "المنطقة (اختياري)")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} />

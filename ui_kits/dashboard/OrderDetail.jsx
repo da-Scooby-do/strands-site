@@ -6,6 +6,15 @@ function Row({ k, v }) {
     </div>
   );
 }
+// Egyptian numbers to wa.me international format (drop leading 0, add 20).
+function waNumber(n) {
+  let d = String(n || "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.slice(0, 2) === "20") return d;
+  if (d[0] === "0") return "20" + d.slice(1);
+  if (d.length <= 10) return "20" + d;
+  return d;
+}
 function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
   const phone = window.useIsPhone();
   const { FLOW, NEXT_LABEL, HISTORY } = window.DASH;
@@ -13,7 +22,8 @@ function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
   const [saved, setSaved] = React.useState(false);
   const sub = order.items.reduce((a, i) => a + i.p * i.q, 0);
   const done = order.status === "Delivered" || order.status === "Cancelled";
-  const history = (order.events && order.events.length ? order.events : (HISTORY[order.id] || [{ s: "Placed", t: order.placed + " 10:00", mail: { ok: true, to: order.email } }]));
+  const waNum = waNumber(order.whatsapp || order.phone);
+  const history =(order.events && order.events.length ? order.events : (HISTORY[order.id] || [{ s: "Placed", t: order.placed + " 10:00", mail: { ok: true, to: order.email } }]));
   return (
     <div>
       <button type="button" onClick={onBack} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: 0, color: "var(--green)", cursor: "pointer", fontSize: "var(--text-small)", marginBottom: "var(--space-4)" }}>← All orders</button>
@@ -25,7 +35,9 @@ function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
             <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>Each step emails the customer at {order.email}.</p>
             <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "center" }}>
               {!done && <Button size="sm" onClick={onAdvance}>{NEXT_LABEL[order.status]}</Button>}
-              <Button size="sm" variant="quiet">WhatsApp customer</Button>
+              {waNum
+                ? <a href={"https://wa.me/" + waNum} target="_blank" rel="noopener noreferrer" style={{ borderBottom: "none" }}><Button size="sm" variant="quiet">WhatsApp customer</Button></a>
+                : <Button size="sm" variant="quiet" disabled>No WhatsApp number</Button>}
               {!done && <Button size="sm" variant="text" onClick={onCancel}>Cancel order</Button>}
             </div>
             <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
@@ -61,6 +73,7 @@ function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
             <Row k="Governorate" v={order.gov} />
             <Row k="Landmark" v={order.landmark} />
             <Row k="Phone" v={order.phone} />
+            <Row k="WhatsApp" v={order.whatsapp || (waNum ? order.phone : null)} />
             <Row k="Email" v={order.email} />
           </Card>
           <Card pad="var(--space-5)">

@@ -8,7 +8,7 @@ function egp(n) { return (n | 0).toLocaleString("en-US") + " EGP"; }
 function NewOrder({ open, onClose, onCreated }) {
   const phone = window.useIsPhone();
   const [variants, setVariants] = React.useState([]);
-  const [f, setF] = React.useState({ source: "whatsapp", status: "confirmed", full_name: "", phone: "", email: "", governorate: "", area: "", street: "", landmark: "", shipping: "", discount: "", note: "" });
+  const [f, setF] = React.useState({ source: "whatsapp", status: "confirmed", full_name: "", phone: "", phone2: "", email: "", governorate: "", area: "", street: "", landmark: "", shipping: "", discount: "", note: "" });
   const [items, setItems] = React.useState([{ variant_key: "", qty: 1 }]);
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState("");
@@ -34,7 +34,7 @@ function NewOrder({ open, onClose, onCreated }) {
     setBusy(true);
     try {
       const payload = {
-        source: f.source, status: f.status, full_name: f.full_name, phone: f.phone, email: f.email,
+        source: f.source, status: f.status, full_name: f.full_name, phone: f.phone, phone2: f.phone2, email: f.email,
         governorate: f.governorate, area: f.area, street: f.street, landmark: f.landmark,
         shipping: Number(f.shipping) || 0, discount: Number(f.discount) || 0, note: f.note,
         items: items.filter((it) => it.variant_key && Number(it.qty) > 0).map((it) => ({ variant_key: it.variant_key, qty: Number(it.qty) })),
@@ -68,8 +68,9 @@ function NewOrder({ open, onClose, onCreated }) {
             <Input label="Full name" value={f.full_name} onChange={(v) => set("full_name", v)} />
             <div style={two}>
               <Input label="Phone" type="tel" value={f.phone} onChange={(v) => set("phone", v)} />
-              <Input label="Email (optional)" type="email" value={f.email} onChange={(v) => set("email", v)} />
+              <Input label="WhatsApp (optional)" type="tel" value={f.phone2} onChange={(v) => set("phone2", v)} />
             </div>
+            <Input label="Email (optional)" type="email" value={f.email} onChange={(v) => set("email", v)} />
             <div style={two}>
               <Input label="Street" value={f.street} onChange={(v) => set("street", v)} />
               <Select label="Governorate" value={f.governorate} onChange={(v) => set("governorate", v)} options={[{ value: "", label: "Choose…" }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: g[0] })))} />

@@ -49,7 +49,7 @@ function mapOrder(o){
     {s:ST_LABEL[e.status]||e.status,t:fmtDT(e.created_at),notify:e.notify_result||null,to:e.notified_email||o.email}
   ));
   const emailResult=events.length?events[events.length-1].notify:null;
-  return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,
+  return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,whatsapp:o.phone2||null,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,
     source:o.source||"website",items,shipping:o.shipping||0,discount:o.discount||0,promo:o.promo_code||null,total:o.total,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
 }
 
