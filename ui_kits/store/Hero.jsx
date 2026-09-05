@@ -7,6 +7,13 @@ function Hero({ onAdd, added, product, variants }) {
   const lang = window.useLang();
   const ar = lang === "AR";
   const [open, setOpen] = React.useState(0);
+  const [rev, setRev] = React.useState({ avg: 0, count: 0 });
+  React.useEffect(() => {
+    if (!window.SB_READY) return;
+    window.sb.from("reviews").select("rating").eq("published", true).then(({ data }) => {
+      if (data && data.length) { const c = data.length; const a = Math.round((data.reduce((s, r) => s + (r.rating || 5), 0) / c) * 10) / 10; setRev({ avg: a, count: c }); }
+    });
+  }, []);
 
   const v1 = (variants || []).find((v) => v.jars === 1) || (variants || [])[0];
   const v2 = (variants || []).find((v) => v.jars === 2);
@@ -42,7 +49,7 @@ function Hero({ onAdd, added, product, variants }) {
       <div style={{ display: "grid", gap: "var(--space-4)" }}>
         <div><Chip tone="green">{ar ? ("ماسك شعر · " + size + " مل") : ("Hair masque · " + size + " ml")}</Chip></div>
         <h1 style={{ fontSize: phone ? 32 : 44, lineHeight: 1.1 }}>{name}</h1>
-        <StarRating value={4.6} count={38} />
+        {rev.count > 0 && <StarRating value={rev.avg} count={rev.count} />}
         <p style={{ color: "var(--ink-2)", fontSize: "var(--text-body-size)", maxWidth: "42ch" }}>
           {tagline || (ar ? "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر." : "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.")}
         </p>
