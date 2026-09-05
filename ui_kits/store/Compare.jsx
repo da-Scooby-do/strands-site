@@ -2,7 +2,9 @@ const { DamaskPanel, Eyebrow, ComparisonTable } = window.StrandsDesignSystem_6d0
 function Compare() {
   const phone = window.useIsPhone();
   const ar = window.useLang() === "AR";
-  const columns = ar ? ["Strands", "علاج الصالون", "ماسك الصيدلية"] : ["Strands", "Salon treatment", "Drugstore mask"];
+  const columns = ar
+    ? ["Strands", phone ? "الصالون" : "علاج الصالون", phone ? "الصيدلية" : "ماسك الصيدلية"]
+    : ["Strands", phone ? "Salon" : "Salon treatment", phone ? "Drugstore" : "Drugstore mask"];
   const rows = ar ? [
     { label: "تسع مكونات، كلها مذكورة بالاسم", values: [true, false, false] },
     { label: "يشتغل قبل الغسيل وكبلسم", values: [true, true, false] },
@@ -23,7 +25,7 @@ function Compare() {
           <Eyebrow tone="lilac">{ar ? "المقارنة" : "How it compares"}</Eyebrow>
           <h2 style={{ color: "var(--white)", fontSize: phone ? "var(--display-3)" : "var(--display-2)" }}>{ar ? "علبة واحدة، ثلاث روتينات، من غير صالون." : "One jar, three routines, no salon visit."}</h2>
         </div>
-        <ComparisonTable columns={columns} rows={rows} />
+        <div className="strands-compare" style={{ minWidth: 0 }}><ComparisonTable columns={columns} rows={rows} /></div>
       </div>
     </DamaskPanel>
   );

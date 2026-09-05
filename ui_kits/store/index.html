@@ -10,6 +10,9 @@
   --font-numeric:"Noto Kufi Arabic","Jost",system-ui,sans-serif;
 }
 .strands-review-track::-webkit-scrollbar{display:none}
+/* Comparison table on phones: tighten the row-label column so the three compare
+   columns get room and don't crowd together. */
+@media (max-width:760px){ .strands-compare table th:first-child, .strands-compare table td:first-child{ width:34%!important } .strands-compare table th, .strands-compare table td{ padding-left:4px!important; padding-right:4px!important } }
 /* Phone: keep the hero product column from being forced wide by the gallery's
    thumbnail strip (its 5 thumbs have a min-content wider than the screen). */
 @media (max-width:760px){
