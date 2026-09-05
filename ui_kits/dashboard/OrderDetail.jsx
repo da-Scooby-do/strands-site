@@ -41,8 +41,9 @@ function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
                 </div>
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}><span>Subtotal</span><span style={{ fontFamily: "var(--font-numeric)" }}>{sub.toLocaleString("en-US")} EGP</span></div>
+              {order.discount > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--green)" }}><span>Discount{order.promo ? " · " + order.promo : ""}</span><span style={{ fontFamily: "var(--font-numeric)" }}>– {order.discount.toLocaleString("en-US")} EGP</span></div>}
               <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}><span>Shipping</span><span style={{ fontFamily: "var(--font-numeric)" }}>{order.shipping ? order.shipping + " EGP" : "Free"}</span></div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-body-size)", fontWeight: 500 }}><span>Total to collect</span><span style={{ fontFamily: "var(--font-numeric)" }}>{(sub + order.shipping).toLocaleString("en-US")} EGP</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-body-size)", fontWeight: 500 }}><span>Total to collect</span><span style={{ fontFamily: "var(--font-numeric)" }}>{(sub - (order.discount || 0) + order.shipping).toLocaleString("en-US")} EGP</span></div>
             </div>
             <Textarea label="Internal note" value={note} onChange={(v) => { setNote(v); setSaved(false); }} placeholder="Courier said the flat was empty, calling back tomorrow." />
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>

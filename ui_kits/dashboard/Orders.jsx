@@ -10,11 +10,11 @@ function Orders({ orders, onOpen, onReload }) {
     return f && s;
   });
   const exportCSV = () => {
-    const headers = ["Order", "Customer", "Phone", "Email", "Governorate", "Area", "Street", "Landmark", "Items", "Subtotal", "Shipping", "Discount", "Total", "Status", "Placed", "Note"];
+    const headers = ["Order", "Source", "Customer", "Phone", "Email", "Governorate", "Area", "Street", "Landmark", "Items", "Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"];
     const data = rows.map((o) => {
       const sub = o.items.reduce((a, i) => a + i.p * i.q, 0);
       const items = o.items.map((i) => i.n + " x" + i.q).join(" | ");
-      return [o.id, o.customer, o.phone, o.email, o.gov, o.area, o.street, o.landmark, items, sub, o.shipping, o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note];
+      return [o.id, o.source, o.customer, o.phone, o.email, o.gov, o.area, o.street, o.landmark, items, sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note];
     });
     window.downloadCSV("strands-orders.csv", headers, data);
   };
@@ -37,7 +37,13 @@ function Orders({ orders, onOpen, onReload }) {
         { key: "source", label: "From", render: (r) => (r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--purple)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span> },
         { key: "phone", label: "Phone", numeric: true },
         { key: "address", label: "Address", maxWidth: "220px", render: (r) => r.street + ", " + r.area },
-        { key: "total", label: "Total", numeric: true, align: "end", render: (r) => (r.items.reduce((a, i) => a + i.p * i.q, 0) + r.shipping).toLocaleString("en-US") + " EGP" },
+        { key: "total", label: "Total", numeric: true, align: "end", render: (r) => {
+          const t = (r.total != null) ? r.total : (r.items.reduce((a, i) => a + i.p * i.q, 0) - (r.discount || 0) + r.shipping);
+          return <span style={{ display: "inline-grid", justifyItems: "end", gap: 2 }}>
+            <span style={{ fontFamily: "var(--font-numeric)" }}>{t.toLocaleString("en-US")} EGP</span>
+            {r.discount > 0 && <span style={{ fontSize: 10, color: "var(--green)", fontFamily: "var(--font-sans)", whiteSpace: "nowrap" }}>−{r.discount.toLocaleString("en-US")}{r.promo ? " · " + r.promo : ""}</span>}
+          </span>;
+        } },
         { key: "status", label: "Status", render: (r) => <StatusPill status={r.status} /> },
         { key: "email", label: "Email", render: (r) => { const s = window.emailStatusOf(r.emailResult); return <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, padding: "3px 9px", borderRadius: "var(--radius-pill)", background: s.bg, color: s.color, whiteSpace: "nowrap" }}>{s.label}</span>; } },
         { key: "placed", label: "Placed", numeric: true, align: "end" },
