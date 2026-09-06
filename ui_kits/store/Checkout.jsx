@@ -125,8 +125,10 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
 
   if (!open) return null;
   const panel = { position: "fixed", top: 0, bottom: 0, insetInlineEnd: 0, width: "min(460px, 100vw)", background: "var(--cream)", zIndex: 60, boxShadow: "-8px 0 40px rgba(0,0,0,.14)", display: "flex", flexDirection: "column", overflowY: "auto" };
-  const field = { display: "grid", gap: "var(--space-3)" };
-  const row2 = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" };
+  // minmax(0,1fr) keeps these single/two-column grids from stretching to a wide
+  // child's max-content, which in RTL overflowed the drawer to the left (clipped).
+  const field = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "var(--space-3)" };
+  const row2 = { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "var(--space-3)" };
   const heading = done ? T("Order placed", "تم الطلب") : step === "cart" ? T("Your cart", "سلتك") : T("Checkout", "إتمام الطلب");
 
   return (
@@ -158,7 +160,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             <Button onClick={onClose}>{T("Continue shopping", "كملي تسوّق")}</Button>
           </div>
         ) : step === "cart" ? (
-          <div style={{ padding: "var(--space-5)", display: "grid", gap: "var(--space-5)" }}>
+          <div style={{ padding: "var(--space-5)", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "var(--space-5)" }}>
             <div style={{ display: "grid", gap: "var(--space-3)" }}>
               {lines.map((l) => (
                 <div key={l.key} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "var(--space-3)", alignItems: "center", background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "12px 14px" }}>
@@ -185,10 +187,10 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             <button type="button" onClick={onClose} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>{T("Continue shopping", "كملي تسوّق")}</button>
           </div>
         ) : (
-          <div style={{ padding: "var(--space-5)", display: "grid", gap: "var(--space-5)" }}>
+          <div style={{ padding: "var(--space-5)", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "var(--space-5)" }}>
             <section style={field}>
               <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "end" }}>
-                <div style={{ flex: 1 }}><Input label={T("Discount code", "كود الخصم")} value={promoInput} onChange={setPromoInput} placeholder={T("e.g. NOUR10", "مثال: NOUR10")} /></div>
+                <div style={{ flex: 1, minWidth: 0 }}><Input label={T("Discount code", "كود الخصم")} value={promoInput} onChange={setPromoInput} placeholder={T("e.g. NOUR10", "مثال: NOUR10")} /></div>
                 <Button size="sm" variant="quiet" onClick={applyPromo}>{T("Apply", "تطبيق")}</Button>
               </div>
               {promo && <InlineAlert tone="ok">{T("Code", "الكود")} {promo.code} {T("applied.", "اتفعّل.")}</InlineAlert>}
