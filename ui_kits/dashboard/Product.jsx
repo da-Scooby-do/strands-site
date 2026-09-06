@@ -33,7 +33,6 @@ function Product() {
 
   async function save() {
     setSaved(null);
-    if (!numOk(product.price_egp)) return setSaved({ ok: false, msg: "Nothing saved — the price must be a whole number." });
     if (!numOk(product.stock)) return setSaved({ ok: false, msg: "Nothing saved — jars in stock must be a whole number." });
     for (const v of variants) { if (!numOk(v.price_egp)) return setSaved({ ok: false, msg: "Nothing saved — every bundle price must be a whole number." }); }
     if (ship.flat_egp !== "" && !numOk(ship.flat_egp)) return setSaved({ ok: false, msg: "Nothing saved — the shipping flat rate must be a whole number." });
@@ -45,7 +44,7 @@ function Product() {
         subtitle_en: product.subtitle_en, subtitle_ar: product.subtitle_ar,
         tagline_en: product.tagline_en, tagline_ar: product.tagline_ar,
         ingredients_en: product.ingredients_en, ingredients_ar: product.ingredients_ar,
-        price_egp: Number(product.price_egp), size_ml: product.size_ml ? Number(product.size_ml) : null,
+        price_egp: Number((variants.find((v) => v.jars === 1) || {}).price_egp || product.price_egp), size_ml: product.size_ml ? Number(product.size_ml) : null,
         stock: Number(product.stock), in_stock: !!product.in_stock,
       }).eq("id", product.id);
       if (pUpd.error) return setSaved({ ok: false, msg: "Nothing saved — " + pUpd.error.message + ". Are you signed in as the owner?" });
@@ -75,12 +74,10 @@ function Product() {
       <PageHeader label="Product & bundles" title="What the shop is selling." action={<Button size="sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button>} />
       <div style={{ display: "grid", gap: "var(--space-5)" }}>
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
-          <h2 style={{ fontSize: 22 }}>Price and stock.</h2>
-          <Field>
-            <Input label="Price (EGP)" value={String(product.price_egp ?? "")} onChange={(v) => setP("price_egp", v)} />
-            <Input label="Jars in stock" value={String(product.stock ?? "")} onChange={(v) => setP("stock", v)} />
-          </Field>
+          <h2 style={{ fontSize: 22 }}>Stock.</h2>
+          <div style={{ maxWidth: 220 }}><Input label="Jars in stock" value={String(product.stock ?? "")} onChange={(v) => setP("stock", v)} /></div>
           <Checkbox checked={!!product.in_stock} onChange={(v) => setP("in_stock", v)} label="Available to order" />
+          <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>Prices are set in <strong>“The three bundles”</strong> below — that’s what customers pay. The 1-jar price is the one shown on the product page.</p>
           {saved && <InlineAlert tone={saved.ok ? "ok" : "error"}>{saved.msg}</InlineAlert>}
         </Card>
 
@@ -106,6 +103,7 @@ function Product() {
 
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
           <h2 style={{ fontSize: 22 }}>The three bundles.</h2>
+          <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: "calc(var(--space-3) * -1) 0 0" }}>These <strong>Price</strong> fields are what customers pay on the shop. Change them here to change the store prices.</p>
           {variants.map((b, i) => (
             <div key={b.id} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr 100px 130px 130px auto"), gap: "var(--space-3)", alignItems: "end", paddingTop: i ? "var(--space-4)" : 0, borderTop: i ? "1px solid var(--rule)" : "none" }}>
               <Input label={i === 0 ? "Label (EN)" : ""} value={b.label_en || ""} onChange={(v) => setV(i, "label_en", v)} />

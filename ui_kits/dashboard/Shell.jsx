@@ -1,5 +1,5 @@
 const { Wordmark } = window.StrandsDesignSystem_6d0a65;
-const NAV = ["Overview", "Orders", "Product & bundles", "Promo codes", "Reviews", "Gulf waitlist", "Emails"];
+const NAV = ["Overview", "Orders", "Product & bundles", "Promo codes", "Delivery", "Reviews", "Gulf waitlist", "Emails"];
 function Shell({ page, setPage, onSignOut, children }) {
   const phone = window.useIsPhone();
   const [open, setOpen] = React.useState(false);

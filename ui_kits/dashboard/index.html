@@ -13,6 +13,7 @@
 <script type="text/babel" src="OrderDetail.jsx"></script>
 <script type="text/babel" src="Product.jsx"></script>
 <script type="text/babel" src="Promos.jsx"></script>
+<script type="text/babel" src="Delivery.jsx"></script>
 <script type="text/babel" src="ReviewQuotes.jsx"></script>
 <script type="text/babel" src="Waitlist.jsx"></script>
 <script type="text/babel" src="Emails.jsx"></script>
@@ -127,6 +128,7 @@ function App(){
   else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
   else if(page==="Promo codes") body=<window.DashPromos/>;
+  else if(page==="Delivery") body=<window.DashDelivery/>;
   else if(page==="Reviews") body=<window.DashReviews/>;
   else if(page==="Gulf waitlist") body=<window.DashWaitlist/>;
   else body=<window.DashEmails/>;

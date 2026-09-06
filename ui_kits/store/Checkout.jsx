@@ -9,6 +9,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   const money = window.money;
   const [step, setStep] = React.useState("cart");
   const shipCfg = ship || { flat_egp: 80, free_over_egp: 2000 };
+  const [zones, setZones] = React.useState([]);
 
   const [promoInput, setPromoInput] = React.useState("");
   const [promo, setPromo] = React.useState(null);
@@ -31,10 +32,13 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   });
   const subtotal = lines.reduce((a, l) => a + l.lineTotal, 0);
   const count = lines.reduce((a, l) => a + l.qty, 0);
-  let shipping = subtotal >= (shipCfg.free_over_egp || 2000) ? 0 : (shipCfg.flat_egp || 80);
+  const zonePrice = (gov) => { if (!gov) return null; const z = zones.find((z) => (z.governorates || []).includes(gov)); return z ? z.price_egp : (shipCfg.flat_egp || 80); };
+  let shipping = zonePrice(form.governorate);            // null until a governorate is chosen
   if (promo && promo.free_shipping) shipping = 0;
+  else if (shipping != null && shipCfg.free_over_egp && subtotal >= shipCfg.free_over_egp) shipping = 0;
+  const shipKnown = shipping != null;
   const discount = promo ? (promo.discount || 0) : 0;
-  const total = Math.max(0, subtotal - discount) + (subtotal > 0 ? shipping : 0);
+  const total = Math.max(0, subtotal - discount) + (shipKnown ? shipping : 0);
 
   React.useEffect(() => {
     if (!open || !window.SB_READY) return;
@@ -43,6 +47,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
       const { data: sess } = await window.sb.auth.getSession();
       if (live && sess && sess.session) hydrateUser(sess.session.user);
     })();
+    window.sb.from("shipping_zones").select("name_en,price_egp,governorates").eq("active", true).then(({ data }) => { if (live && data) setZones(data); });
     const { data: sub } = window.sb.auth.onAuthStateChange((_e, s) => { if (s) hydrateUser(s.user); else setUser(null); });
     return () => { live = false; sub && sub.subscription && sub.subscription.unsubscribe(); };
   }, [open]);
@@ -169,10 +174,10 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             </div>
             <section style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", display: "grid", gap: 8, fontSize: "var(--text-small)" }}>
               <Row k={T("Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
-              <Row k={T("Shipping", "الشحن")} v={shipping ? money(shipping) : T("Free", "مجاني")} />
-              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={T("Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(subtotal + shipping)} bold /></div>
+              <Row k={T("Shipping", "الشحن")} v={shipKnown ? (shipping ? money(shipping) : T("Free", "مجاني")) : T("Set at checkout", "تُحسب عند الطلب")} />
+              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={T("Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(subtotal + (shipKnown ? shipping : 0))} bold /></div>
             </section>
-            <Button fullWidth onClick={() => setStep("checkout")}>{T("Checkout", "إتمام الطلب")} — {money(subtotal + shipping)}</Button>
+            <Button fullWidth onClick={() => setStep("checkout")}>{T("Checkout", "إتمام الطلب")} — {money(subtotal + (shipKnown ? shipping : 0))}</Button>
             <button type="button" onClick={onClose} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>{T("Continue shopping", "كملي تسوّق")}</button>
           </div>
         ) : (
@@ -222,7 +227,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             <section style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", display: "grid", gap: 8, fontSize: "var(--text-small)" }}>
               <Row k={T("Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
               {discount ? <Row k={T("Discount", "خصم") + " (" + promo.code + ")"} v={"– " + money(discount)} green /> : null}
-              <Row k={T("Shipping", "الشحن")} v={shipping ? money(shipping) : T("Free", "مجاني")} />
+              <Row k={T("Shipping", "الشحن")} v={shipKnown ? (shipping ? money(shipping) : T("Free", "مجاني")) : T("Set at checkout", "تُحسب عند الطلب")} />
               <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={T("Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(total)} bold /></div>
             </section>
             {user && <Button fullWidth onClick={placeOrder} disabled={busy}>{busy ? T("Placing…", "بنكمّل…") : T("Place order — ", "إتمام الطلب — ") + money(total)}</Button>}
