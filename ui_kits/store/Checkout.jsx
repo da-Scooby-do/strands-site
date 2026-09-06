@@ -69,7 +69,10 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
     if (!code) return;
     const r = await window.sbRpc("check_promo", { p_code: code, p_subtotal: subtotal });
     if (r && r.ok) setPromo(r);
-    else setPromoErr(r && r.error === "min_subtotal" ? T("Spend more to use this code.", "لازم تشتري أكتر عشان تستخدمي الكود ده.") : T("That code isn’t valid.", "الكود ده مش صحيح."));
+    else setPromoErr(
+      r && r.error === "min_subtotal" ? T("Spend more to use this code.", "لازم تشتري أكتر عشان تستخدمي الكود ده.")
+        : r && r.error === "already_used" ? T("You’ve already used this code.", "استخدمتي الكود ده قبل كده.")
+        : T("That code isn’t valid.", "الكود ده مش صحيح."));
   }
   React.useEffect(() => { if (promo) applyPromo(); /* eslint-disable-next-line */ }, [subtotal]);
 
@@ -111,6 +114,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           governorate_required: T("Choose your governorate.", "اختاري المحافظة."),
           address_required: T("Enter your street address.", "اكتبي عنوان الشارع."),
           cart_empty: T("Your cart is empty.", "سلتك فاضية."),
+          promo_already_used: T("You’ve already used this code — remove it to continue.", "استخدمتي الكود ده قبل كده — شيليه عشان تكملي."),
           too_fast: T("You just placed an order — give it a moment before trying again.", "لسه دلوقتي عملتي طلب — استني شوية قبل ما تحاولي تاني."),
           rate_limited: T("Too many orders in a short time. Please try again later.", "طلبات كتير في وقت قصير. حاولي تاني بعد شوية."),
         };
