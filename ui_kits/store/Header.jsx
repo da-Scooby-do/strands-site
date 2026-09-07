@@ -19,7 +19,10 @@ function Header({ onBuy, onCart, cart }) {
   return (
     <header style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--cream)", borderBottom: "1px solid var(--rule)", height: stuck ? 56 : 64, transition: "height var(--dur) var(--ease)" }}>
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--gutter)", height: "100%", display: "flex", alignItems: "center", gap: phone ? "var(--space-3)" : "var(--space-6)" }}>
-        <Wordmark size={stuck ? 17 : 19} align="start" />
+        <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }} aria-label="Strands" style={{ display: "inline-flex", alignItems: "center", gap: phone ? 8 : 10, borderBottom: "none" }}>
+          <img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={phone ? 26 : (stuck ? 30 : 34)} height={phone ? 26 : (stuck ? 30 : 34)} style={{ display: "block", flex: "0 0 auto", transition: "width var(--dur) var(--ease), height var(--dur) var(--ease)" }} />
+          <Wordmark size={stuck ? 17 : 19} align="start" />
+        </a>
         <nav style={{ display: phone ? "none" : "flex", gap: "var(--space-5)", marginInlineStart: "var(--space-5)" }}>
           {NAV.map((n) => (
             <a key={n.href} href={n.href} style={{ fontSize: "var(--text-small)", color: "var(--ink)", borderBottom: "none" }}>{ar ? n.ar : n.en}</a>

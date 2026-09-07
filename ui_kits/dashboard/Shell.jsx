@@ -8,6 +8,7 @@ function Shell({ page, setPage, onSignOut, children }) {
   if (phone) return (
     <div style={{ minHeight: "100vh", background: "var(--cream)" }}>
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--purple)", padding: "var(--space-3) var(--space-4)", display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+        <img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={26} height={26} style={{ display: "block", flex: "0 0 auto" }} />
         <Wordmark size={15} color="var(--green-tint)" align="start" descriptor={false} />
         <span style={{ marginInlineStart: "auto", color: "var(--lilac)", fontSize: "var(--text-fine-size)" }}>{page}</span>
         <button type="button" onClick={() => setOpen(!open)} aria-label="Menu"
@@ -32,7 +33,7 @@ function Shell({ page, setPage, onSignOut, children }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "210px 1fr", minHeight: "100vh", background: "var(--cream)" }}>
       <aside style={{ background: "var(--purple)", padding: "var(--space-5) var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-6)", position: "sticky", top: 0, height: "100vh" }}>
-        <Wordmark size={19} color="var(--green-tint)" align="start" />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={30} height={30} style={{ display: "block", flex: "0 0 auto" }} /><Wordmark size={19} color="var(--green-tint)" align="start" /></div>
         <nav style={{ display: "grid", gap: 2 }}>
           {NAV.map((n) => {
             const on = page === n;

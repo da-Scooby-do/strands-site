@@ -1,7 +1,7 @@
 :root{
-  --font-display:"Bodoni Moda",Didot,"Times New Roman",serif;
-  --font-sans:"Jost","Century Gothic",system-ui,sans-serif;
-  --font-arabic:"Noto Kufi Arabic","Jost",system-ui,sans-serif;
+  --font-display:"Aquilla",Didot,"Times New Roman",serif;
+  --font-sans:"Cairo",system-ui,-apple-system,Segoe UI,sans-serif;
+  --font-arabic:"Cairo",system-ui,sans-serif;
   /* Hand annotations over photography only — never for UI text or headings. */
   --font-hand:"Caveat","Bradley Hand",cursive;
 
@@ -29,5 +29,5 @@
   --track-caps:.12em;
 
   --measure:65ch;
-  --font-numeric:"Jost",system-ui,sans-serif;
+  --font-numeric:"Cairo",system-ui,sans-serif;
 }

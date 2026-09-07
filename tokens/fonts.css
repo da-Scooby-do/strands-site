@@ -1,8 +1,18 @@
-/* Strands webfonts.
-   SUBSTITUTION NOTE: no font binaries were supplied with the brand materials.
-   These are the nearest Google Fonts matches to the packaging artwork:
-     - Bodoni Moda      -> the high-contrast display serif of the STRANDS logotype
-     - Jost             -> the geometric sans / "Century Gothic character" body face
-     - Noto Kufi Arabic -> the clean modern Arabic sans
-   Replace with the real licensed faces when available. */
-@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Jost:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Noto+Kufi+Arabic:wght@400;500;700&family=Caveat:wght@500;600&display=swap");
+/* Strands brand fonts — the real licensed faces from the brand pack.
+     - Aquilla  → the high-contrast display serif of the STRANDS logotype.
+                  Self-hosted (not on Google Fonts). Latin only; Arabic headings
+                  fall back to Cairo via the [lang="ar"] token swap.
+     - Cairo    → the body + UI sans. One family covers Latin, Arabic, and
+                  Arabic-Indic digits, so it replaces the old Latin/Arabic split.
+     - Caveat   → hand annotations over photography only — never UI text.
+   NOTE: @import must precede @font-face, so Cairo/Caveat load first. */
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Caveat:wght@500;600&display=swap");
+
+@font-face{
+  font-family:"Aquilla";
+  src:url("../fonts/Aquilla.woff2") format("woff2"),
+      url("../fonts/Aquilla.otf") format("opentype");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
+}

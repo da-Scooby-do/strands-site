@@ -19,7 +19,7 @@ function Footer() {
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", display: "grid", gap: "var(--space-7)" }}>
           <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1.2fr repeat(3,1fr) 1.2fr"), gap: "var(--space-6)" }}>
             <div style={{ display: "grid", gap: "var(--space-4)", alignContent: "start" }}>
-              <Wordmark size={24} color="var(--green-tint)" align="start" />
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}><img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={40} height={40} style={{ display: "block", flex: "0 0 auto" }} /><Wordmark size={24} color="var(--green-tint)" align="start" /></div>
               <p style={{ color: "var(--lilac)", fontSize: "var(--text-small)", maxWidth: "26ch" }}>{ar ? "إدارة صاحبة العلامة في القاهرة. ماسك واحد، مصنوع بعناية." : "Owner-run in Cairo. One masque, made carefully."}</p>
               <a href={IG_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--white)", borderBottom: "none", fontSize: "var(--text-small)" }}>
                 <Icon name="instagram" size={18} /> {IG_HANDLE}
