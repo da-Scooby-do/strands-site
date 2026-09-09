@@ -1,15 +1,15 @@
-const { DamaskPanel, Wordmark, NewsletterField, DisplayBand, Icon } = window.StrandsDesignSystem_6d0a65;
+const { DamaskPanel, Wordmark, NewsletterField, Icon } = window.StrandsDesignSystem_6d0a65;
 const IG_URL = "https://www.instagram.com/strandsbynour";
 const IG_HANDLE = "@strandsbynour";
 function Footer() {
   const phone = window.useIsPhone();
   const ar = window.useLang() === "AR";
   const cols = ar ? [
-    { h: "المتجر", links: ["ماسك فيلفيت تاتش", "عرض علبتين", "علبة الهدية"] },
+    { h: "المتجر", links: ["ماسك فيلفيت تاتش"] },
     { h: "مساعدة", links: ["الشحن", "الإرجاع", "تواصلي معنا"] },
     { h: "عن Strands", links: ["قصتنا", "المكونات", "الآراء"] },
   ] : [
-    { h: "Shop", links: ["Velvet Touch Masque", "2-jar bundle", "Gift box"] },
+    { h: "Shop", links: ["Velvet Touch Masque"] },
     { h: "Help", links: ["Shipping", "Returns", "Contact us"] },
     { h: "About", links: ["Our story", "Ingredients", "Reviews"] },
   ];
@@ -41,7 +41,9 @@ function Footer() {
           </div>
         </div>
       </DamaskPanel>
-      <DisplayBand size={phone ? 88 : 180} ground="var(--purple)" stroke="var(--lilac)">STRANDS</DisplayBand>
+      <div style={{ background: "var(--purple)", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center", padding: "var(--space-7) 0" }}>
+        <span style={{ fontFamily: "var(--font-display)", fontSize: phone ? 88 : 180, lineHeight: 0.9, letterSpacing: ".06em", whiteSpace: "nowrap", color: "var(--green)", textIndent: ".06em" }}>STRANDS</span>
+      </div>
     </div>
   );
 }
