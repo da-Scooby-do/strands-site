@@ -41,10 +41,6 @@ function Hero({ onAdd, added, product, variants }) {
         { label: ar ? "ثلاث علب" : "Three jars", src: "../../assets/photography/three-jars.jpg", position: phone ? "center 62%" : "center 55%" },
         { label: ar ? "كيس الهدية" : "The gift bag", src: "../../assets/photography/gift-bag.jpg", position: "center 55%" },
         { label: ar ? "القوام" : "Texture", src: "../../assets/photography/texture.jpg" },
-        { label: ar ? "المكونات" : "Ingredients", src: "../../assets/photography/mango-butter-flaxseed.jpg", notes: [
-          { text: ar ? "زبدة المانجو" : "Mango butter", top: "26%", left: "6%", tilt: -6 },
-          { text: ar ? "بذور الكتان" : "Flaxseed", top: "66%", left: "52%", tilt: 4, flip: true },
-        ] },
       ]} />
       <div style={{ display: "grid", gap: "var(--space-4)" }}>
         <div><Chip tone="green">{ar ? ("ماسك شعر · " + size + " مل") : ("Hair masque · " + size + " ml")}</Chip></div>

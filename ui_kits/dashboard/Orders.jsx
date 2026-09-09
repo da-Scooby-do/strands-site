@@ -36,7 +36,7 @@ function Orders({ orders, onOpen, onReload }) {
       <DataTable onRowClick={onOpen} rows={rows} empty="No orders match that filter." columns={[
         { key: "id", label: "Order", numeric: true },
         { key: "customer", label: "Customer" },
-        { key: "source", label: "From", render: (r) => (r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--purple)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span> },
+        { key: "source", label: "From", render: (r) => (r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--green)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span> },
         { key: "phone", label: "Phone", numeric: true },
         { key: "address", label: "Address", maxWidth: "220px", render: (r) => r.street + ", " + r.area },
         { key: "total", label: "Total", numeric: true, align: "end", render: (r) => {

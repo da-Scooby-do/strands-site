@@ -6,6 +6,7 @@
   --lilac:#A885D0;         /* the emblem lavender — soft accent, reads on plum */
   --green:#404F24;         /* olive — the logotype green: eyebrows, links, marks */
   --green-bright:#5F7A34;  /* olive lifted just enough to stay lively on light grounds */
+  --green-on-anchor:#7FA84E; /* leaf green that stays readable as TEXT on the dark plum ground (~4.6:1) */
 
   /* Grounds */
   --green-tint:#EEF1E7;
@@ -35,9 +36,9 @@
   --icon-on-light:var(--green-bright);
   --icon-on-anchor:var(--lilac); /* olive is too dark on plum — lilac carries the accent on anchor grounds */
   --text-on-anchor:var(--white);
-  --text-on-anchor-muted:var(--lilac);
+  --text-on-anchor-muted:var(--green-on-anchor);
   --text-link:var(--green);
-  --text-link-hover:var(--purple);
+  --text-link-hover:var(--green-bright);
 
   --border-hairline:var(--rule);
   --border-hairline-anchor:rgba(168,133,208,.32);

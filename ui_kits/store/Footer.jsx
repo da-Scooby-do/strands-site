@@ -20,24 +20,24 @@ function Footer() {
           <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1.2fr repeat(3,1fr) 1.2fr"), gap: "var(--space-6)" }}>
             <div style={{ display: "grid", gap: "var(--space-4)", alignContent: "start" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}><img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={40} height={40} style={{ display: "block", flex: "0 0 auto" }} /><Wordmark size={24} color="var(--green-tint)" align="start" /></div>
-              <p style={{ color: "var(--lilac)", fontSize: "var(--text-small)", maxWidth: "26ch" }}>{ar ? "إدارة صاحبة العلامة في القاهرة. ماسك واحد، مصنوع بعناية." : "Owner-run in Cairo. One masque, made carefully."}</p>
+              <p style={{ color: "var(--green-on-anchor)", fontSize: "var(--text-small)", maxWidth: "26ch" }}>{ar ? "إدارة صاحبة العلامة في القاهرة. ماسك واحد، مصنوع بعناية." : "Owner-run in Cairo. One masque, made carefully."}</p>
               <a href={IG_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--white)", borderBottom: "none", fontSize: "var(--text-small)" }}>
                 <Icon name="instagram" size={18} /> {IG_HANDLE}
               </a>
             </div>
             {cols.map((c) => (
               <div key={c.h} style={{ display: "grid", gap: "var(--space-3)", alignContent: "start" }}>
-                <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--lilac)" }}>{c.h}</span>
+                <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--green-on-anchor)" }}>{c.h}</span>
                 {c.links.map((l) => <a key={l} href="#" style={{ fontSize: "var(--text-small)", color: "var(--white)", borderBottom: "none" }}>{l}</a>)}
               </div>
             ))}
             <div style={{ display: "grid", gap: "var(--space-3)", alignContent: "start" }}>
-              <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--lilac)" }}>{ar ? "النشرة" : "Newsletter"}</span>
+              <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--green-on-anchor)" }}>{ar ? "النشرة" : "Newsletter"}</span>
               <NewsletterField />
             </div>
           </div>
-          <div style={{ borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-4)", display: "flex", flexWrap: "wrap", gap: "var(--space-3) var(--space-5)", fontSize: "var(--text-fine-size)", color: "var(--lilac)" }}>
-            <span>© 2026 Strands Hair Care</span><a href={IG_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--lilac)", borderBottom: "none" }}>{IG_HANDLE}</a><span style={{ marginInlineStart: "auto" }}>{ar ? "الخصوصية · الشروط" : "Privacy · Terms"}</span>
+          <div style={{ borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-4)", display: "flex", flexWrap: "wrap", gap: "var(--space-3) var(--space-5)", fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)" }}>
+            <span>© 2026 Strands Hair Care</span><a href={IG_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--green-on-anchor)", borderBottom: "none" }}>{IG_HANDLE}</a><span style={{ marginInlineStart: "auto" }}>{ar ? "الخصوصية · الشروط" : "Privacy · Terms"}</span>
           </div>
         </div>
       </DamaskPanel>

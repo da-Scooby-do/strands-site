@@ -38,7 +38,7 @@ function Reviews() {
     <div>
       <PageHeader label="Reviews" title="Customer reviews & quotes." action={<Button size="sm" onClick={add}>Add a quote</Button>} />
       <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)", marginBottom: "var(--space-5)", maxWidth: "var(--measure)" }}>
-        Customers submit star reviews from the shop — they wait here until you approve them. You can also add your own quotes. {pendingCount > 0 ? <strong style={{ color: "var(--purple)" }}>{pendingCount} waiting for approval.</strong> : ""}
+        Customers submit star reviews from the shop — they wait here until you approve them. You can also add your own quotes. {pendingCount > 0 ? <strong style={{ color: "var(--green)" }}>{pendingCount} waiting for approval.</strong> : ""}
       </p>
       <div style={{ display: "grid", gap: "var(--space-4)" }}>
         {list.map((q) => {

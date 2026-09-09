@@ -46,7 +46,7 @@ function Delivery() {
       <PageHeader label="Delivery" title="What you charge to deliver, by area." action={<Button size="sm" onClick={add}>Add a zone</Button>} />
       <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)", marginBottom: "var(--space-5)", maxWidth: "var(--measure)" }}>
         Set a delivery price for each area and tick which governorates it covers. Checkout charges the matching zone’s price automatically.
-        {unassigned.length > 0 && <span> <strong style={{ color: "var(--purple)" }}>{unassigned.length} governorates aren’t in any zone</strong> — they’ll use the default rate.</span>}
+        {unassigned.length > 0 && <span> <strong style={{ color: "var(--green)" }}>{unassigned.length} governorates aren’t in any zone</strong> — they’ll use the default rate.</span>}
       </p>
 
       <div style={{ display: "grid", gap: "var(--space-4)" }}>

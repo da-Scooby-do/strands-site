@@ -10,7 +10,7 @@ function Shell({ page, setPage, onSignOut, children }) {
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--purple)", padding: "var(--space-3) var(--space-4)", display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
         <img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={26} height={26} style={{ display: "block", flex: "0 0 auto" }} />
         <Wordmark size={15} color="var(--green-tint)" align="start" descriptor={false} />
-        <span style={{ marginInlineStart: "auto", color: "var(--lilac)", fontSize: "var(--text-fine-size)" }}>{page}</span>
+        <span style={{ marginInlineStart: "auto", color: "var(--green-on-anchor)", fontSize: "var(--text-fine-size)" }}>{page}</span>
         <button type="button" onClick={() => setOpen(!open)} aria-label="Menu"
           style={{ width: 40, height: 40, display: "grid", placeItems: "center", background: open ? "var(--purple-light)" : "transparent", border: "1px solid var(--border-hairline-anchor)", borderRadius: "var(--radius-control)", color: "var(--white)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>{open ? "×" : "≡"}</button>
       </header>
@@ -20,10 +20,10 @@ function Shell({ page, setPage, onSignOut, children }) {
             <button key={n} type="button" onClick={() => pick(n)}
               style={{ font: "inherit", fontFamily: "var(--font-sans)", textAlign: "start", fontSize: "var(--text-body-size)", padding: "13px 12px", borderRadius: "var(--radius-control)", border: "none", cursor: "pointer", background: page === n ? "var(--purple-light)" : "transparent", color: page === n ? "var(--white)" : "var(--lilac)" }}>{n}</button>
           ))}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-4)", paddingTop: "var(--space-4)", marginTop: "var(--space-2)", borderTop: "1px solid var(--border-hairline-anchor)", fontSize: "var(--text-fine-size)", color: "var(--lilac)" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-4)", paddingTop: "var(--space-4)", marginTop: "var(--space-2)", borderTop: "1px solid var(--border-hairline-anchor)", fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)" }}>
             <span>nour@strands.eg</span>
             <a href="../store/index.html" target="_blank" style={{ color: "var(--white)", borderBottom: "none" }}>View store ↗</a>
-            <button type="button" onClick={onSignOut} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: 0, color: "var(--lilac)", cursor: "pointer", fontSize: "var(--text-fine-size)" }}>Sign out</button>
+            <button type="button" onClick={onSignOut} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: 0, color: "var(--green-on-anchor)", cursor: "pointer", fontSize: "var(--text-fine-size)" }}>Sign out</button>
           </div>
         </nav>
       )}
@@ -43,10 +43,10 @@ function Shell({ page, setPage, onSignOut, children }) {
             );
           })}
         </nav>
-        <div style={{ marginTop: "auto", display: "grid", gap: "var(--space-3)", fontSize: "var(--text-fine-size)", color: "var(--lilac)", borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-4)" }}>
+        <div style={{ marginTop: "auto", display: "grid", gap: "var(--space-3)", fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)", borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-4)" }}>
           <span>nour@strands.eg</span>
           <a href="../store/index.html" target="_blank" style={{ color: "var(--white)", borderBottom: "none" }}>View store ↗</a>
-          <button type="button" onClick={onSignOut} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: 0, textAlign: "start", color: "var(--lilac)", cursor: "pointer", fontSize: "var(--text-fine-size)" }}>Sign out</button>
+          <button type="button" onClick={onSignOut} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: 0, textAlign: "start", color: "var(--green-on-anchor)", cursor: "pointer", fontSize: "var(--text-fine-size)" }}>Sign out</button>
         </div>
       </aside>
       <main style={{ padding: "var(--space-7) var(--space-8)", maxWidth: 1060 }}>{children}</main>

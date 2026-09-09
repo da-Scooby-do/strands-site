@@ -5,11 +5,19 @@ const NAV = [
   { en: "How to use", ar: "طريقة الاستخدام", href: "#how-to-use" },
   { en: "Reviews", ar: "الآراء", href: "#reviews" },
 ];
+// Mobile hamburger menu — the short list the owner asked for.
+const MENU = [
+  { en: "Our story", ar: "قصتنا", href: "#story" },
+  { en: "Ingredients", ar: "المكونات", href: "#ingredients" },
+  { en: "Shop now", ar: "تسوّقي الآن", href: "#the-masque" },
+];
 function Header({ onBuy, onCart, cart }) {
   const phone = window.useIsPhone();
   const lang = window.useLang();
   const ar = lang === "AR";
   const [stuck, setStuck] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  React.useEffect(() => { if (!phone) setMenuOpen(false); }, [phone]);
   React.useEffect(() => {
     const onScroll = () => setStuck((window.scrollY || document.documentElement.scrollTop || 0) > 8);
     onScroll();
@@ -33,9 +41,23 @@ function Header({ onBuy, onCart, cart }) {
           <a href="../account/index.html" style={{ borderBottom: "none", display: "inline-flex" }}><IconButton name="user" label={ar ? "حسابك" : "Account"} /></a>
           <IconButton name="shopping-bag" label={ar ? "السلة" : "Cart"} badge={cart || undefined} onClick={onCart} />
           {phone && <LanguageToggle value={window.langToggleValue()} onChange={window.setStrandsLang} />}
+          {phone && (
+            <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label={ar ? "القائمة" : "Menu"} aria-expanded={menuOpen}
+              style={{ font: "inherit", width: 40, height: 40, display: "grid", placeItems: "center", background: menuOpen ? "var(--purple-tint)" : "transparent", border: "1px solid var(--rule)", borderRadius: "var(--radius-control)", color: "var(--ink)", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>
+              {menuOpen ? "×" : "≡"}
+            </button>
+          )}
           {!phone && <Button size="sm" onClick={onBuy}>{ar ? "أضيفي للسلة" : "Add to cart"}</Button>}
         </div>
       </div>
+      {phone && menuOpen && (
+        <nav style={{ position: "absolute", insetInline: 0, top: "100%", background: "var(--cream)", borderBottom: "1px solid var(--rule)", boxShadow: "0 14px 26px rgba(42,31,42,.12)", padding: "var(--space-3) var(--gutter) var(--space-4)", display: "grid", gap: 2, zIndex: 21 }}>
+          {MENU.map((m) => (
+            <a key={m.en} href={m.href} onClick={() => setMenuOpen(false)}
+              style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body-size)", color: "var(--ink)", padding: "13px 8px", borderBottom: "none", borderRadius: "var(--radius-control)" }}>{ar ? m.ar : m.en}</a>
+          ))}
+        </nav>
+      )}
     </header>
   );
 }

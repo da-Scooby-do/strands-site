@@ -677,7 +677,7 @@ function ProductGallery({
       fontFamily: "var(--font-hand)",
       fontSize: n.size || 30,
       lineHeight: 1,
-      color: "var(--purple)",
+      color: "var(--green)",
       whiteSpace: "nowrap"
     }
   }, n.text), !n.flip && /*#__PURE__*/React.createElement("svg", {
@@ -796,7 +796,7 @@ const V = {
   },
   quiet: {
     background: "transparent",
-    color: "var(--purple)",
+    color: "var(--green)",
     border: "1px solid var(--action-quiet-border)"
   },
   text: {
@@ -1002,7 +1002,7 @@ function Eyebrow({
       fontSize: "var(--text-eyebrow-size)",
       letterSpacing: "var(--track-eyebrow)",
       textTransform: "uppercase",
-      color: tone === "lilac" ? "var(--lilac)" : "var(--green)",
+      color: tone === "lilac" ? "var(--green-on-anchor)" : "var(--green)",
       fontWeight: 500,
       ...style
     }
@@ -1183,7 +1183,7 @@ function FeatureColumn({
     style: {
       fontSize: "var(--text-small)",
       lineHeight: 1.6,
-      color: onDark ? "var(--lilac)" : "var(--ink-2)",
+      color: onDark ? "var(--green-on-anchor)" : "var(--ink-2)",
       maxWidth: "30ch"
     }
   }, children));
@@ -1204,7 +1204,7 @@ function Badge({
     border: "1px solid rgba(87,117,55,.2)"
   } : {
     background: "var(--purple-tint)",
-    color: "var(--purple)",
+    color: "var(--green)",
     border: "1px solid rgba(101,52,103,.18)"
   };
   return /*#__PURE__*/React.createElement("span", {
@@ -1259,7 +1259,7 @@ function ReviewCard({
       height: 36,
       borderRadius: "var(--radius-pill)",
       background: "var(--purple-tint)",
-      color: "var(--purple)",
+      color: "var(--green)",
       display: "grid",
       placeItems: "center",
       fontSize: "var(--text-fine-size)",
@@ -1547,7 +1547,7 @@ function SectionHeading({
     }
   }, title), sub && /*#__PURE__*/React.createElement("p", {
     style: {
-      color: onDark ? "var(--lilac)" : "var(--text-muted)",
+      color: onDark ? "var(--green-on-anchor)" : "var(--text-muted)",
       maxWidth: "var(--measure)",
       fontSize: "var(--text-body-size)"
     }

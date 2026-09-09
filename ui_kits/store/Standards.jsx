@@ -3,7 +3,7 @@ function Standards() {
   const phone = window.useIsPhone();
   const ar = window.useLang() === "AR";
   return (
-    <section style={{ borderTop: "1px solid var(--rule)", borderBottom: "1px solid var(--rule)", background: "var(--cream)" }}>
+    <section id="story" style={{ borderTop: "1px solid var(--rule)", borderBottom: "1px solid var(--rule)", background: "var(--cream)", scrollMarginTop: 72 }}>
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: phone ? "var(--section-y-mobile) var(--gutter)" : "var(--section-y) var(--gutter)", display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1.2fr"), gap: phone ? "var(--space-6)" : "var(--space-8)", alignItems: "start" }}>
         <div style={{ display: "grid", gap: "var(--space-4)" }}>
           <Eyebrow>{ar ? "معاييرنا" : "Standards"}</Eyebrow>
