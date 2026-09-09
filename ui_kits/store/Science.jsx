@@ -8,7 +8,7 @@ function Science() {
         <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr"), gap: phone ? "var(--space-4)" : "var(--space-8)", alignItems: "end" }}>
           <div style={{ display: "grid", gap: "var(--space-3)" }}>
             <Eyebrow>{ar ? "تسع مكونات" : "Nine ingredients"}</Eyebrow>
-            <h2 style={{ fontSize: phone ? "var(--display-3)" : "var(--display-2)" }}>{ar ? "نعومة تفضل طول الأسبوع." : "Softness that holds through the week."}</h2>
+            <h2 className="strands-hgrad" style={{ fontSize: phone ? "var(--display-3)" : "var(--display-2)" }}>{ar ? "نعومة تفضل طول الأسبوع." : "Softness that holds through the week."}</h2>
           </div>
           <p style={{ color: "var(--ink-2)", maxWidth: "var(--measure)" }}>
             {ar ? "تلاتة من التسعة بيعملوا معظم الشغل: واحد بينعّم، واحد بيقفل الشعرة، وواحد بيحبس المياه جواها. الباقي بيدعمهم. مفيش حاجة في العلبة موجودة عشان تتقّل القوام." : "Three of the nine do most of the work: one softens, one seals, one holds water in the cuticle. The rest support them. Nothing in the jar is there to thicken the texture."}

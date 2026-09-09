@@ -12,7 +12,6 @@ there is one page; the kit is that page split into its sections.
 | `OverTime.jsx` | 5. Numbered accordion beside the scrolling photo strip |
 | `PhotoStrip.jsx` | The gallery column: every product photograph, looping slowly, masked at both ends, paused on hover |
 | `Science.jsx` | 6. Science block — three ingredient cards + the full-width chart |
-| `Compare.jsx` | 7. Comparison table, full-bleed purple |
 | `Standards.jsx` | 8. Standards / testing |
 | `Reviews.jsx` | 9. Reviews — average, histogram, search, topic chips, sort, pagination |
 | `Footer.jsx` | 10. Purple footer + 11. outlined display band |
