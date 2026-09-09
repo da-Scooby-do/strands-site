@@ -347,6 +347,8 @@ function DamaskPanel({
       inset: 0,
       backgroundImage: "var(--damask-tile)",
       backgroundSize: "var(--damask-size)",
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "center",
       opacity: contrast != null ? contrast : "var(--damask-opacity)",
       pointerEvents: "none"
     }

@@ -7,5 +7,5 @@ a:hover{color:var(--text-link-hover)}
 :where(button,a,input,select,summary):focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 [dir="rtl"]{font-family:var(--font-arabic)}
 .strands-damask{position:relative;background:var(--surface-anchor)}
-.strands-damask::before{content:"";position:absolute;inset:0;background-image:var(--damask-tile);background-size:var(--damask-size);background-repeat:repeat;opacity:var(--damask-opacity);pointer-events:none}
+.strands-damask::before{content:"";position:absolute;inset:0;background-image:var(--damask-tile);background-size:var(--damask-size);background-repeat:no-repeat;background-position:center;opacity:var(--damask-opacity);pointer-events:none}
 .strands-damask>*{position:relative}
