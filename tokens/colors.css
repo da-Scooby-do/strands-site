@@ -1,8 +1,8 @@
 :root{
   /* Brand — the official palette (from the brand pack).
      Plum #3C273C · Lilac #A885D0 · Olive-green #404F24. */
-  --purple:#700394;        /* brand purple — anchor grounds & primary actions */
-  --purple-light:#8A28A8;  /* purple lifted for panels/active states on anchor */
+  --purple:#5F1B7A;        /* brand purple — anchor grounds & primary actions */
+  --purple-light:#763698;  /* purple lifted for panels/active states on anchor */
   --lilac:#A885D0;         /* the emblem lavender — soft accent, reads on plum */
   --green:#404F24;         /* olive — the logotype green: eyebrows, links, marks */
   --green-bright:#5F7A34;  /* olive lifted just enough to stay lively on light grounds */
@@ -44,8 +44,8 @@
   --border-hairline-anchor:rgba(168,133,208,.32);
 
   --action-fill:var(--purple);
-  --action-fill-hover:#5E027D;
-  --action-fill-active:#4E0268;
+  --action-fill-hover:#511768;
+  --action-fill-active:#431356;
   --action-fill-text:var(--white);
   --action-quiet-border:var(--purple);
   --mark-yes:var(--green);
