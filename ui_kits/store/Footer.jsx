@@ -41,8 +41,9 @@ function Footer() {
           </div>
         </div>
       </DamaskPanel>
-      <div style={{ background: "var(--purple)", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center", padding: "var(--space-7) 0" }}>
-        <span style={{ fontFamily: "var(--font-display)", fontSize: phone ? 88 : 180, lineHeight: 0.9, letterSpacing: ".06em", whiteSpace: "nowrap", color: "var(--green)", textIndent: ".06em" }}>STRANDS</span>
+      <div style={{ background: "var(--purple)", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center", padding: phone ? "var(--space-6) var(--gutter)" : "var(--space-7) var(--gutter)" }}>
+        {/* clamp keeps the whole word on screen (Aquilla "STRANDS" ≈ 4.53× the font size) so it stays centred; leaf green reads on the purple. */}
+        <span style={{ fontFamily: "var(--font-display)", fontSize: "clamp(44px, 18vw, 168px)", lineHeight: 0.9, letterSpacing: ".04em", whiteSpace: "nowrap", color: "var(--green-on-anchor)" }}>STRANDS</span>
       </div>
     </div>
   );
