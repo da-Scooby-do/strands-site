@@ -9,7 +9,6 @@ there is one page; the kit is that page split into its sections.
 | `Header.jsx` | 1. Slim sticky header — shrinks on scroll |
 | `Hero.jsx` | 2. Gallery left / buy box right (60-40), collapsible rows, bundle upsell |
 | `Statement.jsx` | 3. Full-bleed purple statement + three ways to use it |
-| `ClaimSplit.jsx` | 4. Split image and green-tint claim card |
 | `OverTime.jsx` | 5. Numbered accordion beside the scrolling photo strip |
 | `PhotoStrip.jsx` | The gallery column: every product photograph, looping slowly, masked at both ends, paused on hover |
 | `Science.jsx` | 6. Science block — three ingredient cards + the full-width chart |
