@@ -45,6 +45,12 @@ function Footer() {
         {/* clamp keeps the whole word on screen (Aquilla "STRANDS" ≈ 4.53× the font size) so it stays centred; leaf green reads on the purple. */}
         <span style={{ fontFamily: "var(--font-display)", fontSize: "clamp(44px, 18vw, 168px)", lineHeight: 0.9, letterSpacing: ".04em", whiteSpace: "nowrap", color: "var(--green-on-anchor)" }}>STRANDS</span>
       </div>
+      <div style={{ background: "var(--purple)", borderTop: "1px solid var(--border-hairline-anchor)", padding: "var(--space-4) var(--gutter)", textAlign: "center" }}>
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)" }}>
+          {ar ? "تطوير " : "Developed by "}
+          <a href="https://my-portfolio-ecru-three-47.vercel.app/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--white)", borderBottom: "1px solid var(--green-on-anchor)", fontWeight: 600 }}>Scooby</a>
+        </span>
+      </div>
     </div>
   );
 }
