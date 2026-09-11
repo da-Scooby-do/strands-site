@@ -1,6 +1,6 @@
 <!-- @dsCard group="Dashboard" viewport="1280x900" name="Owner dashboard" subtitle="Sign in, then the eight admin screens" -->
 <!-- @startingPoint section="Dashboard" subtitle="Single-owner store admin — orders, product, promos, emails" viewport="1280x900" -->
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Strands — dashboard</title><link rel="icon" type="image/svg+xml" href="../../assets/brand/emblem.svg"><link rel="icon" type="image/png" href="../../assets/brand/emblem-512.png"><link rel="apple-touch-icon" href="../../assets/brand/emblem-512.png"><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.114.0/dist/umd/supabase.js"></script><script src="../../_ds_bundle.js"></script><script src="../../_supabase.js"></script>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Strands — dashboard</title><link rel="icon" type="image/svg+xml" href="../../assets/brand/emblem.svg"><link rel="icon" type="image/png" href="../../assets/brand/emblem-512.png"><link rel="apple-touch-icon" href="../../assets/brand/emblem-512.png"><link rel="stylesheet" href="../../styles.css"><script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.js"></script><script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.114.0/dist/umd/supabase.js"></script><script src="../../_ds_bundle.js"></script><script src="../../_supabase.js"></script><script src="../../content.js"></script>
 <style>html,body{margin:0;overflow-x:clip;max-width:100%}#root{overflow-x:clip}img,svg,video{max-width:100%}</style></head><body><div id="root"></div>
 <script type="text/babel" src="responsive.jsx"></script>
 <script type="text/babel" src="data.jsx"></script>
@@ -12,6 +12,7 @@
 <script type="text/babel" src="ImportOrders.jsx"></script>
 <script type="text/babel" src="OrderDetail.jsx"></script>
 <script type="text/babel" src="Product.jsx"></script>
+<script type="text/babel" src="SiteText.jsx"></script>
 <script type="text/babel" src="Promos.jsx"></script>
 <script type="text/babel" src="Delivery.jsx"></script>
 <script type="text/babel" src="ReviewQuotes.jsx"></script>
@@ -127,6 +128,7 @@ function App(){
   else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/>;
   else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
+  else if(page==="Site text") body=<window.DashSiteText/>;
   else if(page==="Promo codes") body=<window.DashPromos/>;
   else if(page==="Delivery") body=<window.DashDelivery/>;
   else if(page==="Reviews") body=<window.DashReviews/>;
@@ -134,6 +136,6 @@ function App(){
   else body=<window.DashEmails/>;
   return <window.DashShell page={page} setPage={go} onSignOut={()=>{window.sb.auth.signOut();setPage("Overview");setOpenId(null);}}>{body}</window.DashShell>;
 }
-const mount=()=>{ if(!window.DashEmails||!window.DASH||!window.DashProduct){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
+const mount=()=>{ if(!window.DashEmails||!window.DASH||!window.DashProduct||!window.DashSiteText){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
 mount();
 </script></body></html>

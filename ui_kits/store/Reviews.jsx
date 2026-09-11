@@ -116,11 +116,11 @@ function Reviews() {
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: phone ? "var(--section-y-mobile) var(--gutter)" : "var(--section-y) var(--gutter)", display: "grid", gap: phone ? "var(--space-6)" : "var(--space-7)" }}>
         <div style={{ display: "grid", gap: "var(--space-3)", justifyItems: "center", textAlign: "center" }}>
           <StarRating value={avg || 5} size={18} />
-          <h2 className="strands-hgrad" style={{ fontSize: phone ? "var(--display-3)" : "var(--display-2)" }}>{ar ? "رأي المشترين." : "What buyers say."}</h2>
+          <h2 className="strands-hgrad" style={{ fontSize: phone ? "var(--display-3)" : "var(--display-2)" }}>{window.copy("reviews.heading", "What buyers say.", "رأي المشترين.")}</h2>
           {count > 0
             ? <p style={{ color: "var(--ink-2)" }}>{ar ? (avg + " من ٥ · " + count + " تقييم") : (avg + " out of 5 · " + count + (count === 1 ? " review" : " reviews"))}</p>
-            : <p style={{ color: "var(--ink-2)", maxWidth: "48ch" }}>{ar ? "كوني أول من يكتب رأيه." : "Be the first to leave a review."}</p>}
-          <div style={{ marginTop: "var(--space-2)" }}><Button size="sm" variant="quiet" onClick={() => setFormOpen(true)}>{ar ? "اكتبي رأيك" : "Write a review"}</Button></div>
+            : <p style={{ color: "var(--ink-2)", maxWidth: "48ch" }}>{window.copy("reviews.empty", "Be the first to leave a review.", "كوني أول من يكتب رأيه.")}</p>}
+          <div style={{ marginTop: "var(--space-2)" }}><Button size="sm" variant="quiet" onClick={() => setFormOpen(true)}>{window.copy("reviews.cta", "Write a review", "اكتبي رأيك")}</Button></div>
         </div>
 
         {count > 0 && (

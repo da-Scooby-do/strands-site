@@ -47,7 +47,7 @@ function Hero({ onAdd, added, product, variants }) {
         <h1 className="strands-hgrad" style={{ fontSize: phone ? 32 : 44, lineHeight: 1.1 }}>{name}</h1>
         {rev.count > 0 && <StarRating value={rev.avg} count={rev.count} />}
         <p style={{ color: "var(--ink-2)", fontSize: "var(--text-body-size)", maxWidth: "42ch" }}>
-          {tagline || (ar ? "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر." : "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.")}
+          {tagline || window.copy("hero.tagline", "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.", "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر.")}
         </p>
         <PriceBlock price={price1 == null ? "—" : price1} note={ar ? "الدفع عند الاستلام، من ٢ لـ ٤ أيام في كل مصر." : "Cash on delivery, 2–4 days across Egypt."} />
         <Button fullWidth onClick={() => onAdd(v1 ? v1.key : "1jar")}>
