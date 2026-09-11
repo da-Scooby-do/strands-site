@@ -23,9 +23,11 @@ function PhotoStrip({ height = 520, horizontal = false }) {
           WebkitMaskImage: "linear-gradient(to right, transparent, #000 5%, #000 95%, transparent)",
           maskImage: "linear-gradient(to right, transparent, #000 5%, #000 95%, transparent)",
         }}>
-        <div style={{ display: "flex", gap: "var(--space-3)", width: "max-content", animation: "strands-strip-x 60s linear infinite", animationPlayState: paused ? "paused" : "running" }}>
+        {/* Spacing is a trailing margin (not flex gap) so the repeat unit is exactly
+            item+gap and the -50% keyframe wraps seamlessly with no jump at the loop. */}
+        <div style={{ display: "flex", width: "max-content", animation: "strands-strip-x 60s linear infinite", animationPlayState: paused ? "paused" : "running" }}>
           {loop.map((p, i) => (
-            <figure key={i} style={{ margin: 0, flex: "0 0 auto", height: phone ? 200 : 300, aspectRatio: "3 / 4", borderRadius: "var(--radius-card)", overflow: "hidden", background: "var(--purple-tint)" }}>
+            <figure key={i} style={{ margin: 0, marginInlineEnd: "var(--space-3)", flex: "0 0 auto", height: phone ? 200 : 300, aspectRatio: "3 / 4", borderRadius: "var(--radius-card)", overflow: "hidden", background: "var(--purple-tint)" }}>
               <img src={p.src} alt={i < PHOTOS.length ? p.alt : ""} aria-hidden={i >= PHOTOS.length}
                 style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: p.pos, display: "block" }} />
             </figure>
