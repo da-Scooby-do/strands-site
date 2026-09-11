@@ -4,14 +4,21 @@ const IG_HANDLE = "@strandsbynour";
 function Footer() {
   const phone = window.useIsPhone();
   const ar = window.useLang() === "AR";
-  const cols = ar ? [
-    { h: "المتجر", links: ["ماسك فيلفيت تاتش"] },
-    { h: "مساعدة", links: ["الشحن", "الإرجاع", "تواصلي معنا"] },
-    { h: "عن Strands", links: ["قصتنا", "المكونات", "الآراء"] },
-  ] : [
-    { h: "Shop", links: ["Velvet Touch Masque"] },
-    { h: "Help", links: ["Shipping", "Returns", "Contact us"] },
-    { h: "About", links: ["Our story", "Ingredients", "Reviews"] },
+  const T = (en, arv) => (ar ? arv : en);
+  const cols = [
+    { h: T("Shop", "المتجر"), links: [
+      { t: T("Velvet Touch Masque", "ماسك فيلفيت تاتش"), href: "#the-masque" },
+    ] },
+    { h: T("Help", "مساعدة"), links: [
+      { t: T("Shipping", "الشحن"), href: "#the-masque" },
+      { t: T("Returns", "الإرجاع"), href: "#the-masque" },
+      { t: T("Contact us", "تواصلي معنا"), href: IG_URL, ext: true },
+    ] },
+    { h: T("About", "عن Strands"), links: [
+      { t: T("Our story", "قصتنا"), href: "#story" },
+      { t: T("Ingredients", "المكونات"), href: "#ingredients" },
+      { t: T("Reviews", "الآراء"), href: "#reviews" },
+    ] },
   ];
   return (
     <div>
@@ -27,7 +34,9 @@ function Footer() {
             {cols.map((c) => (
               <div key={c.h} style={{ display: "grid", gap: "var(--space-3)", alignContent: "start" }}>
                 <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--green-on-anchor)" }}>{c.h}</span>
-                {c.links.map((l) => <a key={l} href="#" style={{ fontSize: "var(--text-small)", color: "var(--white)", borderBottom: "none" }}>{l}</a>)}
+                {c.links.map((l) => <a key={l.t} href={l.href}
+                  {...(l.ext ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  style={{ fontSize: "var(--text-small)", color: "var(--white)", borderBottom: "none" }}>{l.t}</a>)}
               </div>
             ))}
             <div style={{ display: "grid", gap: "var(--space-3)", alignContent: "start" }}>
