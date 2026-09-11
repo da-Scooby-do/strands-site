@@ -1,11 +1,11 @@
 :root{
-  /* Brand — the official palette (from the brand pack).
-     Plum #3C273C · Lilac #A885D0 · Olive-green #404F24. */
-  --purple:#521847;        /* brand purple — anchor grounds & primary actions */
-  --purple-light:#6D3362;  /* purple lifted for panels/active states on anchor */
-  --lilac:#A885D0;         /* the emblem lavender — soft accent, reads on plum */
-  --green:#404F24;         /* olive — the logotype green: eyebrows, links, marks */
-  --green-bright:#5F7A34;  /* olive lifted just enough to stay lively on light grounds */
+  /* Brand — the three primary colours.
+     Purple #5D3863 · Green #5D733F · Lilac #B8A9CC. */
+  --purple:#5D3863;        /* brand purple — anchor grounds & primary actions */
+  --purple-light:#78507F;  /* purple lifted for panels/active states on anchor */
+  --lilac:#B8A9CC;         /* soft lavender accent, reads on purple */
+  --green:#5D733F;         /* brand green: eyebrows, links, marks */
+  --green-bright:#6F8A45;  /* green lifted just enough to stay lively on light grounds */
   --green-on-anchor:#7FA84E; /* leaf green that stays readable as TEXT on the dark plum ground (~4.6:1) */
 
   /* Grounds */
@@ -41,11 +41,11 @@
   --text-link-hover:var(--green-bright);
 
   --border-hairline:var(--rule);
-  --border-hairline-anchor:rgba(168,133,208,.32);
+  --border-hairline-anchor:rgba(184,169,204,.32);
 
   --action-fill:var(--purple);
-  --action-fill-hover:#45143C;
-  --action-fill-active:#3A1132;
+  --action-fill-hover:#4F2F54;
+  --action-fill-active:#422746;
   --action-fill-text:var(--white);
   --action-quiet-border:var(--purple);
   --mark-yes:var(--green);
