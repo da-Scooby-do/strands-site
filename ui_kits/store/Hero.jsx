@@ -29,7 +29,7 @@ function Hero({ onAdd, added, product, variants }) {
     { title: window.copy("hero.row.benefits.t", "Benefits", "الفوائد"), body: window.copy("hero.row.benefits.b", "Softer, fuller hair with the frizz settled. Detangles as it works. Suits all hair types.", "شعر أنعم وأكثف والهيشان يهدأ. بيفك التشابك وهو بيشتغل. مناسب لكل أنواع الشعر.") },
     { title: window.copy("hero.row.ingredients.t", "Ingredients", "المكونات"), body: ingredientList },
     { title: window.copy("hero.row.howto.t", "How to use", "طريقة الاستخدام"), body: window.copy("hero.row.howto.b", "Three ways — as a pre-wash treatment, in place of your conditioner, or as a 30–60 minute deep-care mask.", "بثلاث طرق — قبل الغسيل، بدل البلسم، أو كماسك عناية عميقة من ٣٠ لـ ٦٠ دقيقة.") },
-    { title: window.copy("hero.row.shipping.t", "Shipping & returns", "الشحن والإرجاع"), body: window.copy("hero.row.shipping.b", "Cash on delivery across Egypt, 2–4 days. Unopened jars can be returned within 14 days.", "الدفع عند الاستلام في كل مصر، من ٢ لـ ٤ أيام. العلب غير المفتوحة تترجّع خلال ١٤ يوم.") },
+    { title: window.copy("hero.row.shipping.t", "Shipping & returns", "الشحن والإرجاع"), body: window.copy("hero.row.shipping.b", "Cash on delivery across Egypt, 4–6 working days. Unopened jars can be returned within 14 days.", "الدفع عند الاستلام في كل مصر، من ٤ لـ ٦ أيام عمل. العلب غير المفتوحة تترجّع خلال ١٤ يوم.") },
   ];
 
   return (
@@ -47,7 +47,7 @@ function Hero({ onAdd, added, product, variants }) {
         <p style={{ color: "var(--ink-2)", fontSize: "var(--text-body-size)", maxWidth: "42ch" }}>
           {tagline || window.copy("hero.tagline", "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.", "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر.")}
         </p>
-        <PriceBlock price={price1 == null ? "—" : price1} note={window.copy("hero.priceNote", "Cash on delivery, 2–4 days across Egypt.", "الدفع عند الاستلام، من ٢ لـ ٤ أيام في كل مصر.")} />
+        <PriceBlock price={price1 == null ? "—" : price1} note={window.copy("hero.priceNote", "Cash on delivery, 4–6 working days across Egypt.", "الدفع عند الاستلام، من ٤ لـ ٦ أيام عمل في كل مصر.")} />
         <Button fullWidth onClick={() => onAdd(v1 ? v1.key : "1jar")}>
           {added ? window.copy("hero.added", "Added to cart", "تمت الإضافة") : price1 == null ? window.copy("cta.add", "Add to cart", "أضيفي للسلة") : (window.copy("cta.add", "Add to cart", "أضيفي للسلة") + " — " + window.money(price1))}
         </Button>

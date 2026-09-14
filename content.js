@@ -47,7 +47,7 @@
       { key: "standards.f1.title", label: "Feature 1 — title", en: "12 months", ar: "١٢ شهر" },
       { key: "standards.f1.body", label: "Feature 1 — text", multiline: true, en: "Period after opening, marked on the lid.", ar: "مدة الصلاحية بعد الفتح، مكتوبة على الغطا." },
       { key: "standards.f2.title", label: "Feature 2 — title", en: "Cash on delivery", ar: "الدفع عند الاستلام" },
-      { key: "standards.f2.body", label: "Feature 2 — text", multiline: true, en: "Anywhere in Egypt, 2–4 days.", ar: "في أي مكان في مصر، من ٢ لـ ٤ أيام." },
+      { key: "standards.f2.body", label: "Feature 2 — text", multiline: true, en: "Anywhere in Egypt, 4–6 working days.", ar: "في أي مكان في مصر، من ٤ لـ ٦ أيام عمل." },
     ]},
     { section: "Reviews", fields: [
       { key: "reviews.heading", label: "Heading", en: "What buyers say.", ar: "رأي المشترين." },
@@ -66,7 +66,7 @@
     { section: "Product area", fields: [
       { key: "hero.chip", label: "Category chip (before the size)", en: "Hair masque", ar: "ماسك شعر" },
       { key: "hero.tagline", label: "Description (used when the product has no tagline set)", multiline: true, en: "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.", ar: "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر." },
-      { key: "hero.priceNote", label: "Line under the price", en: "Cash on delivery, 2–4 days across Egypt.", ar: "الدفع عند الاستلام، من ٢ لـ ٤ أيام في كل مصر." },
+      { key: "hero.priceNote", label: "Line under the price", en: "Cash on delivery, 4–6 working days across Egypt.", ar: "الدفع عند الاستلام، من ٤ لـ ٦ أيام عمل في كل مصر." },
       { key: "hero.added", label: "Button label after adding", en: "Added to cart", ar: "تمت الإضافة" },
       { key: "hero.cod", label: "Phone bar — payment note", en: "Cash on delivery", ar: "الدفع عند الاستلام" },
       { key: "hero.row.benefits.t", label: "Row — Benefits (title)", en: "Benefits", ar: "الفوائد" },
@@ -75,7 +75,7 @@
       { key: "hero.row.howto.t", label: "Row — How to use (title)", en: "How to use", ar: "طريقة الاستخدام" },
       { key: "hero.row.howto.b", label: "Row — How to use (text)", multiline: true, en: "Three ways — as a pre-wash treatment, in place of your conditioner, or as a 30–60 minute deep-care mask.", ar: "بثلاث طرق — قبل الغسيل، بدل البلسم، أو كماسك عناية عميقة من ٣٠ لـ ٦٠ دقيقة." },
       { key: "hero.row.shipping.t", label: "Row — Shipping & returns (title)", en: "Shipping & returns", ar: "الشحن والإرجاع" },
-      { key: "hero.row.shipping.b", label: "Row — Shipping & returns (text)", multiline: true, en: "Cash on delivery across Egypt, 2–4 days. Unopened jars can be returned within 14 days.", ar: "الدفع عند الاستلام في كل مصر، من ٢ لـ ٤ أيام. العلب غير المفتوحة تترجّع خلال ١٤ يوم." },
+      { key: "hero.row.shipping.b", label: "Row — Shipping & returns (text)", multiline: true, en: "Cash on delivery across Egypt, 4–6 working days. Unopened jars can be returned within 14 days.", ar: "الدفع عند الاستلام في كل مصر، من ٤ لـ ٦ أيام عمل. العلب غير المفتوحة تترجّع خلال ١٤ يوم." },
     ]},
     { section: "Footer", fields: [
       { key: "footer.shop", label: "Column heading — Shop", en: "Shop", ar: "المتجر" },
