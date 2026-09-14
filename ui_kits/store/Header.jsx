@@ -1,15 +1,15 @@
 const { Wordmark, Button, IconButton, LanguageToggle } = window.StrandsDesignSystem_6d0a65;
 const NAV = [
-  { en: "The Masque", ar: "الماسك", href: "#the-masque" },
-  { en: "Ingredients", ar: "المكونات", href: "#ingredients" },
-  { en: "How to use", ar: "طريقة الاستخدام", href: "#how-to-use" },
-  { en: "Reviews", ar: "الآراء", href: "#reviews" },
+  { key: "nav.masque", en: "The Masque", ar: "الماسك", href: "#the-masque" },
+  { key: "nav.ingredients", en: "Ingredients", ar: "المكونات", href: "#ingredients" },
+  { key: "nav.howto", en: "How to use", ar: "طريقة الاستخدام", href: "#how-to-use" },
+  { key: "nav.reviews", en: "Reviews", ar: "الآراء", href: "#reviews" },
 ];
 // Mobile hamburger menu — the short list the owner asked for.
 const MENU = [
-  { en: "Our story", ar: "قصتنا", href: "#story" },
-  { en: "Ingredients", ar: "المكونات", href: "#ingredients" },
-  { en: "Shop now", ar: "تسوّقي الآن", href: "#the-masque" },
+  { key: "menu.story", en: "Our story", ar: "قصتنا", href: "#story" },
+  { key: "nav.ingredients", en: "Ingredients", ar: "المكونات", href: "#ingredients" },
+  { key: "menu.shopnow", en: "Shop now", ar: "تسوّقي الآن", href: "#the-masque" },
 ];
 function Header({ onBuy, onCart, cart }) {
   const phone = window.useIsPhone();
@@ -33,7 +33,7 @@ function Header({ onBuy, onCart, cart }) {
         </a>
         <nav style={{ display: phone ? "none" : "flex", gap: "var(--space-5)", marginInlineStart: "var(--space-5)" }}>
           {NAV.map((n) => (
-            <a key={n.href} href={n.href} style={{ fontSize: "var(--text-small)", color: "var(--ink)", borderBottom: "none" }}>{ar ? n.ar : n.en}</a>
+            <a key={n.href} href={n.href} style={{ fontSize: "var(--text-small)", color: "var(--ink)", borderBottom: "none" }}>{window.copy(n.key, n.en, n.ar)}</a>
           ))}
         </nav>
         <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
@@ -47,14 +47,14 @@ function Header({ onBuy, onCart, cart }) {
               {menuOpen ? "×" : "≡"}
             </button>
           )}
-          {!phone && <Button size="sm" onClick={onBuy}>{ar ? "أضيفي للسلة" : "Add to cart"}</Button>}
+          {!phone && <Button size="sm" onClick={onBuy}>{window.copy("cta.add", "Add to cart", "أضيفي للسلة")}</Button>}
         </div>
       </div>
       {phone && menuOpen && (
         <nav style={{ position: "absolute", insetInline: 0, top: "100%", background: "var(--cream)", borderBottom: "1px solid var(--rule)", boxShadow: "0 14px 26px rgba(42,31,42,.12)", padding: "var(--space-3) var(--gutter) var(--space-4)", display: "grid", gap: 2, zIndex: 21 }}>
           {MENU.map((m) => (
             <a key={m.en} href={m.href} onClick={() => setMenuOpen(false)}
-              style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body-size)", color: "var(--ink)", padding: "13px 8px", borderBottom: "none", borderRadius: "var(--radius-control)" }}>{ar ? m.ar : m.en}</a>
+              style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body-size)", color: "var(--ink)", padding: "13px 8px", borderBottom: "none", borderRadius: "var(--radius-control)" }}>{window.copy(m.key, m.en, m.ar)}</a>
           ))}
         </nav>
       )}

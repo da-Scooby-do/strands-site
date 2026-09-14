@@ -22,16 +22,14 @@ function Hero({ onAdd, added, product, variants }) {
   const name = product ? (ar ? product.name_ar : product.name_en) : (ar ? "ماسك فيلفيت تاتش" : "Velvet Touch Masque");
   const tagline = product ? (ar ? product.tagline_ar : product.tagline_en) : "";
 
-  const rows = ar ? [
-    { title: "الفوائد", body: "شعر أنعم وأكثف والهيشان يهدأ. بيفك التشابك وهو بيشتغل. مناسب لكل أنواع الشعر." },
-    { title: "المكونات", body: (product && product.ingredients_ar) || "زبدة المانجو · زيت الجوجوبا · زيت القرطم · جل بذور الكتان · منقوع الكركديه · فيتامين هـ · بانثينول · زيت عطري · مادة حافظة" },
-    { title: "طريقة الاستخدام", body: "بثلاث طرق — قبل الغسيل، بدل البلسم، أو كماسك عناية عميقة من ٣٠ لـ ٦٠ دقيقة." },
-    { title: "الشحن والإرجاع", body: "الدفع عند الاستلام في كل مصر، من ٢ لـ ٤ أيام. العلب غير المفتوحة تترجّع خلال ١٤ يوم." },
-  ] : [
-    { title: "Benefits", body: "Softer, fuller hair with the frizz settled. Detangles as it works. Suits all hair types." },
-    { title: "Ingredients", body: (product && product.ingredients_en) || "Mango butter · Jojoba oil · Safflower oil · Flaxseed gel · Hibiscus extract · Vitamin E · Panthenol · Fragrance oil · Preservative" },
-    { title: "How to use", body: "Three ways — as a pre-wash treatment, in place of your conditioner, or as a 30–60 minute deep-care mask." },
-    { title: "Shipping & returns", body: "Cash on delivery across Egypt, 2–4 days. Unopened jars can be returned within 14 days." },
+  const ingredientList = (product && (ar ? product.ingredients_ar : product.ingredients_en)) ||
+    (ar ? "زبدة المانجو · زيت الجوجوبا · زيت القرطم · جل بذور الكتان · منقوع الكركديه · فيتامين هـ · بانثينول · زيت عطري · مادة حافظة"
+        : "Mango butter · Jojoba oil · Safflower oil · Flaxseed gel · Hibiscus extract · Vitamin E · Panthenol · Fragrance oil · Preservative");
+  const rows = [
+    { title: window.copy("hero.row.benefits.t", "Benefits", "الفوائد"), body: window.copy("hero.row.benefits.b", "Softer, fuller hair with the frizz settled. Detangles as it works. Suits all hair types.", "شعر أنعم وأكثف والهيشان يهدأ. بيفك التشابك وهو بيشتغل. مناسب لكل أنواع الشعر.") },
+    { title: window.copy("hero.row.ingredients.t", "Ingredients", "المكونات"), body: ingredientList },
+    { title: window.copy("hero.row.howto.t", "How to use", "طريقة الاستخدام"), body: window.copy("hero.row.howto.b", "Three ways — as a pre-wash treatment, in place of your conditioner, or as a 30–60 minute deep-care mask.", "بثلاث طرق — قبل الغسيل، بدل البلسم، أو كماسك عناية عميقة من ٣٠ لـ ٦٠ دقيقة.") },
+    { title: window.copy("hero.row.shipping.t", "Shipping & returns", "الشحن والإرجاع"), body: window.copy("hero.row.shipping.b", "Cash on delivery across Egypt, 2–4 days. Unopened jars can be returned within 14 days.", "الدفع عند الاستلام في كل مصر، من ٢ لـ ٤ أيام. العلب غير المفتوحة تترجّع خلال ١٤ يوم.") },
   ];
 
   return (
@@ -43,15 +41,15 @@ function Hero({ onAdd, added, product, variants }) {
         { label: ar ? "القوام" : "Texture", src: "../../assets/photography/texture.jpg" },
       ]} />
       <div style={{ display: "grid", gap: "var(--space-4)" }}>
-        <div><Chip tone="green">{ar ? ("ماسك شعر · " + size + " مل") : ("Hair masque · " + size + " ml")}</Chip></div>
+        <div><Chip tone="green">{window.copy("hero.chip", "Hair masque", "ماسك شعر") + " · " + size + " " + (ar ? "مل" : "ml")}</Chip></div>
         <h1 className="strands-hgrad" style={{ fontSize: phone ? 32 : 44, lineHeight: 1.1 }}>{name}</h1>
         {rev.count > 0 && <StarRating value={rev.avg} count={rev.count} />}
         <p style={{ color: "var(--ink-2)", fontSize: "var(--text-body-size)", maxWidth: "42ch" }}>
           {tagline || window.copy("hero.tagline", "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.", "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر.")}
         </p>
-        <PriceBlock price={price1 == null ? "—" : price1} note={ar ? "الدفع عند الاستلام، من ٢ لـ ٤ أيام في كل مصر." : "Cash on delivery, 2–4 days across Egypt."} />
+        <PriceBlock price={price1 == null ? "—" : price1} note={window.copy("hero.priceNote", "Cash on delivery, 2–4 days across Egypt.", "الدفع عند الاستلام، من ٢ لـ ٤ أيام في كل مصر.")} />
         <Button fullWidth onClick={() => onAdd(v1 ? v1.key : "1jar")}>
-          {added ? (ar ? "تمت الإضافة" : "Added to cart") : price1 == null ? (ar ? "أضيفي للسلة" : "Add to cart") : (ar ? ("أضيفي للسلة — " + window.money(price1)) : ("Add to cart — " + window.money(price1)))}
+          {added ? window.copy("hero.added", "Added to cart", "تمت الإضافة") : price1 == null ? window.copy("cta.add", "Add to cart", "أضيفي للسلة") : (window.copy("cta.add", "Add to cart", "أضيفي للسلة") + " — " + window.money(price1))}
         </Button>
         <div style={{ borderBottom: "1px solid var(--rule)" }}>
           {rows.map((r, i) => (

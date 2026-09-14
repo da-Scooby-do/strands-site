@@ -56,33 +56,33 @@ function ReviewForm({ open, onClose, ar }) {
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(30,24,20,.45)", zIndex: 59 }} />
       <div role="dialog" aria-label={ar ? "اكتبي رأيك" : "Write a review"} style={{ position: "fixed", insetInline: 0, bottom: 0, margin: "0 auto", top: "50%", transform: "translateY(-50%)", width: "min(440px,92vw)", maxHeight: "90vh", overflowY: "auto", background: "var(--cream)", borderRadius: "var(--radius-card)", zIndex: 60, boxShadow: "0 20px 60px rgba(0,0,0,.25)", padding: "var(--space-6)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
-          <h3 style={{ fontSize: 22, margin: 0 }}>{done ? (ar ? "شكرًا ليكي" : "Thank you") : (ar ? "اكتبي رأيك" : "Write a review")}</h3>
+          <h3 style={{ fontSize: 22, margin: 0 }}>{done ? window.copy("revform.thanks.title", "Thank you", "شكرًا ليكي") : window.copy("revform.title", "Write a review", "اكتبي رأيك")}</h3>
           <button type="button" onClick={onClose} aria-label={ar ? "إغلاق" : "Close"} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)" }}><Icon name="x" size={20} /></button>
         </div>
 
         {done ? (
           <div style={{ display: "grid", gap: "var(--space-4)" }}>
-            <p style={{ color: "var(--ink-2)" }}>{ar ? "استلمنا رأيك، وهيظهر على المتجر بعد المراجعة. شكرًا!" : "We’ve got your review — it’ll appear on the shop once we’ve approved it. Thank you!"}</p>
+            <p style={{ color: "var(--ink-2)" }}>{window.copy("revform.thanks.msg", "We’ve got your review — it’ll appear on the shop once we’ve approved it. Thank you!", "استلمنا رأيك، وهيظهر على المتجر بعد المراجعة. شكرًا!")}</p>
             <Button fullWidth onClick={onClose}>{ar ? "تمام" : "Done"}</Button>
           </div>
         ) : !user ? (
           <div style={{ display: "grid", gap: "var(--space-4)" }}>
-            <p style={{ color: "var(--ink-2)" }}>{ar ? "سجّلي دخول بحسابك عشان تكتبي رأيك." : "Sign in to your account to leave a review."}</p>
-            <Button fullWidth onClick={() => (window.location.href = "../account/index.html")}>{ar ? "تسجيل الدخول" : "Sign in"}</Button>
+            <p style={{ color: "var(--ink-2)" }}>{window.copy("revform.signin.msg", "Sign in to your account to leave a review.", "سجّلي دخول بحسابك عشان تكتبي رأيك.")}</p>
+            <Button fullWidth onClick={() => (window.location.href = "../account/index.html")}>{window.copy("revform.signin.btn", "Sign in", "تسجيل الدخول")}</Button>
           </div>
         ) : (
           <div style={{ display: "grid", gap: "var(--space-4)" }}>
             <div style={{ display: "grid", gap: 8 }}>
-              <span style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>{ar ? "تقييمك" : "Your rating"}</span>
+              <span style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>{window.copy("revform.rating", "Your rating", "تقييمك")}</span>
               <StarInput value={rating} onChange={setRating} ar={ar} />
             </div>
-            <Textarea label={ar ? "رأيك" : "Your review"} rows={4} dir={ar ? "rtl" : "ltr"} value={quote} onChange={setQuote} placeholder={ar ? "إيه رأيك في الماسك؟" : "How did the masque work for you?"} />
+            <Textarea label={window.copy("revform.review.label", "Your review", "رأيك")} rows={4} dir={ar ? "rtl" : "ltr"} value={quote} onChange={setQuote} placeholder={window.copy("revform.review.ph", "How did the masque work for you?", "إيه رأيك في الماسك؟")} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-3)" }}>
-              <Input label={ar ? "الاسم (اختياري)" : "Name (optional)"} value={name} onChange={setName} />
-              <Input label={ar ? "المدينة (اختياري)" : "City (optional)"} value={city} onChange={setCity} />
+              <Input label={window.copy("revform.name", "Name (optional)", "الاسم (اختياري)")} value={name} onChange={setName} />
+              <Input label={window.copy("revform.city", "City (optional)", "المدينة (اختياري)")} value={city} onChange={setCity} />
             </div>
             {err && <InlineAlert tone="error">{err}</InlineAlert>}
-            <Button fullWidth onClick={submit} disabled={busy}>{busy ? (ar ? "بنبعت…" : "Sending…") : (ar ? "إرسال الرأي" : "Submit review")}</Button>
+            <Button fullWidth onClick={submit} disabled={busy}>{busy ? (ar ? "بنبعت…" : "Sending…") : window.copy("revform.submit", "Submit review", "إرسال الرأي")}</Button>
           </div>
         )}
       </div>

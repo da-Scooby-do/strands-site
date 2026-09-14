@@ -4,20 +4,20 @@ const IG_HANDLE = "@strandsbynour";
 function Footer() {
   const phone = window.useIsPhone();
   const ar = window.useLang() === "AR";
-  const T = (en, arv) => (ar ? arv : en);
+  const C = window.copy;
   const cols = [
-    { h: T("Shop", "المتجر"), links: [
-      { t: T("Velvet Touch Masque", "ماسك فيلفيت تاتش"), href: "#the-masque" },
+    { h: C("footer.shop", "Shop", "المتجر"), links: [
+      { t: C("footer.link.masque", "Velvet Touch Masque", "ماسك فيلفيت تاتش"), href: "#the-masque" },
     ] },
-    { h: T("Help", "مساعدة"), links: [
-      { t: T("Shipping", "الشحن"), href: "#the-masque" },
-      { t: T("Returns", "الإرجاع"), href: "#the-masque" },
-      { t: T("Contact us", "تواصلي معنا"), href: IG_URL, ext: true },
+    { h: C("footer.help", "Help", "مساعدة"), links: [
+      { t: C("footer.link.shipping", "Shipping", "الشحن"), href: "#the-masque" },
+      { t: C("footer.link.returns", "Returns", "الإرجاع"), href: "#the-masque" },
+      { t: C("footer.link.contact", "Contact us", "تواصلي معنا"), href: IG_URL, ext: true },
     ] },
-    { h: T("About", "عن Strands"), links: [
-      { t: T("Our story", "قصتنا"), href: "#story" },
-      { t: T("Ingredients", "المكونات"), href: "#ingredients" },
-      { t: T("Reviews", "الآراء"), href: "#reviews" },
+    { h: C("footer.about", "About", "عن Strands"), links: [
+      { t: C("footer.link.story", "Our story", "قصتنا"), href: "#story" },
+      { t: C("footer.link.ingredients", "Ingredients", "المكونات"), href: "#ingredients" },
+      { t: C("footer.link.reviews", "Reviews", "الآراء"), href: "#reviews" },
     ] },
   ];
   return (
@@ -40,12 +40,12 @@ function Footer() {
               </div>
             ))}
             <div style={{ display: "grid", gap: "var(--space-3)", alignContent: "start" }}>
-              <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--green-on-anchor)" }}>{ar ? "النشرة" : "Newsletter"}</span>
+              <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--green-on-anchor)" }}>{window.copy("footer.newsletter", "Newsletter", "النشرة")}</span>
               <NewsletterField />
             </div>
           </div>
           <div style={{ borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-4)", display: "flex", flexWrap: "wrap", gap: "var(--space-3) var(--space-5)", fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)" }}>
-            <span>© 2026 Strands Hair Care</span><a href={IG_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--green-on-anchor)", borderBottom: "none" }}>{IG_HANDLE}</a><span style={{ marginInlineStart: "auto" }}>{ar ? "الخصوصية · الشروط" : "Privacy · Terms"}</span>
+            <span>{window.copy("footer.copyright", "© 2026 Strands Hair Care", "© 2026 Strands Hair Care")}</span><a href={IG_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--green-on-anchor)", borderBottom: "none" }}>{IG_HANDLE}</a><span style={{ marginInlineStart: "auto" }}>{window.copy("footer.legal", "Privacy · Terms", "الخصوصية · الشروط")}</span>
           </div>
         </div>
       </DamaskPanel>

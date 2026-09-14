@@ -113,7 +113,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           phone_invalid: T("Enter a valid phone number.", "اكتبي رقم تليفون صحيح."),
           governorate_required: T("Choose your governorate.", "اختاري المحافظة."),
           address_required: T("Enter your street address.", "اكتبي عنوان الشارع."),
-          cart_empty: T("Your cart is empty.", "سلتك فاضية."),
+          cart_empty: window.copy("co.empty", "Your cart is empty.", "سلتك فاضية."),
           promo_already_used: T("You’ve already used this code — remove it to continue.", "استخدمتي الكود ده قبل كده — شيليه عشان تكملي."),
           too_fast: T("You just placed an order — give it a moment before trying again.", "لسه دلوقتي عملتي طلب — استني شوية قبل ما تحاولي تاني."),
           rate_limited: T("Too many orders in a short time. Please try again later.", "طلبات كتير في وقت قصير. حاولي تاني بعد شوية."),
@@ -129,7 +129,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   // child's max-content, which in RTL overflowed the drawer to the left (clipped).
   const field = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "var(--space-3)" };
   const row2 = { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "var(--space-3)" };
-  const heading = done ? T("Order placed", "تم الطلب") : step === "cart" ? T("Your cart", "سلتك") : T("Checkout", "إتمام الطلب");
+  const heading = done ? T("Order placed", "تم الطلب") : step === "cart" ? window.copy("co.cart.title", "Your cart", "سلتك") : window.copy("co.checkout.title", "Checkout", "إتمام الطلب");
 
   return (
     <div>
@@ -147,17 +147,17 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           <div style={{ padding: "var(--space-6) var(--space-5)", display: "grid", gap: "var(--space-4)" }}>
             <div style={{ display: "grid", placeItems: "center", gap: "var(--space-3)", textAlign: "center", padding: "var(--space-4) 0" }}>
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--green)", color: "var(--white)", display: "grid", placeItems: "center" }}><Icon name="check" size={28} /></div>
-              <h2 style={{ fontSize: 24 }}>{T("Thank you.", "شكرًا ليكي.")}</h2>
+              <h2 style={{ fontSize: 24 }}>{window.copy("co.done.title", "Thank you.", "شكرًا ليكي.")}</h2>
               <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is in. We’ll message you as it moves. Pay", "وصلنا. هنبعتلك مع كل خطوة. ادفعي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("on delivery.", "عند الاستلام.")}</p>
             </div>
-            <Button fullWidth onClick={() => (window.location.href = "../account/index.html")}>{T("Track it in your account", "تابعي طلبك من حسابك")}</Button>
-            <Button fullWidth variant="quiet" onClick={() => { setDone(null); onClose(); }}>{T("Keep browsing", "كملي تسوّق")}</Button>
+            <Button fullWidth onClick={() => (window.location.href = "../account/index.html")}>{window.copy("co.done.track", "Track it in your account", "تابعي طلبك من حسابك")}</Button>
+            <Button fullWidth variant="quiet" onClick={() => { setDone(null); onClose(); }}>{window.copy("co.done.keep", "Keep browsing", "كملي تسوّق")}</Button>
           </div>
         ) : lines.length === 0 ? (
           <div style={{ padding: "var(--space-7) var(--space-5)", display: "grid", gap: "var(--space-4)", placeItems: "center", textAlign: "center" }}>
             <Icon name="shopping-bag" size={32} />
-            <p style={{ color: "var(--ink-2)" }}>{T("Your cart is empty.", "سلتك فاضية.")}</p>
-            <Button onClick={onClose}>{T("Continue shopping", "كملي تسوّق")}</Button>
+            <p style={{ color: "var(--ink-2)" }}>{window.copy("co.empty", "Your cart is empty.", "سلتك فاضية.")}</p>
+            <Button onClick={onClose}>{window.copy("co.keepShopping", "Continue shopping", "كملي تسوّق")}</Button>
           </div>
         ) : step === "cart" ? (
           <div style={{ padding: "var(--space-5)", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "var(--space-5)" }}>
@@ -166,12 +166,12 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                 <div key={l.key} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "var(--space-3)", alignItems: "center", background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "12px 14px" }}>
                   <div style={{ display: "grid", gap: 6 }}>
                     <span style={{ fontWeight: 600 }}>{l.label}</span>
-                    <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{money(l.price)} {T("each", "للعلبة")}</span>
+                    <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{money(l.price)} {window.copy("co.each", "each", "للعلبة")}</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <button type="button" aria-label={T("Fewer", "أقل")} onClick={() => onSetQty(l.key, l.qty - 1)} style={stepBtn}>–</button>
                       <span style={{ minWidth: 22, textAlign: "center", fontFamily: "var(--font-numeric)" }}>{l.qty}</span>
                       <button type="button" aria-label={T("More", "أكتر")} onClick={() => onSetQty(l.key, l.qty + 1)} style={stepBtn}>+</button>
-                      <button type="button" onClick={() => onRemove(l.key)} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-fine-size)", marginInlineStart: 6 }}>{T("Remove", "إزالة")}</button>
+                      <button type="button" onClick={() => onRemove(l.key)} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-fine-size)", marginInlineStart: 6 }}>{window.copy("co.remove", "Remove", "إزالة")}</button>
                     </div>
                   </div>
                   <span style={{ fontFamily: "var(--font-numeric)", fontWeight: 600 }}>{money(l.lineTotal)}</span>
@@ -179,19 +179,19 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
               ))}
             </div>
             <section style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", display: "grid", gap: 8, fontSize: "var(--text-small)" }}>
-              <Row k={T("Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
-              <Row k={T("Shipping", "الشحن")} v={shipKnown ? (shipping ? money(shipping) : T("Free", "مجاني")) : T("Set at checkout", "تُحسب عند الطلب")} />
-              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={T("Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(subtotal + (shipKnown ? shipping : 0))} bold /></div>
+              <Row k={window.copy("co.subtotal", "Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
+              <Row k={window.copy("co.shipping", "Shipping", "الشحن")} v={shipKnown ? (shipping ? money(shipping) : window.copy("co.free", "Free", "مجاني")) : window.copy("co.shipping.tbd", "Set at checkout", "تُحسب عند الطلب")} />
+              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={window.copy("co.total", "Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(subtotal + (shipKnown ? shipping : 0))} bold /></div>
             </section>
-            <Button fullWidth onClick={() => setStep("checkout")}>{T("Checkout", "إتمام الطلب")} — {money(subtotal + (shipKnown ? shipping : 0))}</Button>
-            <button type="button" onClick={onClose} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>{T("Continue shopping", "كملي تسوّق")}</button>
+            <Button fullWidth onClick={() => setStep("checkout")}>{window.copy("co.checkout.title", "Checkout", "إتمام الطلب")} — {money(subtotal + (shipKnown ? shipping : 0))}</Button>
+            <button type="button" onClick={onClose} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>{window.copy("co.keepShopping", "Continue shopping", "كملي تسوّق")}</button>
           </div>
         ) : (
           <div style={{ padding: "var(--space-5)", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "var(--space-5)" }}>
             <section style={field}>
               <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "end" }}>
-                <div style={{ flex: 1, minWidth: 0 }}><Input label={T("Discount code", "كود الخصم")} value={promoInput} onChange={setPromoInput} placeholder={T("e.g. NOUR10", "مثال: NOUR10")} /></div>
-                <Button size="sm" variant="quiet" onClick={applyPromo}>{T("Apply", "تطبيق")}</Button>
+                <div style={{ flex: 1, minWidth: 0 }}><Input label={window.copy("co.promo.label", "Discount code", "كود الخصم")} value={promoInput} onChange={setPromoInput} placeholder={T("e.g. NOUR10", "مثال: NOUR10")} /></div>
+                <Button size="sm" variant="quiet" onClick={applyPromo}>{window.copy("co.promo.apply", "Apply", "تطبيق")}</Button>
               </div>
               {promo && <InlineAlert tone="ok">{T("Code", "الكود")} {promo.code} {T("applied.", "اتفعّل.")}</InlineAlert>}
               {promoErr && <InlineAlert tone="error">{promoErr}</InlineAlert>}
@@ -199,12 +199,12 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
 
             {!user ? (
               <section style={{ ...field, background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)" }}>
-                <strong style={{ fontSize: 15 }}>{authMode === "signin" ? T("Sign in to order", "سجّلي دخول للطلب") : T("Create your account", "أنشئي حسابك")}</strong>
-                <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("Orders are cash on delivery. An account lets you track them.", "الطلبات بالدفع عند الاستلام. الحساب بيخليكي تتابعي طلباتك.")}</p>
-                <Input label={T("Email", "البريد الإلكتروني")} type="email" value={email} onChange={setEmail} />
-                <Input label={T("Password", "كلمة السر")} type="password" value={pw} onChange={setPw} />
+                <strong style={{ fontSize: 15 }}>{authMode === "signin" ? window.copy("co.auth.signinTitle", "Sign in to order", "سجّلي دخول للطلب") : window.copy("co.auth.createTitle", "Create your account", "أنشئي حسابك")}</strong>
+                <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{window.copy("co.auth.note", "Orders are cash on delivery. An account lets you track them.", "الطلبات بالدفع عند الاستلام. الحساب بيخليكي تتابعي طلباتك.")}</p>
+                <Input label={window.copy("co.email", "Email", "البريد الإلكتروني")} type="email" value={email} onChange={setEmail} />
+                <Input label={window.copy("co.password", "Password", "كلمة السر")} type="password" value={pw} onChange={setPw} />
                 {notice && <InlineAlert tone="ok">{notice}</InlineAlert>}
-                <Button fullWidth onClick={doAuth} disabled={busy}>{busy ? "…" : authMode === "signin" ? T("Sign in", "دخول") : T("Create account", "إنشاء حساب")}</Button>
+                <Button fullWidth onClick={doAuth} disabled={busy}>{busy ? "…" : authMode === "signin" ? window.copy("co.signin", "Sign in", "دخول") : window.copy("co.createAccount", "Create account", "إنشاء حساب")}</Button>
                 <button type="button" onClick={() => { setAuthMode(authMode === "signin" ? "signup" : "signin"); setErr(""); setNotice(""); }} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>
                   {authMode === "signin" ? T("New here? Create an account", "أول مرة؟ أنشئي حساب") : T("Already have an account? Sign in", "عندك حساب؟ سجّلي دخول")}
                 </button>
@@ -215,28 +215,28 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                   <span style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>{T("Signed in as", "داخلة باسم")} {user.email}</span>
                   <button type="button" onClick={() => window.sb.auth.signOut()} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>{T("Sign out", "خروج")}</button>
                 </div>
-                <Input label={T("Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
+                <Input label={window.copy("co.fullName", "Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
                 <div style={row2}>
-                  <Input label={T("Phone", "التليفون")} type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-                  <Input label={T("WhatsApp (optional)", "واتساب (اختياري)")} type="tel" value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} hint={T("to reach you if needed", "للتواصل معك لو لزم")} />
+                  <Input label={window.copy("co.phone", "Phone", "التليفون")} type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+                  <Input label={window.copy("co.whatsapp", "WhatsApp (optional)", "واتساب (اختياري)")} type="tel" value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} hint={T("to reach you if needed", "للتواصل معك لو لزم")} />
                 </div>
-                <Select label={T("Governorate", "المحافظة")} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: T("Choose…", "اختاري…") }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
-                <Input label={T("Street address", "عنوان الشارع")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} placeholder={T("Building, street", "العمارة، الشارع")} />
+                <Select label={window.copy("co.gov", "Governorate", "المحافظة")} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
+                <Input label={window.copy("co.street", "Street address", "عنوان الشارع")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} placeholder={T("Building, street", "العمارة، الشارع")} />
                 <div style={row2}>
-                  <Input label={T("Area (optional)", "المنطقة (اختياري)")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} />
-                  <Input label={T("Landmark (optional)", "علامة مميزة (اختياري)")} value={form.landmark} onChange={(v) => setForm({ ...form, landmark: v })} />
+                  <Input label={window.copy("co.area", "Area (optional)", "المنطقة (اختياري)")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} />
+                  <Input label={window.copy("co.landmark", "Landmark (optional)", "علامة مميزة (اختياري)")} value={form.landmark} onChange={(v) => setForm({ ...form, landmark: v })} />
                 </div>
               </section>
             )}
 
             {err && <InlineAlert tone="error">{err}</InlineAlert>}
             <section style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", display: "grid", gap: 8, fontSize: "var(--text-small)" }}>
-              <Row k={T("Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
-              {discount ? <Row k={T("Discount", "خصم") + " (" + promo.code + ")"} v={"– " + money(discount)} green /> : null}
-              <Row k={T("Shipping", "الشحن")} v={shipKnown ? (shipping ? money(shipping) : T("Free", "مجاني")) : T("Set at checkout", "تُحسب عند الطلب")} />
-              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={T("Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(total)} bold /></div>
+              <Row k={window.copy("co.subtotal", "Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
+              {discount ? <Row k={window.copy("co.discount", "Discount", "خصم") + " (" + promo.code + ")"} v={"– " + money(discount)} green /> : null}
+              <Row k={window.copy("co.shipping", "Shipping", "الشحن")} v={shipKnown ? (shipping ? money(shipping) : window.copy("co.free", "Free", "مجاني")) : window.copy("co.shipping.tbd", "Set at checkout", "تُحسب عند الطلب")} />
+              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={window.copy("co.total", "Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(total)} bold /></div>
             </section>
-            {user && <Button fullWidth onClick={placeOrder} disabled={busy}>{busy ? T("Placing…", "بنكمّل…") : T("Place order — ", "إتمام الطلب — ") + money(total)}</Button>}
+            {user && <Button fullWidth onClick={placeOrder} disabled={busy}>{busy ? T("Placing…", "بنكمّل…") : window.copy("co.placeOrder", "Place order — ", "إتمام الطلب — ") + money(total)}</Button>}
           </div>
         )}
       </aside>

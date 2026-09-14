@@ -79,8 +79,8 @@ function Page(){
     <window.StrandsReviews/>
     <window.StrandsFooter/>
     {phone && <div style={{position:'fixed',insetInline:0,bottom:0,zIndex:30,background:'var(--cream)',borderTop:'1px solid var(--rule)',padding:'10px var(--gutter)',display:'flex',alignItems:'center',gap:'var(--space-4)'}}>
-      <div style={{display:'grid'}}><span style={{fontFamily:'var(--font-numeric)',fontSize:18,fontWeight:500}}>{v1?window.money(v1.price_egp):'—'}</span><span style={{fontSize:11,color:'var(--ink-2)'}}>{lang==='AR'?'الدفع عند الاستلام':'Cash on delivery'}</span></div>
-      <div style={{flex:1}}><window.DSButton fullWidth onClick={()=>add(v1?v1.key:"1jar")}>{lang==='AR'?'أضيفي للسلة':'Add to cart'}</window.DSButton></div>
+      <div style={{display:'grid'}}><span style={{fontFamily:'var(--font-numeric)',fontSize:18,fontWeight:500}}>{v1?window.money(v1.price_egp):'—'}</span><span style={{fontSize:11,color:'var(--ink-2)'}}>{window.copy('hero.cod','Cash on delivery','الدفع عند الاستلام')}</span></div>
+      <div style={{flex:1}}><window.DSButton fullWidth onClick={()=>add(v1?v1.key:"1jar")}>{window.copy('cta.add','Add to cart','أضيفي للسلة')}</window.DSButton></div>
     </div>}
     {phone && <div style={{height:76}}/>}
   </div>;
