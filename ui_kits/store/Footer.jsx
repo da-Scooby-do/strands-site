@@ -16,8 +16,8 @@ function Footer() {
   const ar = window.useLang() === "AR";
   const C = window.copy;
   const stores = [
-    { name: C("stores.s1.name", "Sheel Store", "متجر شيل"), map: "https://maps.app.goo.gl/ZTiPDXJc2wc2efy48" },
-    { name: C("stores.s2.name", "Madinaty — Craft Zone, Block 6", "مدينتي — كرافت زون، بلوك ٦"), map: "https://maps.app.goo.gl/pqCYUzCYoNH7VbAj8", phone: "+20 104 488 2958" },
+    { name: C("stores.s1.name", "Sheel Store", "متجر شيل"), area: C("stores.s1.area", "Madinaty — Craft Zone, Block 6", "مدينتي — كرافت زون، بلوك ٦"), map: "https://maps.app.goo.gl/pqCYUzCYoNH7VbAj8", phone: "+20 104 488 2958" },
+    { name: C("stores.s2.name", "Glow Up", "جلو أب"), area: C("stores.s2.area", "Faisal — Al-Talbiya, Haram", "فيصل — الطالبية، الهرم"), map: "https://maps.app.goo.gl/ZTiPDXJc2wc2efy48", phone: "+20 11 5434 2207" },
   ];
   const cols = [
     { h: C("footer.shop", "Shop", "المتجر"), links: [
@@ -67,6 +67,7 @@ function Footer() {
               {stores.map((s) => (
                 <div key={s.name} style={{ display: "grid", gap: "var(--space-2)", alignContent: "start" }}>
                   <span style={{ fontSize: "var(--text-small)", color: "var(--white)", fontWeight: 600 }}>{s.name}</span>
+                  {s.area && <span style={{ fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)" }}>{s.area}</span>}
                   <a href={s.map} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--green-on-anchor)", borderBottom: "none", fontSize: "var(--text-small)" }}>
                     <Icon name="map-pin" size={16} /> {C("stores.directions", "Get directions", "الاتجاهات")}
                   </a>
