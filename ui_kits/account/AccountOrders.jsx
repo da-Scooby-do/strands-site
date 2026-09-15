@@ -41,7 +41,13 @@ function AccountOrders({ orders, open, setOpen }) {
                   </div>
                   <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
                     <Button size="sm" variant="quiet" onClick={() => window.open("https://wa.me/201023789109?text=" + encodeURIComponent("Hi Strands, I have a question about order " + o.id), "_blank", "noopener")}>Message us on WhatsApp</Button>
-                    <Button size="sm" variant="text">Order again</Button>
+                    <Button size="sm" variant="text" onClick={() => {
+                      try {
+                        const items = (o.items || []).filter((i) => i.k).map((i) => ({ key: i.k, qty: i.q }));
+                        if (items.length) localStorage.setItem("strands-cart", JSON.stringify(items));
+                      } catch (e) {}
+                      window.location.href = "../store/?checkout=1";
+                    }}>Order again</Button>
                   </div>
                 </div>
               </div>

@@ -45,7 +45,7 @@ function loadCart(){ try{ const v=JSON.parse(localStorage.getItem(CART_KEY)); re
 function Page(){
   const phone=window.useIsPhone();
   const lang=window.useLang();
-  const [coOpen,setCoOpen]=React.useState(false);
+  const [coOpen,setCoOpen]=React.useState(()=>{ try{ return new URLSearchParams(location.search).get("checkout")==="1"; }catch(e){ return false; } });
   const [product,setProduct]=React.useState(null);
   const [variants,setVariants]=React.useState(null);
   const [ship,setShip]=React.useState(null);

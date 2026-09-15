@@ -15,7 +15,7 @@ const ST_LABEL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",with_couri
 function pad2(n){return (n<10?"0":"")+n;}
 function fmtDate(d){try{const x=new Date(d);return pad2(x.getDate())+"/"+pad2(x.getMonth()+1)+"/"+x.getFullYear();}catch(e){return "";}}
 function mapOrder(o){
-  const items=(o.order_items||[]).map(i=>({n:i.title_en,q:i.qty,p:i.unit_price}));
+  const items=(o.order_items||[]).map(i=>({n:i.title_en,q:i.qty,p:i.unit_price,k:i.variant_key}));
   const dates={};
   (o.order_events||[]).forEach(e=>{ dates[ST_LABEL[e.status]||e.status]=fmtDate(e.created_at); });
   return {id:o.order_number,uuid:o.id,status:ST_LABEL[o.status]||o.status,items,shipping:o.shipping||0,discount:o.discount||0,

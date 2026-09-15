@@ -56,10 +56,15 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
     setUser(u); setEmail(u.email || "");
     window.sb.from("profiles").select("full_name,phone,governorate,area,street,landmark").eq("user_id", u.id).maybeSingle().then(({ data }) => {
       if (data) setForm((f) => ({
+        ...f,
         full_name: f.full_name || data.full_name || "", phone: f.phone || data.phone || "",
         governorate: f.governorate || data.governorate || "", area: f.area || data.area || "",
         street: f.street || data.street || "", landmark: f.landmark || data.landmark || "",
       }));
+    });
+    // profiles has no WhatsApp column, so restore phone2 from the customer's most recent order.
+    window.sb.from("orders").select("phone2").eq("user_id", u.id).not("phone2", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle().then(({ data }) => {
+      if (data && data.phone2) setForm((f) => (f.phone2 ? f : { ...f, phone2: data.phone2 }));
     });
   }
 
