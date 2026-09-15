@@ -16,7 +16,7 @@ function Account({ user, isOwner, orders, onDashboard, onSignOut }) {
         <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr 1fr" : "repeat(3,220px)", gap: "var(--space-3)", marginBottom: "var(--space-6)" }}>
           <StatBox tone="green" value={live} caption="orders on the way" />
           <StatBox value={list.length} caption="orders in total" />
-          {!phone && <StatBox value="2–4 days" caption="usual delivery, cash on arrival" />}
+          {!phone && <StatBox value="4–6 days" caption="usual delivery, cash on arrival" />}
         </div>
         <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-5)" }}>
           {TABS.map((t) => (

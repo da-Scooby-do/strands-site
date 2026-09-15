@@ -91,7 +91,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   }
 
   async function placeOrder() {
-    if (busy) return; setErr(""); setBusy(true);
+    if (busy) return; setErr("");
+    if (!form.phone2 || !form.phone2.trim()) { setErr(T("Enter your WhatsApp number.", "اكتبي رقم الواتساب.")); return; }
+    setBusy(true);
     try {
       const payload = {
         lang: ar ? "ar" : "en", full_name: form.full_name, phone: form.phone, phone2: form.phone2,
@@ -218,7 +220,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                 <Input label={window.copy("co.fullName", "Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
                 <div style={row2}>
                   <Input label={window.copy("co.phone", "Phone", "التليفون")} type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-                  <Input label={window.copy("co.whatsapp", "WhatsApp (optional)", "واتساب (اختياري)")} type="tel" value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} hint={T("to reach you if needed", "للتواصل معك لو لزم")} />
+                  <Input label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} type="tel" value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} />
                 </div>
                 <Select label={window.copy("co.gov", "Governorate", "المحافظة")} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
                 <Input label={window.copy("co.street", "Street address", "عنوان الشارع")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} placeholder={T("Building, street", "العمارة، الشارع")} />

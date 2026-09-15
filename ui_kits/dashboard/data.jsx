@@ -35,7 +35,7 @@ const WAITLIST = [
 ];
 const EMAILS = {
   "Order confirmation": { subject: "We have your order, {name} — STR-1041", body: "Thank you for your order. We have it, and we will message you as soon as it is confirmed.\n\nTotal to collect on delivery: 440 EGP." },
-  Confirmed: { subject: "Your Strands order is confirmed", body: "Your order is confirmed and we are getting it ready. Cash on delivery, 2–4 days." },
+  Confirmed: { subject: "Your Strands order is confirmed", body: "Your order is confirmed and we are getting it ready. Cash on delivery, 4–6 days." },
   Packed: { subject: "Your jar is packed", body: "Your order is packed and waiting for the courier." },
   "With courier": { subject: "On its way to you", body: "Your order is with the courier. They will call before they arrive." },
   Delivered: { subject: "Thank you for being part of our Strands family", body: "Every ingredient in your hair mask has been carefully selected to nourish your hair and give it exactly what it needs. We hope it works beautifully for you, and we'd love to hear your honest thoughts." },

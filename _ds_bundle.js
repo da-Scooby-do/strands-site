@@ -4423,7 +4423,7 @@ const EMAILS = {
   },
   Confirmed: {
     subject: "Your Strands order is confirmed",
-    body: "Your order is confirmed and we are getting it ready. Cash on delivery, 2–4 days."
+    body: "Your order is confirmed and we are getting it ready. Cash on delivery, 4–6 days."
   },
   Packed: {
     subject: "Your jar is packed",
@@ -4877,7 +4877,7 @@ const HERO_ROWS = [{
   body: "Three ways — as a pre-wash treatment, in place of your conditioner, or as a 30–60 minute deep-care mask."
 }, {
   title: "Shipping & returns",
-  body: "Cash on delivery across Egypt, 2–4 days. Unopened jars can be returned within 14 days."
+  body: "Cash on delivery across Egypt, 4–6 days. Unopened jars can be returned within 14 days."
 }];
 function Hero({
   onAdd,

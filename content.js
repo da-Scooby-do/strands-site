@@ -129,7 +129,7 @@
       { key: "co.createAccount", label: "Create-account button", en: "Create account", ar: "إنشاء حساب" },
       { key: "co.fullName", label: "Full name field", en: "Full name", ar: "الاسم بالكامل" },
       { key: "co.phone", label: "Phone field", en: "Phone", ar: "التليفون" },
-      { key: "co.whatsapp", label: "WhatsApp field", en: "WhatsApp (optional)", ar: "واتساب (اختياري)" },
+      { key: "co.whatsapp", label: "WhatsApp field", en: "WhatsApp", ar: "واتساب" },
       { key: "co.gov", label: "Governorate field", en: "Governorate", ar: "المحافظة" },
       { key: "co.choose", label: "“Choose…” option", en: "Choose…", ar: "اختاري…" },
       { key: "co.street", label: "Street address field", en: "Street address", ar: "عنوان الشارع" },
