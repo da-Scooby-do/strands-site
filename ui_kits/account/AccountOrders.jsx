@@ -40,7 +40,7 @@ function AccountOrders({ orders, open, setOpen }) {
                     <span><Badge>Nothing charged online</Badge></span>
                   </div>
                   <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
-                    <Button size="sm" variant="quiet">Message us on WhatsApp</Button>
+                    <Button size="sm" variant="quiet" onClick={() => window.open("https://wa.me/201023789109?text=" + encodeURIComponent("Hi Strands, I have a question about order " + o.id), "_blank", "noopener")}>Message us on WhatsApp</Button>
                     <Button size="sm" variant="text">Order again</Button>
                   </div>
                 </div>
