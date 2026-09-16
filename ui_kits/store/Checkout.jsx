@@ -3,7 +3,7 @@
    (anon), check_promo (anon rpc), Supabase Auth, and place_order. */
 const { Button, Input, Select, InlineAlert, Icon } = window.StrandsDesignSystem_6d0a65;
 
-function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onClear }) {
+function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onClear, maxQty }) {
   const ar = window.useLang() === "AR";
   const T = (en, arr) => (ar ? arr : en);
   const money = window.money;
@@ -177,8 +177,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <button type="button" aria-label={T("Fewer", "أقل")} onClick={() => onSetQty(l.key, l.qty - 1)} style={stepBtn}>–</button>
                       <span style={{ minWidth: 22, textAlign: "center", fontFamily: "var(--font-numeric)" }}>{l.qty}</span>
-                      <button type="button" aria-label={T("More", "أكتر")} onClick={() => onSetQty(l.key, l.qty + 1)} style={stepBtn}>+</button>
+                      <button type="button" aria-label={T("More", "أكتر")} disabled={Number.isFinite(maxQty) && l.qty >= maxQty} onClick={() => onSetQty(l.key, l.qty + 1)} style={Number.isFinite(maxQty) && l.qty >= maxQty ? { ...stepBtn, opacity: 0.4, cursor: "not-allowed" } : stepBtn}>+</button>
                       <button type="button" onClick={() => onRemove(l.key)} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-fine-size)", marginInlineStart: 6 }}>{window.copy("co.remove", "Remove", "إزالة")}</button>
+                      {Number.isFinite(maxQty) && l.qty >= maxQty && <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", marginInlineStart: 4 }}>{T("Max in stock", "الحد المتاح")}</span>}
                     </div>
                   </div>
                   <span style={{ fontFamily: "var(--font-numeric)", fontWeight: 600 }}>{money(l.lineTotal)}</span>

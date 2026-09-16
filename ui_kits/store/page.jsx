@@ -35,8 +35,9 @@ function Page(){
   },[reloadKey]);
   const v1=(variants||[]).find(v=>v.jars===1)||(variants||[])[0];
   const count=cart.reduce((a,c)=>a+c.qty,0);
-  const addToCart=(key,qty)=>{ key=key||"1jar"; qty=qty||1; setCart(cs=>{ const i=cs.findIndex(c=>c.key===key); if(i>=0){ const n=cs.slice(); n[i]={...n[i],qty:n[i].qty+qty}; return n; } return [...cs,{key,qty}]; }); };
-  const setQty=(key,qty)=>setCart(cs=>qty<=0?cs.filter(c=>c.key!==key):cs.map(c=>c.key===key?{...c,qty}:c));
+  const maxQty=(product&&product.stock!=null)?product.stock:Infinity; // cap cart quantity at what's in stock
+  const addToCart=(key,qty)=>{ key=key||"1jar"; qty=qty||1; setCart(cs=>{ const i=cs.findIndex(c=>c.key===key); if(i>=0){ const n=cs.slice(); n[i]={...n[i],qty:Math.min(n[i].qty+qty,maxQty)}; return n; } return [...cs,{key,qty:Math.min(qty,maxQty)}]; }); };
+  const setQty=(key,qty)=>setCart(cs=>qty<=0?cs.filter(c=>c.key!==key):cs.map(c=>c.key===key?{...c,qty:Math.min(qty,maxQty)}:c));
   const removeItem=(key)=>setCart(cs=>cs.filter(c=>c.key!==key));
   const clearCart=()=>setCart([]);
   const add=(vk)=>{ addToCart(typeof vk==="string"?vk:"1jar",1); setCoOpen(true); };
@@ -45,7 +46,7 @@ function Page(){
       <span>{window.copy('store.loadError',"We couldn’t load the latest product details.","تعذّر تحميل تفاصيل المنتج.")}</span>
       <button type="button" onClick={()=>setReloadKey(k=>k+1)} style={{background:'#fff',color:'#7A2E2E',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:700,cursor:'pointer',font:'inherit',fontFamily:'var(--font-sans)'}}>{window.copy('store.retry','Retry','إعادة المحاولة')}</button>
     </div>}
-    <window.StrandsCheckout open={coOpen} onClose={()=>setCoOpen(false)} cart={cart} variants={variants} ship={ship} onSetQty={setQty} onRemove={removeItem} onClear={clearCart}/>
+    <window.StrandsCheckout open={coOpen} onClose={()=>setCoOpen(false)} cart={cart} variants={variants} ship={ship} onSetQty={setQty} onRemove={removeItem} onClear={clearCart} maxQty={maxQty}/>
     <window.StrandsHeader onBuy={add} onCart={()=>setCoOpen(true)} cart={count}/>
     <window.StrandsHero onAdd={add} product={product} variants={variants} status={dataStatus}/>
     <window.StrandsStatement/>
