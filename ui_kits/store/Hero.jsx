@@ -2,7 +2,7 @@ const { ProductGallery, Chip, StarRating, PriceBlock, Button, CollapsibleRow, Bu
 
 /* product + variants come from the database (owner-controlled in the dashboard).
    Nothing here is a hardcoded price; copy switches EN/AR with the language toggle. */
-function Hero({ onAdd, added, product, variants }) {
+function Hero({ onAdd, added, product, variants, status }) {
   const phone = window.useIsPhone();
   const lang = window.useLang();
   const ar = lang === "AR";
@@ -47,9 +47,15 @@ function Hero({ onAdd, added, product, variants }) {
         <p style={{ color: "var(--ink-2)", fontSize: "var(--text-body-size)", maxWidth: "42ch" }}>
           {tagline || window.copy("hero.tagline", "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.", "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر.")}
         </p>
-        <PriceBlock price={price1 == null ? "—" : price1} note={window.copy("hero.priceNote", "Cash on delivery, 4–6 working days across Egypt.", "الدفع عند الاستلام، من ٤ لـ ٦ أيام عمل في كل مصر.")} />
-        <Button fullWidth onClick={() => onAdd(v1 ? v1.key : "1jar")}>
-          {added ? window.copy("hero.added", "Added to cart", "تمت الإضافة") : price1 == null ? window.copy("cta.add", "Add to cart", "أضيفي للسلة") : (window.copy("cta.add", "Add to cart", "أضيفي للسلة") + " — " + window.money(price1))}
+        {price1 != null
+          ? <PriceBlock price={price1} note={window.copy("hero.priceNote", "Cash on delivery, 4–6 working days across Egypt.", "الدفع عند الاستلام، من ٤ لـ ٦ أيام عمل في كل مصر.")} />
+          : status === "error"
+            ? <div style={{ fontSize: "var(--text-body-size)", color: "var(--ink-2)" }}>{window.copy("hero.priceError", "Price couldn’t load — tap Retry at the top of the page.", "السعر ماحمّلش — دوسي إعادة المحاولة فوق.")}</div>
+            : <div aria-live="polite" style={{ fontFamily: "var(--font-numeric)", fontSize: 32, fontWeight: 500, color: "var(--ink-2)" }}>{window.copy("hero.priceLoading", "Loading price…", "بيحمّل السعر…")}</div>}
+        <Button fullWidth disabled={price1 == null} onClick={() => onAdd(v1 ? v1.key : "1jar")}>
+          {added ? window.copy("hero.added", "Added to cart", "تمت الإضافة")
+            : price1 == null ? (status === "error" ? window.copy("cta.unavailable", "Unavailable", "غير متاح") : window.copy("cta.loading", "Loading…", "بيحمّل…"))
+            : (window.copy("cta.add", "Add to cart", "أضيفي للسلة") + " — " + window.money(price1))}
         </Button>
         <div style={{ borderBottom: "1px solid var(--rule)" }}>
           {rows.map((r, i) => (
