@@ -28,7 +28,7 @@ function PhotoStrip({ height = 520, horizontal = false }) {
         <div style={{ display: "flex", width: "max-content", animation: "strands-strip-x 60s linear infinite", animationPlayState: paused ? "paused" : "running" }}>
           {loop.map((p, i) => (
             <figure key={i} style={{ margin: 0, marginInlineEnd: "var(--space-3)", flex: "0 0 auto", height: phone ? 200 : 300, aspectRatio: "3 / 4", borderRadius: "var(--radius-card)", overflow: "hidden", background: "var(--purple-tint)" }}>
-              <img src={p.src} alt={i < PHOTOS.length ? p.alt : ""} aria-hidden={i >= PHOTOS.length}
+              <img src={p.src} alt={i < PHOTOS.length ? p.alt : ""} aria-hidden={i >= PHOTOS.length} loading="lazy" decoding="async"
                 style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: p.pos, display: "block" }} />
             </figure>
           ))}
@@ -49,7 +49,7 @@ function PhotoStrip({ height = 520, horizontal = false }) {
       <div style={{ display: "grid", gap: "var(--space-3)", animation: "strands-strip 56s linear infinite", animationPlayState: paused ? "paused" : "running" }}>
         {loop.map((p, i) => (
           <figure key={i} style={{ margin: 0, borderRadius: "var(--radius-card)", overflow: "hidden", background: "var(--purple-tint)", aspectRatio: i % 3 === 1 ? "4 / 3" : "3 / 4" }}>
-            <img src={p.src} alt={i < PHOTOS.length ? p.alt : ""} aria-hidden={i >= PHOTOS.length}
+            <img src={p.src} alt={i < PHOTOS.length ? p.alt : ""} aria-hidden={i >= PHOTOS.length} loading="lazy" decoding="async"
               style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: p.pos, display: "block" }} />
           </figure>
         ))}
