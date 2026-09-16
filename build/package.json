@@ -1,0 +1,13 @@
+{
+  "name": "strands-store-build",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Precompiles the Strands store JSX and removes Babel Standalone from the live page.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
