@@ -1,6 +1,13 @@
 const { PageHeader, DataTable, StatusPill, SearchField, Button } = window.StrandsDesignSystem_6d0a65;
 const FILTERS = ["To action", "All", "Placed", "Confirmed", "Packed", "With courier", "Delivered", "Cancelled"];
-function Orders({ orders, onOpen, onReload, onBulkConfirm }) {
+const BULK_ACTIONS = [
+  { key: "confirmed", label: "Confirm" },
+  { key: "packed", label: "Pack" },
+  { key: "with_courier", label: "Out for delivery" },
+  { key: "delivered", label: "Delivered" },
+];
+const BULK_DONE_LABEL = { confirmed: "Confirmed", packed: "Packed", with_courier: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
+function Orders({ orders, onOpen, onReload, onBulkAction }) {
   const [filter, setFilter] = React.useState("To action");
   const [q, setQ] = React.useState("");
   const [newOpen, setNewOpen] = React.useState(false);
@@ -16,15 +23,17 @@ function Orders({ orders, onOpen, onReload, onBulkConfirm }) {
     if (query) return s;
     return filter === "All" ? true : filter === "To action" ? !["Delivered", "Cancelled"].includes(o.status) : o.status === filter;
   });
-  const placedShown = rows.filter((r) => r.status === "Placed");
-  const allPlacedSelected = placedShown.length > 0 && placedShown.every((r) => selected.has(r.uuid));
+  // Actionable = anything not already finished (Delivered/Cancelled are terminal).
+  const actionable = rows.filter((r) => !["Delivered", "Cancelled"].includes(r.status));
+  const allSelected = actionable.length > 0 && actionable.every((r) => selected.has(r.uuid));
   const toggle = (uuid) => setSelected((s) => { const n = new Set(s); n.has(uuid) ? n.delete(uuid) : n.add(uuid); return n; });
-  const toggleAll = () => setSelected((s) => { const n = new Set(s); if (allPlacedSelected) placedShown.forEach((r) => n.delete(r.uuid)); else placedShown.forEach((r) => n.add(r.uuid)); return n; });
-  const confirmSelected = async () => {
-    const chosen = orders.filter((o) => selected.has(o.uuid) && o.status === "Placed");
-    if (!chosen.length || !onBulkConfirm) return;
+  const toggleAll = () => setSelected((s) => { const n = new Set(s); if (allSelected) actionable.forEach((r) => n.delete(r.uuid)); else actionable.forEach((r) => n.add(r.uuid)); return n; });
+  const runBulk = async (targetKey) => {
+    const chosen = orders.filter((o) => selected.has(o.uuid));
+    if (!chosen.length || !onBulkAction) return;
+    if (targetKey === "cancelled" && !window.confirm("Cancel " + chosen.length + " selected order(s)? Each customer is emailed.")) return;
     setBulkBusy(true); setBulkMsg(null);
-    const res = await onBulkConfirm(chosen);
+    const res = await onBulkAction(chosen, targetKey);
     setBulkBusy(false); setSelected(new Set()); setBulkMsg(res);
   };
   const exportCSV = () => {
@@ -50,19 +59,26 @@ function Orders({ orders, onOpen, onReload, onBulkConfirm }) {
       <div style={{ maxWidth: 320, marginBottom: "var(--space-4)" }}>
         <SearchField value={q} onChange={setQ} placeholder="Order number, name, or phone" />
       </div>
-      {placedShown.length > 0 && (
+      {actionable.length > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap", marginBottom: "var(--space-4)", fontSize: "var(--text-small)" }}>
           <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", color: "var(--ink-2)" }}>
-            <input type="checkbox" checked={allPlacedSelected} onChange={toggleAll} style={{ width: 16, height: 16, cursor: "pointer" }} />
-            Select all placed ({placedShown.length})
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ width: 16, height: 16, cursor: "pointer" }} />
+            Select all ({actionable.length})
           </label>
-          {selected.size > 0 && <Button size="sm" onClick={confirmSelected} disabled={bulkBusy}>{bulkBusy ? "Confirming…" : ("Confirm " + selected.size + " selected")}</Button>}
-          {selected.size > 0 && !bulkBusy && <button type="button" onClick={() => setSelected(new Set())} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-small)" }}>Clear</button>}
-          {bulkMsg && <span style={{ color: "var(--green)" }}>{bulkMsg.confirmed} confirmed{bulkMsg.emailFailed ? (" · " + bulkMsg.emailFailed + " email(s) failed") : " & emailed"}</span>}
+          {selected.size > 0 && !bulkBusy && (
+            <span style={{ display: "inline-flex", gap: "var(--space-2)", flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ color: "var(--ink-2)" }}>{selected.size} selected:</span>
+              {BULK_ACTIONS.map((a) => <Button key={a.key} size="sm" variant="quiet" onClick={() => runBulk(a.key)}>{a.label}</Button>)}
+              <Button size="sm" variant="text" onClick={() => runBulk("cancelled")}>Cancel orders</Button>
+              <button type="button" onClick={() => setSelected(new Set())} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-small)" }}>Clear</button>
+            </span>
+          )}
+          {bulkBusy && <span style={{ color: "var(--ink-2)" }}>Working… emailing each customer.</span>}
+          {bulkMsg && !bulkBusy && <span style={{ color: "var(--green)" }}>{bulkMsg.done} → {BULK_DONE_LABEL[bulkMsg.targetKey] || bulkMsg.targetKey}{bulkMsg.emailFailed ? (" · " + bulkMsg.emailFailed + " email(s) failed") : " & emailed"}{bulkMsg.skipped ? (" · " + bulkMsg.skipped + " skipped") : ""}</span>}
         </div>
       )}
       <DataTable onRowClick={onOpen} rows={rows} empty="No orders match that filter." columns={[
-        { key: "sel", label: "", render: (r) => r.status === "Placed" ? <input type="checkbox" checked={selected.has(r.uuid)} onChange={() => toggle(r.uuid)} onClick={(e) => e.stopPropagation()} style={{ width: 16, height: 16, cursor: "pointer" }} /> : null },
+        { key: "sel", label: "", render: (r) => !["Delivered", "Cancelled"].includes(r.status) ? <input type="checkbox" checked={selected.has(r.uuid)} onChange={() => toggle(r.uuid)} onClick={(e) => e.stopPropagation()} style={{ width: 16, height: 16, cursor: "pointer" }} /> : null },
         { key: "id", label: "Order", numeric: true },
         { key: "customer", label: "Customer" },
         { key: "source", label: "From", render: (r) => (r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--green)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span> },
