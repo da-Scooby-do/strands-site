@@ -36,6 +36,7 @@ function Page(){
   const v1=(variants||[]).find(v=>v.jars===1)||(variants||[])[0];
   const count=cart.reduce((a,c)=>a+c.qty,0);
   const maxQty=(product&&product.stock!=null)?product.stock:Infinity; // cap cart quantity at what's in stock
+  const outOfStock=!!(product&&(product.in_stock===false||(product.stock!=null&&product.stock<=0)));
   const addToCart=(key,qty)=>{ key=key||"1jar"; qty=qty||1; setCart(cs=>{ const i=cs.findIndex(c=>c.key===key); if(i>=0){ const n=cs.slice(); n[i]={...n[i],qty:Math.min(n[i].qty+qty,maxQty)}; return n; } return [...cs,{key,qty:Math.min(qty,maxQty)}]; }); };
   const setQty=(key,qty)=>setCart(cs=>qty<=0?cs.filter(c=>c.key!==key):cs.map(c=>c.key===key?{...c,qty:Math.min(qty,maxQty)}:c));
   const removeItem=(key)=>setCart(cs=>cs.filter(c=>c.key!==key));
@@ -57,7 +58,7 @@ function Page(){
     <window.StrandsFooter/>
     {phone && <div style={{position:'fixed',insetInline:0,bottom:0,zIndex:30,background:'var(--cream)',borderTop:'1px solid var(--rule)',padding:'10px var(--gutter)',display:'flex',alignItems:'center',gap:'var(--space-4)'}}>
       <div style={{display:'grid'}}><span style={{fontFamily:'var(--font-numeric)',fontSize:18,fontWeight:500}}>{v1?window.money(v1.price_egp):(dataStatus==="error"?'—':'…')}</span><span style={{fontSize:11,color:'var(--ink-2)'}}>{window.copy('hero.cod','Cash on delivery','الدفع عند الاستلام')}</span></div>
-      <div style={{flex:1}}><window.DSButton fullWidth disabled={!v1} onClick={()=>add(v1?v1.key:"1jar")}>{window.copy('cta.add','Add to cart','أضيفي للسلة')}</window.DSButton></div>
+      <div style={{flex:1}}><window.DSButton fullWidth disabled={!v1||outOfStock} onClick={()=>add(v1?v1.key:"1jar")}>{outOfStock?window.copy('cta.outofstock','Out of stock','خلص من المخزون'):window.copy('cta.add','Add to cart','أضيفي للسلة')}</window.DSButton></div>
     </div>}
     {phone && <div style={{height:76}}/>}
   </div>;

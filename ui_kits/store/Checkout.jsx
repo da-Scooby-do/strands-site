@@ -124,6 +124,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           promo_already_used: T("You’ve already used this code — remove it to continue.", "استخدمتي الكود ده قبل كده — شيليه عشان تكملي."),
           too_fast: T("You just placed an order — give it a moment before trying again.", "لسه دلوقتي عملتي طلب — استني شوية قبل ما تحاولي تاني."),
           rate_limited: T("Too many orders in a short time. Please try again later.", "طلبات كتير في وقت قصير. حاولي تاني بعد شوية."),
+          out_of_stock: T("Sorry — this just went out of stock.", "للأسف المنتج خلص من المخزون."),
         };
         setErr((r && map[r.error]) || (r && r.error) || T("Could not place the order.", "معرفناش نكمّل الطلب."));
       }

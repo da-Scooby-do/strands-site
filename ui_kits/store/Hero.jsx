@@ -18,6 +18,7 @@ function Hero({ onAdd, added, product, variants, status }) {
   const v1 = (variants || []).find((v) => v.jars === 1) || (variants || [])[0];
   const v2 = (variants || []).find((v) => v.jars === 2);
   const price1 = v1 ? v1.price_egp : (product ? product.price_egp : null);
+  const outOfStock = !!(product && (product.in_stock === false || (product.stock != null && product.stock <= 0)));
   const size = (product && product.size_ml) || 300;
   const name = product ? (ar ? product.name_ar : product.name_en) : (ar ? "ماسك فيلفيت تاتش" : "Velvet Touch Masque");
   const tagline = product ? (ar ? product.tagline_ar : product.tagline_en) : "";
@@ -52,8 +53,9 @@ function Hero({ onAdd, added, product, variants, status }) {
           : status === "error"
             ? <div style={{ fontSize: "var(--text-body-size)", color: "var(--ink-2)" }}>{window.copy("hero.priceError", "Price couldn’t load — tap Retry at the top of the page.", "السعر ماحمّلش — دوسي إعادة المحاولة فوق.")}</div>
             : <div aria-live="polite" style={{ fontFamily: "var(--font-numeric)", fontSize: 32, fontWeight: 500, color: "var(--ink-2)" }}>{window.copy("hero.priceLoading", "Loading price…", "بيحمّل السعر…")}</div>}
-        <Button fullWidth disabled={price1 == null} onClick={() => onAdd(v1 ? v1.key : "1jar")}>
-          {added ? window.copy("hero.added", "Added to cart", "تمت الإضافة")
+        <Button fullWidth disabled={price1 == null || outOfStock} onClick={() => onAdd(v1 ? v1.key : "1jar")}>
+          {outOfStock ? window.copy("cta.outofstock", "Out of stock", "خلص من المخزون")
+            : added ? window.copy("hero.added", "Added to cart", "تمت الإضافة")
             : price1 == null ? (status === "error" ? window.copy("cta.unavailable", "Unavailable", "غير متاح") : window.copy("cta.loading", "Loading…", "بيحمّل…"))
             : (window.copy("cta.add", "Add to cart", "أضيفي للسلة") + " — " + window.money(price1))}
         </Button>
