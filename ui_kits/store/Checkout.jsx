@@ -85,6 +85,15 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
     return null;
   }
   React.useEffect(() => { if (promo) applyPromo(); /* eslint-disable-next-line */ }, [subtotal]);
+  // Auto-apply as the customer types (debounced) so the discount shows without pressing Apply.
+  React.useEffect(() => {
+    const code = promoInput.trim();
+    if (!code) { setPromo(null); setPromoErr(""); return; }
+    if (promo && String(promo.code).toLowerCase() === code.toLowerCase()) return;
+    const t = setTimeout(() => { applyPromo(); }, 500);
+    return () => clearTimeout(t);
+    /* eslint-disable-next-line */
+  }, [promoInput]);
 
   async function doAuth() {
     if (busy) return; setErr(""); setBusy(true);
