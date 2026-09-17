@@ -33,7 +33,7 @@ function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onSaveNote })
         <div style={{ display: "grid", gap: "var(--space-5)" }}>
           <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
             <h2 style={{ fontSize: 22 }}>Move this order along.</h2>
-            <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>Jump to any step — every step up to it is emailed to the customer at {order.email}.</p>
+            <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>Jump to any step. Only the step you choose emails the customer at {order.email} — skipped steps don't send.</p>
             <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "center" }}>
               {!done && FLOW.slice(FLOW.indexOf(order.status) + 1).map((s) => (
                 <Button key={s} size="sm" variant="quiet" onClick={() => onJump(s)}>{STEP_LABEL[s] || ("Mark " + s.toLowerCase())}</Button>

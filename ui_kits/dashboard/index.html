@@ -114,20 +114,14 @@ function App(){
   }
   async function advance(){ if(!order) return; const idx=FLOW_KEYS.indexOf(ST_KEY[order.status]); await setStatus(order,FLOW_KEYS[Math.min(FLOW_KEYS.length-1,idx+1)]); }
   async function cancel(){ if(order) await setStatus(order,"cancelled"); }
-  // Jump forward to any status in one click: set the final status, then record an
-  // event and send the customer email for EVERY skipped step in between (and the target).
+  // Jump forward to any status in one click. Only the chosen status is recorded and
+  // emailed — steps skipped over do NOT send an email to the customer.
   async function jumpTo(o,targetKey){
     if(!o) return;
     const startIdx=FLOW_KEYS.indexOf(ST_KEY[o.status]);
     const endIdx=FLOW_KEYS.indexOf(targetKey);
-    if(endIdx<0 || endIdx<=startIdx) return;
-    await window.sb.from("orders").update({status:targetKey}).eq("id",o.uuid);
-    for(let i=startIdx+1;i<=endIdx;i++){
-      const key=FLOW_KEYS[i];
-      await window.sb.from("order_events").insert({order_id:o.uuid,status:key,note_en:ST_LABEL[key]});
-      try{ await window.sb.functions.invoke("notify-order",{body:{order_id:o.uuid,status:key}}); }catch(e){ console.warn("email notify failed",e); }
-    }
-    await loadOrders();
+    if(endIdx<0 || endIdx<=startIdx) return;   // forward-only
+    await setStatus(o,targetKey);              // one event + one email, for the target status only
   }
   async function saveNote(text){ if(order){ await window.sb.from("orders").update({admin_note:text}).eq("id",order.uuid); await loadOrders(); } }
 
