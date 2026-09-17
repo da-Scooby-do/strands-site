@@ -15,9 +15,10 @@ function waNumber(n) {
   if (d.length <= 10) return "20" + d;
   return d;
 }
-function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
+function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onSaveNote }) {
   const phone = window.useIsPhone();
   const { FLOW, NEXT_LABEL, HISTORY } = window.DASH;
+  const STEP_LABEL = { Confirmed: "Mark confirmed", Packed: "Mark packed", "With courier": "Mark out for delivery", Delivered: "Mark delivered" };
   const [note, setNote] = React.useState(order.note || "");
   const [saved, setSaved] = React.useState(false);
   const sub = order.items.reduce((a, i) => a + i.p * i.q, 0);
@@ -32,9 +33,11 @@ function OrderDetail({ order, onBack, onAdvance, onCancel, onSaveNote }) {
         <div style={{ display: "grid", gap: "var(--space-5)" }}>
           <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
             <h2 style={{ fontSize: 22 }}>Move this order along.</h2>
-            <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>Each step emails the customer at {order.email}.</p>
+            <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>Jump to any step — every step up to it is emailed to the customer at {order.email}.</p>
             <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "center" }}>
-              {!done && <Button size="sm" onClick={onAdvance}>{NEXT_LABEL[order.status]}</Button>}
+              {!done && FLOW.slice(FLOW.indexOf(order.status) + 1).map((s) => (
+                <Button key={s} size="sm" variant="quiet" onClick={() => onJump(s)}>{STEP_LABEL[s] || ("Mark " + s.toLowerCase())}</Button>
+              ))}
               {waNum
                 ? <a href={"https://wa.me/" + waNum} target="_blank" rel="noopener noreferrer" style={{ borderBottom: "none" }}><Button size="sm" variant="quiet">WhatsApp customer</Button></a>
                 : <Button size="sm" variant="quiet" disabled>No WhatsApp number</Button>}

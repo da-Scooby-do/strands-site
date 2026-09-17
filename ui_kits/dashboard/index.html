@@ -114,6 +114,21 @@ function App(){
   }
   async function advance(){ if(!order) return; const idx=FLOW_KEYS.indexOf(ST_KEY[order.status]); await setStatus(order,FLOW_KEYS[Math.min(FLOW_KEYS.length-1,idx+1)]); }
   async function cancel(){ if(order) await setStatus(order,"cancelled"); }
+  // Jump forward to any status in one click: set the final status, then record an
+  // event and send the customer email for EVERY skipped step in between (and the target).
+  async function jumpTo(o,targetKey){
+    if(!o) return;
+    const startIdx=FLOW_KEYS.indexOf(ST_KEY[o.status]);
+    const endIdx=FLOW_KEYS.indexOf(targetKey);
+    if(endIdx<0 || endIdx<=startIdx) return;
+    await window.sb.from("orders").update({status:targetKey}).eq("id",o.uuid);
+    for(let i=startIdx+1;i<=endIdx;i++){
+      const key=FLOW_KEYS[i];
+      await window.sb.from("order_events").insert({order_id:o.uuid,status:key,note_en:ST_LABEL[key]});
+      try{ await window.sb.functions.invoke("notify-order",{body:{order_id:o.uuid,status:key}}); }catch(e){ console.warn("email notify failed",e); }
+    }
+    await loadOrders();
+  }
   async function saveNote(text){ if(order){ await window.sb.from("orders").update({admin_note:text}).eq("id",order.uuid); await loadOrders(); } }
 
   if(!ready) return <Splash msg="Loading…"/>;
@@ -124,7 +139,7 @@ function App(){
 
   const go=(p)=>{setOpenId(null);setPage(p);};
   let body;
-  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onCancel={cancel} onSaveNote={saveNote}/>;
+  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onSaveNote={saveNote}/>;
   else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/>;
   else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
