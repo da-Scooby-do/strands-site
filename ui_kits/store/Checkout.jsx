@@ -2,12 +2,16 @@
    and mirrors to RTL for Arabic. Talks to Supabase: product_variants + settings
    (anon), check_promo (anon rpc), Supabase Auth, and place_order. */
 const { Button, Input, Select, InlineAlert, Icon } = window.StrandsDesignSystem_6d0a65;
+const INSTAPAY_URL = "https://ipn.eg/S/nourhatim/instapay/3CHDAq";
+const INSTAPAY_HANDLE = "nourhatim@instapay";
+const SHOP_WA = "201023789109";  // shop WhatsApp for InstaPay payment screenshots
 
 function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onClear, maxQty }) {
   const ar = window.useLang() === "AR";
   const T = (en, arr) => (ar ? arr : en);
   const money = window.money;
   const [step, setStep] = React.useState("cart");
+  const [pay, setPay] = React.useState("cod");  // "cod" | "instapay"
   const shipCfg = ship || { flat_egp: 80, free_over_egp: 2000 };
   const [zones, setZones] = React.useState([]);
 
@@ -104,6 +108,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
         lang: ar ? "ar" : "en", full_name: form.full_name, phone: form.phone, phone2: form.phone2,
         governorate: form.governorate, area: form.area, street: form.street, landmark: form.landmark,
         promo_code: promo ? promo.code : null,
+        payment_method: pay,
         items: lines.map((l) => ({ variant_key: l.key, qty: l.qty })),
       };
       const r = await window.sbRpc("place_order", { payload });
@@ -156,9 +161,13 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             <div style={{ display: "grid", placeItems: "center", gap: "var(--space-3)", textAlign: "center", padding: "var(--space-4) 0" }}>
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--green)", color: "var(--white)", display: "grid", placeItems: "center" }}><Icon name="check" size={28} /></div>
               <h2 style={{ fontSize: 24 }}>{window.copy("co.done.title", "Thank you.", "شكرًا ليكي.")}</h2>
-              <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is in. We’ll message you as it moves. Pay", "وصلنا. هنبعتلك مع كل خطوة. ادفعي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("on delivery.", "عند الاستلام.")}</p>
+              {pay === "instapay"
+                ? <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is in. To pay, send", "وصلنا. عشان تدفعي، حوّلي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("by InstaPay to", "بإنستاباي لـ")} <strong style={{ color: "var(--ink)" }}>{INSTAPAY_HANDLE}</strong>{T(", then send us a screenshot on WhatsApp with your order number.", "، وبعدين ابعتيلنا صورة التحويل على واتساب مع رقم الطلب.")}</p>
+                : <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is in. We’ll message you as it moves. Pay", "وصلنا. هنبعتلك مع كل خطوة. ادفعي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("on delivery.", "عند الاستلام.")}</p>}
             </div>
-            <Button fullWidth onClick={() => (window.location.href = "../account/index.html")}>{window.copy("co.done.track", "Track it in your account", "تابعي طلبك من حسابك")}</Button>
+            {pay === "instapay" && <Button fullWidth onClick={() => window.open(INSTAPAY_URL, "_blank", "noopener")}>{T("Pay", "ادفعي")} {money(done.total)} {T("with InstaPay", "بإنستاباي")}</Button>}
+            {pay === "instapay" && <Button fullWidth variant="quiet" onClick={() => window.open("https://wa.me/" + SHOP_WA + "?text=" + encodeURIComponent(T("Hi Strands, I paid for order ", "أهلاً ستراندز، دفعت طلب ") + done.order_number + T(" by InstaPay. Screenshot attached.", " بإنستاباي. صورة التحويل مرفقة.")), "_blank", "noopener")}>{T("Send screenshot on WhatsApp", "ابعتي صورة التحويل على واتساب")}</Button>}
+            <Button fullWidth variant={pay === "instapay" ? "text" : undefined} onClick={() => (window.location.href = "../account/index.html")}>{window.copy("co.done.track", "Track it in your account", "تابعي طلبك من حسابك")}</Button>
             <Button fullWidth variant="quiet" onClick={() => { setDone(null); onClose(); }}>{window.copy("co.done.keep", "Keep browsing", "كملي تسوّق")}</Button>
           </div>
         ) : lines.length === 0 ? (
@@ -238,12 +247,21 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
               </section>
             )}
 
+            <section style={field}>
+              <strong style={{ fontSize: 15 }}>{T("How would you like to pay?", "هتدفعي إزاي؟")}</strong>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: "var(--space-3)" }}>
+                <PayOption active={pay === "cod"} onClick={() => setPay("cod")} title={T("Cash on delivery", "الدفع عند الاستلام")} sub={T("Pay the courier", "ادفعي للمندوب")} />
+                <PayOption active={pay === "instapay"} onClick={() => setPay("instapay")} title={T("InstaPay", "إنستاباي")} sub={T("Pay now, send proof", "ادفعي وابعتي الإيصال")} />
+              </div>
+              {pay === "instapay" && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("After you place the order you’ll get the InstaPay link. Pay, then send us a screenshot on WhatsApp with your order number.", "بعد ما تعملي الطلب هيظهرلك لينك إنستاباي. ادفعي وابعتيلنا صورة التحويل على واتساب مع رقم الطلب.")}</p>}
+            </section>
+
             {err && <InlineAlert tone="error">{err}</InlineAlert>}
             <section style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", display: "grid", gap: 8, fontSize: "var(--text-small)" }}>
               <Row k={window.copy("co.subtotal", "Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
               {discount ? <Row k={window.copy("co.discount", "Discount", "خصم") + " (" + promo.code + ")"} v={"– " + money(discount)} green /> : null}
               <Row k={window.copy("co.shipping", "Shipping", "الشحن")} v={shipKnown ? (shipping ? money(shipping) : window.copy("co.free", "Free", "مجاني")) : window.copy("co.shipping.tbd", "Set at checkout", "تُحسب عند الطلب")} />
-              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={window.copy("co.total", "Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(total)} bold /></div>
+              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={pay === "instapay" ? T("Total (pay by InstaPay)", "الإجمالي (الدفع بإنستاباي)") : window.copy("co.total", "Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(total)} bold /></div>
             </section>
             {user && <Button fullWidth onClick={placeOrder} disabled={busy}>{busy ? T("Placing…", "بنكمّل…") : window.copy("co.placeOrder", "Place order — ", "إتمام الطلب — ") + money(total)}</Button>}
           </div>
@@ -254,6 +272,12 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
 }
 
 const stepBtn = { font: "inherit", width: 30, height: 30, borderRadius: "var(--radius-control)", border: "1px solid var(--rule)", background: "var(--white)", cursor: "pointer", fontSize: 17, lineHeight: 1 };
+function PayOption({ active, onClick, title, sub }) {
+  return <button type="button" onClick={onClick} style={{ textAlign: "start", cursor: "pointer", font: "inherit", fontFamily: "var(--font-sans)", background: active ? "var(--purple-tint)" : "var(--white)", border: "1.5px solid " + (active ? "var(--purple)" : "var(--rule)"), borderRadius: "var(--radius-card)", padding: "12px 14px", display: "grid", gap: 3 }}>
+    <span style={{ fontWeight: 600, fontSize: 14 }}>{title}</span>
+    <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{sub}</span>
+  </button>;
+}
 function Row({ k, v, bold, green }) {
   return <div style={{ display: "flex", justifyContent: "space-between" }}>
     <span style={{ color: "var(--ink-2)" }}>{k}</span>
