@@ -75,13 +75,14 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   async function applyPromo() {
     setPromoErr(""); setPromo(null);
     const code = promoInput.trim();
-    if (!code) return;
+    if (!code) return null;
     const r = await window.sbRpc("check_promo", { p_code: code, p_subtotal: subtotal });
-    if (r && r.ok) setPromo(r);
-    else setPromoErr(
+    if (r && r.ok) { setPromo(r); return r; }
+    setPromoErr(
       r && r.error === "min_subtotal" ? T("Spend more to use this code.", "لازم تشتري أكتر عشان تستخدمي الكود ده.")
         : r && r.error === "already_used" ? T("You’ve already used this code.", "استخدمتي الكود ده قبل كده.")
         : T("That code isn’t valid.", "الكود ده مش صحيح."));
+    return null;
   }
   React.useEffect(() => { if (promo) applyPromo(); /* eslint-disable-next-line */ }, [subtotal]);
 
@@ -102,12 +103,18 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   async function placeOrder() {
     if (busy) return; setErr("");
     if (!form.phone2 || !form.phone2.trim()) { setErr(T("Enter your WhatsApp number.", "اكتبي رقم الواتساب.")); return; }
+    // If a code was typed but "Apply" wasn't pressed, validate it now so the discount still counts.
+    const typedCode = promoInput.trim();
+    let usePromo = promo;
+    if (typedCode && (!promo || String(promo.code).toLowerCase() !== typedCode.toLowerCase())) {
+      usePromo = await applyPromo();
+    }
     setBusy(true);
     try {
       const payload = {
         lang: ar ? "ar" : "en", full_name: form.full_name, phone: form.phone, phone2: form.phone2,
         governorate: form.governorate, area: form.area, street: form.street, landmark: form.landmark,
-        promo_code: promo ? promo.code : null,
+        promo_code: usePromo ? usePromo.code : null,
         payment_method: pay,
         items: lines.map((l) => ({ variant_key: l.key, qty: l.qty })),
       };
