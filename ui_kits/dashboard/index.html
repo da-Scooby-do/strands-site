@@ -52,7 +52,7 @@ function mapOrder(o){
     {s:ST_LABEL[e.status]||e.status,t:fmtDT(e.created_at),notify:e.notify_result||null,to:e.notified_email||o.email}
   ));
   const emailResult=events.length?events[events.length-1].notify:null;
-  return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,whatsapp:o.phone2||null,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,pay:o.payment_method||"cod",
+  return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,whatsapp:o.phone2||null,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,pay:o.payment_method||"cod",paid:!!o.paid_at,
     source:o.source||"website",items,shipping:o.shipping||0,discount:o.discount||0,promo:o.promo_code||null,total:o.total,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
 }
 
@@ -124,6 +124,7 @@ function App(){
     await setStatus(o,targetKey);              // one event + one email, for the target status only
   }
   async function saveNote(text){ if(order){ await window.sb.from("orders").update({admin_note:text}).eq("id",order.uuid); await loadOrders(); } }
+  async function setPaid(o,val){ if(!o) return; await window.sb.from("orders").update({paid_at: val ? new Date().toISOString() : null}).eq("id",o.uuid); await loadOrders(); }
   // Bulk-apply a status to selected orders: process one at a time (throttled) so we
   // stay under the email provider's rate limit, emailing the customer for each.
   // Forward-only for flow statuses; cancel applies unless already delivered/cancelled.
@@ -155,7 +156,7 @@ function App(){
 
   const go=(p)=>{setOpenId(null);setPage(p);};
   let body;
-  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onSaveNote={saveNote}/>;
+  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onSaveNote={saveNote} onSetPaid={(val)=>setPaid(order,val)}/>;
   else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/>;
   else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders} onBulkAction={bulkSetStatus}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;

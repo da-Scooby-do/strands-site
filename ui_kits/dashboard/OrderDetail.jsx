@@ -15,7 +15,7 @@ function waNumber(n) {
   if (d.length <= 10) return "20" + d;
   return d;
 }
-function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onSaveNote }) {
+function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onSaveNote, onSetPaid }) {
   const phone = window.useIsPhone();
   const { FLOW, NEXT_LABEL, HISTORY } = window.DASH;
   const STEP_LABEL = { Confirmed: "Mark confirmed", Packed: "Mark packed", "With courier": "Mark out for delivery", Delivered: "Mark delivered" };
@@ -59,7 +59,15 @@ function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onSaveNote })
               {order.discount > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--green)" }}><span>Discount{order.promo ? " · " + order.promo : ""}</span><span style={{ fontFamily: "var(--font-numeric)" }}>– {order.discount.toLocaleString("en-US")} EGP</span></div>}
               <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}><span>Shipping</span><span style={{ fontFamily: "var(--font-numeric)" }}>{order.shipping ? order.shipping + " EGP" : "Free"}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-body-size)", fontWeight: 500 }}><span>{order.pay === "instapay" ? "Total (InstaPay)" : "Total to collect"}</span><span style={{ fontFamily: "var(--font-numeric)" }}>{(sub - (order.discount || 0) + order.shipping).toLocaleString("en-US")} EGP</span></div>
-              {order.pay === "instapay" && <div style={{ marginTop: "var(--space-3)", padding: "10px 12px", borderRadius: "var(--radius-control)", background: "#FBEFD8", color: "#7A5200", fontSize: "var(--text-small)", lineHeight: 1.4 }}>Paid by <strong>InstaPay</strong> — confirm the customer’s transfer screenshot (on WhatsApp) before shipping.</div>}
+              {order.pay === "instapay" && (order.paid
+                ? <div style={{ marginTop: "var(--space-3)", padding: "10px 12px", borderRadius: "var(--radius-control)", background: "#E9F2E4", color: "#3C5A2C", fontSize: "var(--text-small)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--space-3)", flexWrap: "wrap" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="check" size={14} /> InstaPay payment confirmed</span>
+                    <button type="button" onClick={() => onSetPaid && onSetPaid(false)} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-fine-size)", textDecoration: "underline" }}>Mark unpaid</button>
+                  </div>
+                : <div style={{ marginTop: "var(--space-3)", padding: "10px 12px", borderRadius: "var(--radius-control)", background: "#FBEFD8", color: "#7A5200", fontSize: "var(--text-small)", display: "grid", gap: "var(--space-3)" }}>
+                    <span style={{ lineHeight: 1.4 }}>Paid by <strong>InstaPay</strong> — confirm the customer’s transfer screenshot (on WhatsApp) before shipping.</span>
+                    <div><Button size="sm" onClick={() => onSetPaid && onSetPaid(true)}>Mark as paid</Button></div>
+                  </div>)}
             </div>
             <Textarea label="Internal note" value={note} onChange={(v) => { setNote(v); setSaved(false); }} placeholder="Courier said the flat was empty, calling back tomorrow." />
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>

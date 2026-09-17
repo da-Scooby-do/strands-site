@@ -84,6 +84,7 @@ function Orders({ orders, onOpen, onReload, onBulkAction }) {
         { key: "source", label: "From", render: (r) => <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
           {(r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--green)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span>}
           {r.pay === "instapay" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "#FBEFD8", color: "#7A5200", whiteSpace: "nowrap" }}>InstaPay</span>}
+          {r.pay === "instapay" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: r.paid ? "#E9F2E4" : "#F6E5E5", color: r.paid ? "#3C5A2C" : "#8A2B2B", whiteSpace: "nowrap" }}>{r.paid ? "Paid" : "Unpaid"}</span>}
         </span> },
         { key: "phone", label: "Phone", numeric: true },
         { key: "address", label: "Address", maxWidth: "220px", render: (r) => r.street + ", " + r.area },
