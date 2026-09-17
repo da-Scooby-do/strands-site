@@ -114,10 +114,20 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
       const r = await window.sbRpc("place_order", { payload });
       if (r && r.ok) {
         setDone(r); if (onClear) onClear();
+        // InstaPay: send the customer straight to WhatsApp with their order number
+        // and amount already written in — all they do is attach the screenshot.
+        const waRedirect = pay === "instapay"
+          ? "https://wa.me/" + SHOP_WA + "?text=" + encodeURIComponent(
+              T("Hi Strands! My order ", "أهلاً ستراندز! طلبي ") + r.order_number +
+              T(" — total ", " — الإجمالي ") + money(r.total) +
+              T(". I’m paying by InstaPay here: ", ". هدفع بإنستاباي من هنا: ") + INSTAPAY_URL +
+              T(" — I’ll send the payment screenshot in this chat.", " — وهبعت صورة التحويل في نفس المحادثة."))
+          : null;
         try {
           const { data: o } = await window.sb.from("orders").select("id").eq("order_number", r.order_number).maybeSingle();
-          if (o) window.sb.functions.invoke("notify-order", { body: { order_id: o.id, status: "placed" } });
+          if (o) { const inv = window.sb.functions.invoke("notify-order", { body: { order_id: o.id, status: "placed" } }); if (waRedirect) await inv; }
         } catch (e) { /* non-blocking */ }
+        if (waRedirect) window.location.href = waRedirect;  // hand off to WhatsApp
       } else {
         const map = {
           auth_required: T("Please sign in to place your order.", "سجّلي دخول عشان تكملي الطلب."),
@@ -162,11 +172,11 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--green)", color: "var(--white)", display: "grid", placeItems: "center" }}><Icon name="check" size={28} /></div>
               <h2 style={{ fontSize: 24 }}>{window.copy("co.done.title", "Thank you.", "شكرًا ليكي.")}</h2>
               {pay === "instapay"
-                ? <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is in. To pay, send", "وصلنا. عشان تدفعي، حوّلي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("by InstaPay to", "بإنستاباي لـ")} <strong style={{ color: "var(--ink)" }}>{INSTAPAY_HANDLE}</strong>{T(", then send us a screenshot on WhatsApp with your order number.", "، وبعدين ابعتيلنا صورة التحويل على واتساب مع رقم الطلب.")}</p>
+                ? <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is placed. Tap WhatsApp below — your order number is already in the message. Pay", "اتسجّل. اضغطي واتساب تحت — رقم طلبك موجود في الرسالة. حوّلي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("by InstaPay to", "بإنستاباي لـ")} <strong style={{ color: "var(--ink)" }}>{INSTAPAY_HANDLE}</strong>{T(", then send the screenshot in the same chat.", "، وابعتي صورة التحويل في نفس المحادثة.")}</p>
                 : <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is in. We’ll message you as it moves. Pay", "وصلنا. هنبعتلك مع كل خطوة. ادفعي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("on delivery.", "عند الاستلام.")}</p>}
             </div>
-            {pay === "instapay" && <Button fullWidth onClick={() => window.open(INSTAPAY_URL, "_blank", "noopener")}>{T("Pay", "ادفعي")} {money(done.total)} {T("with InstaPay", "بإنستاباي")}</Button>}
-            {pay === "instapay" && <Button fullWidth variant="quiet" onClick={() => window.open("https://wa.me/" + SHOP_WA + "?text=" + encodeURIComponent(T("Hi Strands, I paid for order ", "أهلاً ستراندز، دفعت طلب ") + done.order_number + T(" by InstaPay. Screenshot attached.", " بإنستاباي. صورة التحويل مرفقة.")), "_blank", "noopener")}>{T("Send screenshot on WhatsApp", "ابعتي صورة التحويل على واتساب")}</Button>}
+            {pay === "instapay" && <Button fullWidth onClick={() => window.open("https://wa.me/" + SHOP_WA + "?text=" + encodeURIComponent(T("Hi Strands! My order ", "أهلاً ستراندز! طلبي ") + done.order_number + T(" — total ", " — الإجمالي ") + money(done.total) + T(". Paying by InstaPay — I’ll send the screenshot here.", ". بدفع بإنستاباي — وهبعت صورة التحويل هنا.")), "_blank", "noopener")}>{T("Message us on WhatsApp", "كلّمينا على واتساب")}</Button>}
+            {pay === "instapay" && <Button fullWidth variant="quiet" onClick={() => window.open(INSTAPAY_URL, "_blank", "noopener")}>{T("Open InstaPay to pay", "افتحي إنستاباي للدفع")} {money(done.total)}</Button>}
             <Button fullWidth variant={pay === "instapay" ? "text" : undefined} onClick={() => (window.location.href = "../account/index.html")}>{window.copy("co.done.track", "Track it in your account", "تابعي طلبك من حسابك")}</Button>
             <Button fullWidth variant="quiet" onClick={() => { setDone(null); onClose(); }}>{window.copy("co.done.keep", "Keep browsing", "كملي تسوّق")}</Button>
           </div>
