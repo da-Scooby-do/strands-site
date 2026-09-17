@@ -124,6 +124,23 @@ function App(){
     await setStatus(o,targetKey);              // one event + one email, for the target status only
   }
   async function saveNote(text){ if(order){ await window.sb.from("orders").update({admin_note:text}).eq("id",order.uuid); await loadOrders(); } }
+  // Bulk-confirm selected orders: process one at a time (throttled) so we stay under
+  // the email provider's rate limit. Only orders still at "placed" are confirmed.
+  async function bulkConfirm(list){
+    let confirmed=0, emailFailed=0;
+    for(const o of list){
+      if(ST_KEY[o.status]!=="placed") continue;
+      const up=await window.sb.from("orders").update({status:"confirmed"}).eq("id",o.uuid);
+      if(up.error) continue;
+      await window.sb.from("order_events").insert({order_id:o.uuid,status:"confirmed",note_en:ST_LABEL["confirmed"]});
+      confirmed++;
+      try{ const {error}=await window.sb.functions.invoke("notify-order",{body:{order_id:o.uuid,status:"confirmed"}}); if(error) emailFailed++; }
+      catch(e){ emailFailed++; console.warn("email notify failed",e); }
+      await new Promise(r=>setTimeout(r,350));  // throttle: keep well under Resend's rate limit
+    }
+    await loadOrders();
+    return {confirmed, emailFailed};
+  }
 
   if(!ready) return <Splash msg="Loading…"/>;
   if(!window.SB_READY) return <Splash msg="Could not reach the database. Check your connection and refresh."/>;
@@ -135,7 +152,7 @@ function App(){
   let body;
   if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onSaveNote={saveNote}/>;
   else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/>;
-  else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders}/>;
+  else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders} onBulkConfirm={bulkConfirm}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
   else if(page==="Site text") body=<window.DashSiteText/>;
   else if(page==="Promo codes") body=<window.DashPromos/>;

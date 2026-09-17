@@ -1,15 +1,32 @@
 const { PageHeader, DataTable, StatusPill, SearchField, Button } = window.StrandsDesignSystem_6d0a65;
 const FILTERS = ["To action", "All", "Placed", "Confirmed", "Packed", "With courier", "Delivered", "Cancelled"];
-function Orders({ orders, onOpen, onReload }) {
+function Orders({ orders, onOpen, onReload, onBulkConfirm }) {
   const [filter, setFilter] = React.useState("To action");
   const [q, setQ] = React.useState("");
   const [newOpen, setNewOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
+  const [selected, setSelected] = React.useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = React.useState(false);
+  const [bulkMsg, setBulkMsg] = React.useState(null);
+  const query = q.trim().toLowerCase();
   const rows = orders.filter((o) => {
-    const f = filter === "All" ? true : filter === "To action" ? !["Delivered", "Cancelled"].includes(o.status) : o.status === filter;
-    const s = (o.id + o.customer + o.phone).toLowerCase().includes(q.toLowerCase());
-    return f && s;
+    const s = ("" + o.id + o.customer + o.phone).toLowerCase().includes(query);
+    // While searching, look across every order regardless of the status tab, so an
+    // order number is always findable — even if it's Delivered or Cancelled.
+    if (query) return s;
+    return filter === "All" ? true : filter === "To action" ? !["Delivered", "Cancelled"].includes(o.status) : o.status === filter;
   });
+  const placedShown = rows.filter((r) => r.status === "Placed");
+  const allPlacedSelected = placedShown.length > 0 && placedShown.every((r) => selected.has(r.uuid));
+  const toggle = (uuid) => setSelected((s) => { const n = new Set(s); n.has(uuid) ? n.delete(uuid) : n.add(uuid); return n; });
+  const toggleAll = () => setSelected((s) => { const n = new Set(s); if (allPlacedSelected) placedShown.forEach((r) => n.delete(r.uuid)); else placedShown.forEach((r) => n.add(r.uuid)); return n; });
+  const confirmSelected = async () => {
+    const chosen = orders.filter((o) => selected.has(o.uuid) && o.status === "Placed");
+    if (!chosen.length || !onBulkConfirm) return;
+    setBulkBusy(true); setBulkMsg(null);
+    const res = await onBulkConfirm(chosen);
+    setBulkBusy(false); setSelected(new Set()); setBulkMsg(res);
+  };
   const exportCSV = () => {
     const headers = ["Order", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Items", "Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"];
     const data = rows.map((o) => {
@@ -33,7 +50,19 @@ function Orders({ orders, onOpen, onReload }) {
       <div style={{ maxWidth: 320, marginBottom: "var(--space-4)" }}>
         <SearchField value={q} onChange={setQ} placeholder="Order number, name, or phone" />
       </div>
+      {placedShown.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap", marginBottom: "var(--space-4)", fontSize: "var(--text-small)" }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", color: "var(--ink-2)" }}>
+            <input type="checkbox" checked={allPlacedSelected} onChange={toggleAll} style={{ width: 16, height: 16, cursor: "pointer" }} />
+            Select all placed ({placedShown.length})
+          </label>
+          {selected.size > 0 && <Button size="sm" onClick={confirmSelected} disabled={bulkBusy}>{bulkBusy ? "Confirming…" : ("Confirm " + selected.size + " selected")}</Button>}
+          {selected.size > 0 && !bulkBusy && <button type="button" onClick={() => setSelected(new Set())} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-small)" }}>Clear</button>}
+          {bulkMsg && <span style={{ color: "var(--green)" }}>{bulkMsg.confirmed} confirmed{bulkMsg.emailFailed ? (" · " + bulkMsg.emailFailed + " email(s) failed") : " & emailed"}</span>}
+        </div>
+      )}
       <DataTable onRowClick={onOpen} rows={rows} empty="No orders match that filter." columns={[
+        { key: "sel", label: "", render: (r) => r.status === "Placed" ? <input type="checkbox" checked={selected.has(r.uuid)} onChange={() => toggle(r.uuid)} onClick={(e) => e.stopPropagation()} style={{ width: 16, height: 16, cursor: "pointer" }} /> : null },
         { key: "id", label: "Order", numeric: true },
         { key: "customer", label: "Customer" },
         { key: "source", label: "From", render: (r) => (r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--green)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span> },
