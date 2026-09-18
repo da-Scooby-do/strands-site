@@ -22,10 +22,34 @@ function mapOrder(o){
     placed:fmtDate(o.created_at),dates,street:o.street,area:o.area,gov:o.governorate,phone:o.phone};
 }
 function Splash({msg}){return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",color:"var(--ink-2)",fontFamily:"var(--font-sans)"}}>{msg}</div>;}
+function RecoveryForm({email,onDone}){
+  const { Input, Button, InlineAlert } = window.StrandsDesignSystem_6d0a65;
+  const [pw,setPw]=React.useState(""); const [busy,setBusy]=React.useState(false);
+  const [err,setErr]=React.useState(""); const [ok,setOk]=React.useState(false);
+  async function submit(){
+    if(pw.length<6){ setErr("Password must be at least 6 characters."); return; }
+    setBusy(true); setErr("");
+    const { error } = await window.sb.auth.updateUser({ password: pw });
+    setBusy(false);
+    if(error){ setErr(error.message); return; }
+    setOk(true); setTimeout(onDone,1400);
+  }
+  return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",padding:"var(--gutter)",fontFamily:"var(--font-sans)"}}>
+    <div style={{width:"min(400px,100%)",background:"var(--white)",border:"1px solid var(--rule)",borderRadius:"var(--radius-card)",padding:"var(--space-6)",display:"grid",gap:"var(--space-4)"}}>
+      <h1 style={{fontSize:24,margin:0}}>Set a new password</h1>
+      <p style={{fontSize:"var(--text-small)",color:"var(--ink-2)",margin:0}}>For {email}. Choose a new password to finish.</p>
+      <Input label="New password" type="password" value={pw} onChange={setPw} />
+      {err && <InlineAlert tone="error">{err}</InlineAlert>}
+      {ok && <InlineAlert tone="ok">Password updated. Taking you to your account…</InlineAlert>}
+      <Button fullWidth onClick={submit} disabled={busy||ok}>{busy?"Saving…":"Save new password"}</Button>
+    </div>
+  </div>;
+}
 
 function App(){
   const [ready,setReady]=React.useState(false);
   const [session,setSession]=React.useState(null);
+  const [recovery,setRecovery]=React.useState(false);
   const [orders,setOrders]=React.useState([]);
   const [name,setName]=React.useState("");
   const [isOwner,setIsOwner]=React.useState(false);
@@ -33,7 +57,7 @@ function App(){
   React.useEffect(()=>{
     if(!window.SB_READY){ setReady(true); return; }
     window.sb.auth.getSession().then(({data})=>{ setSession(data.session||null); setReady(true); });
-    const {data:sub}=window.sb.auth.onAuthStateChange((_e,s)=>setSession(s||null));
+    const {data:sub}=window.sb.auth.onAuthStateChange((_e,s)=>{ setSession(s||null); if(_e==="PASSWORD_RECOVERY") setRecovery(true); });
     return ()=>{ sub&&sub.subscription&&sub.subscription.unsubscribe(); };
   },[]);
 
@@ -54,6 +78,7 @@ function App(){
 
   if(!ready) return <Splash msg="Loading…"/>;
   if(!window.SB_READY) return <Splash msg="Could not reach the database. Refresh to try again."/>;
+  if(recovery && session) return <RecoveryForm email={session.user.email} onDone={()=>setRecovery(false)}/>;
   if(!session) return <window.DashLogin heading="Sign in to your account." onSignedIn={(s)=>setSession(s)}/>;
   return <window.StrandsAccount user={name} isOwner={isOwner} orders={orders}
     onDashboard={()=>{window.location.href="../dashboard/index.html";}}

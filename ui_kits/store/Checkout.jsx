@@ -5,6 +5,14 @@ const { Button, Input, Select, InlineAlert, Icon } = window.StrandsDesignSystem_
 const INSTAPAY_URL = "https://ipn.eg/S/nourhatim/instapay/3CHDAq";
 const INSTAPAY_HANDLE = "nourhatim@instapay";
 const SHOP_WA = "201023789109";  // shop WhatsApp for InstaPay payment screenshots
+// Normalise an Egyptian number to +20 international form (so WhatsApp links work).
+function egPhone(n) {
+  const d = String(n || "").replace(/[^\d]/g, "");
+  if (!d) return String(n || "");
+  if (d.slice(0, 2) === "20") return "+" + d;
+  if (d[0] === "0") return "+20" + d.slice(1);
+  return "+20" + d;
+}
 
 function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onClear, maxQty }) {
   const ar = window.useLang() === "AR";
@@ -121,7 +129,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
     setBusy(true);
     try {
       const payload = {
-        lang: ar ? "ar" : "en", full_name: form.full_name, phone: form.phone, phone2: form.phone2,
+        lang: ar ? "ar" : "en", full_name: form.full_name, phone: egPhone(form.phone), phone2: egPhone(form.phone2),
         governorate: form.governorate, area: form.area, street: form.street, landmark: form.landmark,
         promo_code: usePromo ? usePromo.code : null,
         payment_method: pay,
@@ -261,8 +269,8 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                 </div>
                 <Input label={window.copy("co.fullName", "Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
                 <div style={row2}>
-                  <Input label={window.copy("co.phone", "Phone", "التليفون")} type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-                  <Input label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} type="tel" value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} />
+                  <Input label={window.copy("co.phone", "Phone", "التليفون")} type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+20 10 1234 5678" />
+                  <Input label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} type="tel" value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} placeholder="+20 10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} />
                 </div>
                 <Select label={window.copy("co.gov", "Governorate", "المحافظة")} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
                 <Input label={window.copy("co.street", "Street address", "عنوان الشارع")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} placeholder={T("Building, street", "العمارة، الشارع")} />
