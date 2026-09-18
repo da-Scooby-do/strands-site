@@ -15,14 +15,14 @@ function waNumber(n) {
   if (d.length <= 10) return "20" + d;
   return d;
 }
-function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onSaveNote, onSetPaid }) {
+function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, onSaveNote, onSetPaid }) {
   const phone = window.useIsPhone();
   const { FLOW, NEXT_LABEL, HISTORY } = window.DASH;
-  const STEP_LABEL = { Confirmed: "Mark confirmed", Packed: "Mark packed", "With courier": "Mark out for delivery", Delivered: "Mark delivered" };
+  const STEP_LABEL = { Confirmed: "Mark confirmed", "With courier": "Mark out for delivery", Delivered: "Mark delivered" };
   const [note, setNote] = React.useState(order.note || "");
   const [saved, setSaved] = React.useState(false);
   const sub = order.items.reduce((a, i) => a + i.p * i.q, 0);
-  const done = order.status === "Delivered" || order.status === "Cancelled";
+  const done = ["Delivered", "Cancelled", "Returned"].includes(order.status);
   const waNum = waNumber(order.whatsapp || order.phone);
   const history =(order.events && order.events.length ? order.events : (HISTORY[order.id] || [{ s: "Placed", t: order.placed + " 10:00", mail: { ok: true, to: order.email } }]));
   return (
@@ -42,6 +42,7 @@ function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onSaveNote, o
                 ? <a href={"https://wa.me/" + waNum} target="_blank" rel="noopener noreferrer" style={{ borderBottom: "none" }}><Button size="sm" variant="quiet">WhatsApp customer</Button></a>
                 : <Button size="sm" variant="quiet" disabled>No WhatsApp number</Button>}
               {!done && <Button size="sm" variant="text" onClick={onCancel}>Cancel order</Button>}
+              {!["Returned", "Cancelled"].includes(order.status) && <Button size="sm" variant="text" onClick={() => onReturned && onReturned()}>Mark returned</Button>}
             </div>
             <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
               {FLOW.map((s) => <StatusPill key={s} quiet status={s} active={s === order.status} />)}

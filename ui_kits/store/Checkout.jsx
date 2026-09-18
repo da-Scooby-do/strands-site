@@ -149,7 +149,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           : null;
         try {
           const { data: o } = await window.sb.from("orders").select("id").eq("order_number", r.order_number).maybeSingle();
-          if (o) { const inv = window.sb.functions.invoke("notify-order", { body: { order_id: o.id, status: "placed" } }); if (waRedirect) await inv; }
+          if (o) { const inv = window.sb.functions.invoke("notify-order", { body: { order_id: o.id, status: "confirmed" } }); if (waRedirect) await inv; }
         } catch (e) { /* non-blocking */ }
         if (waRedirect) window.location.href = waRedirect;  // hand off to WhatsApp
       } else {

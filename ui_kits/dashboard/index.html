@@ -19,9 +19,9 @@
 <script type="text/babel" src="Waitlist.jsx"></script>
 <script type="text/babel" src="Emails.jsx"></script>
 <script type="text/babel" data-presets="react">
-const ST_LABEL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",with_courier:"With courier",delivered:"Delivered",cancelled:"Cancelled"};
-const ST_KEY={"Placed":"placed","Confirmed":"confirmed","Packed":"packed","With courier":"with_courier","Delivered":"delivered","Cancelled":"cancelled"};
-const FLOW_KEYS=["placed","confirmed","packed","with_courier","delivered"];
+const ST_LABEL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",with_courier:"With courier",delivered:"Delivered",cancelled:"Cancelled",returned:"Returned"};
+const ST_KEY={"Placed":"placed","Confirmed":"confirmed","Packed":"packed","With courier":"with_courier","Delivered":"delivered","Cancelled":"cancelled","Returned":"returned"};
+const FLOW_KEYS=["confirmed","with_courier","delivered"];
 function pad2(n){return (n<10?"0":"")+n;}
 function csvCell(v){ v = (v==null)?"":String(v); return /[",\n\r]/.test(v) ? ('"'+v.replace(/"/g,'""')+'"') : v; }
 function downloadCSV(filename, headers, rows){
@@ -156,7 +156,7 @@ function App(){
 
   const go=(p)=>{setOpenId(null);setPage(p);};
   let body;
-  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onSaveNote={saveNote} onSetPaid={(val)=>setPaid(order,val)}/>;
+  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onReturned={()=>setStatus(order,"returned")} onSaveNote={saveNote} onSetPaid={(val)=>setPaid(order,val)}/>;
   else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/>;
   else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders} onBulkAction={bulkSetStatus}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;

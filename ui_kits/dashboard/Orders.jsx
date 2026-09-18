@@ -1,12 +1,11 @@
 const { PageHeader, DataTable, StatusPill, SearchField, Button } = window.StrandsDesignSystem_6d0a65;
-const FILTERS = ["To action", "All", "Placed", "Confirmed", "Packed", "With courier", "Delivered", "Cancelled"];
+const FILTERS = ["To action", "All", "Confirmed", "With courier", "Delivered", "Returned", "Cancelled"];
 const BULK_ACTIONS = [
   { key: "confirmed", label: "Confirm" },
-  { key: "packed", label: "Pack" },
   { key: "with_courier", label: "Out for delivery" },
   { key: "delivered", label: "Delivered" },
 ];
-const BULK_DONE_LABEL = { confirmed: "Confirmed", packed: "Packed", with_courier: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
+const BULK_DONE_LABEL = { confirmed: "Confirmed", with_courier: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned" };
 function Orders({ orders, onOpen, onReload, onBulkAction }) {
   const [filter, setFilter] = React.useState("To action");
   const [q, setQ] = React.useState("");
@@ -21,10 +20,10 @@ function Orders({ orders, onOpen, onReload, onBulkAction }) {
     // While searching, look across every order regardless of the status tab, so an
     // order number is always findable — even if it's Delivered or Cancelled.
     if (query) return s;
-    return filter === "All" ? true : filter === "To action" ? !["Delivered", "Cancelled"].includes(o.status) : o.status === filter;
+    return filter === "All" ? true : filter === "To action" ? !["Delivered", "Cancelled", "Returned"].includes(o.status) : o.status === filter;
   });
   // Actionable = anything not already finished (Delivered/Cancelled are terminal).
-  const actionable = rows.filter((r) => !["Delivered", "Cancelled"].includes(r.status));
+  const actionable = rows.filter((r) => !["Delivered", "Cancelled", "Returned"].includes(r.status));
   const allSelected = actionable.length > 0 && actionable.every((r) => selected.has(r.uuid));
   const toggle = (uuid) => setSelected((s) => { const n = new Set(s); n.has(uuid) ? n.delete(uuid) : n.add(uuid); return n; });
   const toggleAll = () => setSelected((s) => { const n = new Set(s); if (allSelected) actionable.forEach((r) => n.delete(r.uuid)); else actionable.forEach((r) => n.add(r.uuid)); return n; });

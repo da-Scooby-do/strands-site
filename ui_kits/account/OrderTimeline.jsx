@@ -1,8 +1,9 @@
 const { Icon } = window.StrandsDesignSystem_6d0a65;
-const FLOW = ["Placed", "Confirmed", "Packed", "With courier", "Delivered"];
+const FLOW = ["Confirmed", "With courier", "Delivered"];
 function OrderTimeline({ status, dates = {} }) {
   const cancelled = status === "Cancelled";
-  const at = cancelled ? -1 : FLOW.indexOf(status);
+  const returned = status === "Returned";
+  const at = cancelled ? -1 : returned ? FLOW.length - 1 : FLOW.indexOf(status);
   return (
     <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 0 }}>
       {FLOW.map((s, i) => {
@@ -25,6 +26,7 @@ function OrderTimeline({ status, dates = {} }) {
         );
       })}
       {cancelled && <li style={{ paddingTop: "var(--space-3)", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}>This order was cancelled. Nothing was collected.</li>}
+      {returned && <li style={{ paddingTop: "var(--space-3)", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}>This order was returned.</li>}
     </ol>
   );
 }

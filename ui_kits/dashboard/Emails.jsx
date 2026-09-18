@@ -2,19 +2,17 @@
    settings.emails and used by the notify-order function. */
 const { PageHeader, Card, Select, Input, Textarea, Button, InlineAlert, Wordmark } = window.StrandsDesignSystem_6d0a65;
 const STATUSES = [
-  { key: "placed", label: "Order received (placed)" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "packed", label: "Packed" },
+  { key: "confirmed", label: "Order received (confirmed)" },
   { key: "with_courier", label: "With courier" },
   { key: "delivered", label: "Delivered" },
+  { key: "returned", label: "Returned" },
   { key: "cancelled", label: "Cancelled" },
 ];
 const HEAD = {
-  placed: { en: "Thank you Mona — we have your order.", ar: "شكرًا Mona — وصلنا طلبك." },
-  confirmed: { en: "We have confirmed your order.", ar: "أكّدنا طلبك." },
-  packed: { en: "Your order is packed.", ar: "طلبك اتجهّز." },
+  confirmed: { en: "Thank you Mona — your order is confirmed.", ar: "شكرًا Mona — تم تأكيد طلبك." },
   with_courier: { en: "Your order is with the courier.", ar: "طلبك مع المندوب." },
   delivered: { en: "Your order arrived.", ar: "طلبك وصل." },
+  returned: { en: "Your order has been returned.", ar: "تم إرجاع طلبك." },
   cancelled: { en: "Your order was cancelled.", ar: "طلبك اتلغى." },
 };
 function sample(s) {
@@ -23,7 +21,7 @@ function sample(s) {
 function Emails() {
   const phone = window.useIsPhone();
   const [emails, setEmails] = React.useState(null);
-  const [which, setWhich] = React.useState("placed");
+  const [which, setWhich] = React.useState("confirmed");
   const [langLabel, setLangLabel] = React.useState("English");
   const [msg, setMsg] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
@@ -87,7 +85,7 @@ function Emails() {
               <div style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--ink-2)" }}>{rtl ? "رقم الطلب" : "Order number"}</div>
               <div style={{ fontWeight: 700, fontSize: 20 }}>STR-2490</div>
             </div>
-            <div style={{ background: "var(--purple)", color: "#fff", padding: "12px 24px", width: "fit-content", fontSize: 13, fontWeight: 700 }}>{which === "delivered" ? (rtl ? "شاركي نتيجتك" : "Share your result") : which === "cancelled" ? (rtl ? "رجوع للمتجر" : "Back to the shop") : (rtl ? "تابعي طلبك" : "Track your order")}</div>
+            <div style={{ background: "var(--purple)", color: "#fff", padding: "12px 24px", width: "fit-content", fontSize: 13, fontWeight: 700 }}>{which === "delivered" ? (rtl ? "شاركي نتيجتك" : "Share your result") : (which === "cancelled" || which === "returned") ? (rtl ? "رجوع للمتجر" : "Back to the shop") : (rtl ? "تابعي طلبك" : "Track your order")}</div>
           </div>
         </div>
       </div>

@@ -8,8 +8,8 @@ const ORDERS = [
   { id: "STR-1035", customer: "Nada Hassan", phone: "0106 767 1212", email: "nada@example.com", street: "19 Sharia Sudan", area: "Mohandessin", gov: "Cairo", landmark: "", city: "Cairo", items: [{ n: "Velvet Touch Masque — 1 jar", q: 1, p: 380 }], shipping: 60, status: "Cancelled", placed: "27/08/2026", note: "Customer asked to cancel — wrong size." },
   { id: "STR-1034", customer: "Rana Ezz", phone: "0114 878 2323", email: "rana@example.com", street: "5 Sharia Ahmed Orabi", area: "Shubra", gov: "Cairo", landmark: "", city: "Cairo", items: [{ n: "Velvet Touch Masque — 1 jar", q: 1, p: 380 }], shipping: 60, status: "Delivered", placed: "26/08/2026", note: "" },
 ];
-const FLOW = ["Placed", "Confirmed", "Packed", "With courier", "Delivered"];
-const NEXT_LABEL = { Placed: "Mark confirmed", Confirmed: "Mark packed", Packed: "Mark with courier", "With courier": "Mark delivered" };
+const FLOW = ["Confirmed", "With courier", "Delivered"];
+const NEXT_LABEL = { Confirmed: "Mark with courier", "With courier": "Mark delivered" };
 const HISTORY = {
   "STR-1040": [
     { s: "Placed", t: "01/09/2026 10:12", mail: { ok: true, to: "salma@example.com" } },
