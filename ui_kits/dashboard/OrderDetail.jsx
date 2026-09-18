@@ -42,7 +42,7 @@ function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, o
                 ? <a href={"https://wa.me/" + waNum} target="_blank" rel="noopener noreferrer" style={{ borderBottom: "none" }}><Button size="sm" variant="quiet">WhatsApp customer</Button></a>
                 : <Button size="sm" variant="quiet" disabled>No WhatsApp number</Button>}
               {!done && <Button size="sm" variant="text" onClick={onCancel}>Cancel order</Button>}
-              {!["Returned", "Cancelled"].includes(order.status) && <Button size="sm" variant="text" onClick={() => onReturned && onReturned()}>Mark returned</Button>}
+              {!["Returned", "Cancelled"].includes(order.status) && <Button size="sm" variant="quiet" onClick={() => onReturned && onReturned()}>Mark returned</Button>}
             </div>
             <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
               {FLOW.map((s) => <StatusPill key={s} quiet status={s} active={s === order.status} />)}
