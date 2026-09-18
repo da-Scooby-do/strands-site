@@ -5,13 +5,51 @@ const { Button, Input, Select, InlineAlert, Icon } = window.StrandsDesignSystem_
 const INSTAPAY_URL = "https://ipn.eg/S/nourhatim/instapay/3CHDAq";
 const INSTAPAY_HANDLE = "nourhatim@instapay";
 const SHOP_WA = "201023789109";  // shop WhatsApp for InstaPay payment screenshots
-// Normalise an Egyptian number to +20 international form (so WhatsApp links work).
+// Normalise a phone number to international form. A number that already carries a
+// "+" country code (from the picker) is kept as-is; a bare Egyptian number gets +20.
 function egPhone(n) {
-  const d = String(n || "").replace(/[^\d]/g, "");
-  if (!d) return String(n || "");
+  const s = String(n || "").trim();
+  if (s[0] === "+") return "+" + s.slice(1).replace(/[^\d]/g, "");
+  const d = s.replace(/[^\d]/g, "");
+  if (!d) return s;
   if (d.slice(0, 2) === "20") return "+" + d;
   if (d[0] === "0") return "+20" + d.slice(1);
   return "+20" + d;
+}
+// Country codes for the phone picker — Egypt default, then Gulf + common.
+const DIAL_CODES = [
+  { f: "🇪🇬", d: "+20", n: "Egypt" }, { f: "🇸🇦", d: "+966", n: "Saudi Arabia" }, { f: "🇦🇪", d: "+971", n: "UAE" },
+  { f: "🇰🇼", d: "+965", n: "Kuwait" }, { f: "🇶🇦", d: "+974", n: "Qatar" }, { f: "🇧🇭", d: "+973", n: "Bahrain" },
+  { f: "🇴🇲", d: "+968", n: "Oman" }, { f: "🇯🇴", d: "+962", n: "Jordan" }, { f: "🇱🇧", d: "+961", n: "Lebanon" },
+  { f: "🇸🇩", d: "+249", n: "Sudan" }, { f: "🇱🇾", d: "+218", n: "Libya" }, { f: "🇲🇦", d: "+212", n: "Morocco" },
+  { f: "🇺🇸", d: "+1", n: "United States" }, { f: "🇬🇧", d: "+44", n: "United Kingdom" }, { f: "🇩🇪", d: "+49", n: "Germany" },
+  { f: "🇫🇷", d: "+33", n: "France" }, { f: "🇮🇹", d: "+39", n: "Italy" }, { f: "🇹🇷", d: "+90", n: "Türkiye" },
+];
+function splitPhone(value) {
+  const v = String(value || "").replace(/[^\d+]/g, "");
+  if (v[0] === "+") {
+    const m = DIAL_CODES.slice().sort((a, b) => b.d.length - a.d.length).find((x) => v.startsWith(x.d));
+    if (m) return { code: m.d, local: v.slice(m.d.length) };
+    return { code: "+20", local: v.replace(/^\+/, "") };
+  }
+  if (v && v[0] === "0") return { code: "+20", local: v.slice(1) };
+  return { code: "+20", local: v };
+}
+function PhoneField({ label, value, onChange, hint, placeholder }) {
+  const { code, local } = splitPhone(value);
+  const box = { boxSizing: "border-box", height: 46, border: "1px solid var(--rule)", borderRadius: "var(--radius-control)", padding: "0 12px", font: "inherit", fontFamily: "var(--font-sans)", fontSize: 15, background: "var(--white)", color: "var(--ink)" };
+  return (
+    <div style={{ display: "grid", gap: 6 }}>
+      <label style={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--ink-2)", fontFamily: "var(--font-sans)" }}>{label}</label>
+      <div style={{ display: "flex", gap: 8 }}>
+        <select value={code} onChange={(e) => onChange(e.target.value + local)} aria-label="Country code" style={{ ...box, width: "auto", flex: "0 0 auto", maxWidth: 128, cursor: "pointer" }}>
+          {DIAL_CODES.map((c) => <option key={c.n} value={c.d}>{c.f} {c.d} {c.n}</option>)}
+        </select>
+        <input type="tel" inputMode="tel" value={local} onChange={(e) => onChange(code + e.target.value.replace(/\D/g, ""))} placeholder={placeholder} style={{ ...box, flex: 1, minWidth: 0 }} />
+      </div>
+      {hint && <span style={{ fontSize: 12, color: "var(--ink-2)" }}>{hint}</span>}
+    </div>
+  );
 }
 
 function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onClear, maxQty }) {
@@ -268,10 +306,8 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                   <button type="button" onClick={() => window.sb.auth.signOut()} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>{T("Sign out", "خروج")}</button>
                 </div>
                 <Input label={window.copy("co.fullName", "Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
-                <div style={row2}>
-                  <Input label={window.copy("co.phone", "Phone", "التليفون")} type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+20 10 1234 5678" />
-                  <Input label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} type="tel" value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} placeholder="+20 10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} />
-                </div>
+                <PhoneField label={window.copy("co.phone", "Phone", "التليفون")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="10 1234 5678" />
+                <PhoneField label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} placeholder="10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} />
                 <Select label={window.copy("co.gov", "Governorate", "المحافظة")} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
                 <Input label={window.copy("co.street", "Street address", "عنوان الشارع")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} placeholder={T("Building, street", "العمارة، الشارع")} />
                 <div style={row2}>

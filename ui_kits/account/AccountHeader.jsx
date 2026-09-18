@@ -12,8 +12,8 @@ function AccountHeader({ isOwner, onDashboard, onSignOut }) {
         <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
           {/* The ONLY thing the owner sees that a customer does not. */}
           {isOwner && <Button size="sm" variant="quiet" onClick={onDashboard}>Dashboard</Button>}
-          <IconButton name="shopping-bag" label="Cart" />
-          {!phone && <Button size="sm" variant="text" onClick={onSignOut}>Sign out</Button>}
+          {!phone && <IconButton name="shopping-bag" label="Cart" />}
+          <Button size="sm" variant="text" onClick={onSignOut}>Sign out</Button>
         </div>
       </div>
     </header>
