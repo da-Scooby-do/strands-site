@@ -4,7 +4,8 @@ function AccountOrders({ orders, open, setOpen }) {
   return (
     <div style={{ display: "grid", gap: "var(--space-4)" }}>
       {orders.map((o) => {
-        const total = o.items.reduce((a, i) => a + i.p * i.q, 0) + o.shipping;
+        const sub = o.items.reduce((a, i) => a + i.p * i.q, 0);
+        const total = (o.total != null) ? o.total : (sub - (o.discount || 0) + o.shipping);
         const isOpen = open === o.id;
         return (
           <Card key={o.id} pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
@@ -19,7 +20,10 @@ function AccountOrders({ orders, open, setOpen }) {
                 </span>
               </div>
               <div style={{ display: "grid", gap: "var(--space-3)", justifyItems: phone ? "start" : "end" }}>
-                <span style={{ fontFamily: "var(--font-numeric)", fontSize: 20, fontWeight: 500 }}>{total.toLocaleString("en-US")} EGP</span>
+                <div style={{ display: "grid", gap: 2, justifyItems: phone ? "start" : "end" }}>
+                  <span style={{ fontFamily: "var(--font-numeric)", fontSize: 20, fontWeight: 500 }}>{total.toLocaleString("en-US")} EGP</span>
+                  {o.discount > 0 && <span style={{ fontSize: 11, color: "var(--green)", fontFamily: "var(--font-sans)" }}>−{o.discount.toLocaleString("en-US")} EGP{o.promo ? " · " + o.promo : ""}</span>}
+                </div>
                 <Button size="sm" variant="quiet" onClick={() => setOpen(isOpen ? null : o.id)}>{isOpen ? "Hide details" : "Track this order"}</Button>
               </div>
             </div>

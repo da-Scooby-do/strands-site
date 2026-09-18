@@ -18,7 +18,7 @@ function mapOrder(o){
   const items=(o.order_items||[]).map(i=>({n:i.title_en,q:i.qty,p:i.unit_price,k:i.variant_key}));
   const dates={};
   (o.order_events||[]).forEach(e=>{ dates[ST_LABEL[e.status]||e.status]=fmtDate(e.created_at); });
-  return {id:o.order_number,uuid:o.id,status:ST_LABEL[o.status]||o.status,items,shipping:o.shipping||0,discount:o.discount||0,
+  return {id:o.order_number,uuid:o.id,status:ST_LABEL[o.status]||o.status,items,shipping:o.shipping||0,discount:o.discount||0,total:o.total,promo:o.promo_code||null,
     placed:fmtDate(o.created_at),dates,street:o.street,area:o.area,gov:o.governorate,phone:o.phone};
 }
 function Splash({msg}){return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",color:"var(--ink-2)",fontFamily:"var(--font-sans)"}}>{msg}</div>;}
