@@ -318,7 +318,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             )}
 
             <section style={field}>
-              <strong style={{ fontSize: 15 }}>{T("How would you like to pay?", "هتدفعي إزاي؟")}</strong>
+              <strong style={{ fontSize: 15 }}>{T("How would you like to pay?", "طريقة الدفع")}</strong>
               <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: "var(--space-3)" }}>
                 <PayOption active={pay === "cod"} onClick={() => setPay("cod")} title={T("Cash on delivery", "الدفع عند الاستلام")} sub={T("Pay the courier", "ادفعي للمندوب")} />
                 <PayOption active={pay === "instapay"} onClick={() => setPay("instapay")} title={T("InstaPay", "إنستاباي")} sub={T("Pay now, send proof", "ادفعي وابعتي الإيصال")} />
