@@ -36,11 +36,13 @@ function Orders({ orders, onOpen, onReload, onBulkAction }) {
     setBulkBusy(false); setSelected(new Set()); setBulkMsg(res);
   };
   const exportCSV = () => {
+    // Force phone numbers to text (="…") so Excel doesn't turn them into 2.0E+11.
+    const xlText = (v) => v ? '="' + String(v).replace(/"/g, "") + '"' : "";
     const headers = ["Order", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Items", "Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"];
     const data = rows.map((o) => {
       const sub = o.items.reduce((a, i) => a + i.p * i.q, 0);
       const items = o.items.map((i) => i.n + " x" + i.q).join(" | ");
-      return [o.id, o.source, o.customer, o.phone, o.whatsapp || "", o.email, o.gov, o.area, o.street, o.landmark, items, sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note];
+      return [o.id, o.source, o.customer, xlText(o.phone), xlText(o.whatsapp), o.email, o.gov, o.area, o.street, o.landmark, items, sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note];
     });
     window.downloadCSV("strands-orders.csv", headers, data);
   };
