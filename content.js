@@ -150,7 +150,9 @@
   window.copy = function (key, defEN, defAR) {
     var isAr = !!(window.getStrandsLang && window.getStrandsLang() === "AR");
     var ov = window.__SITE_COPY[key];
-    if (ov) { var v = isAr ? (ov.ar || ov.en) : (ov.en || ov.ar); if (v != null && v !== "") return v; }
+    // Use the override for the CURRENT language only. If it's missing that language,
+    // fall through to the default below — never show the other language's override.
+    if (ov) { var v = isAr ? ov.ar : ov.en; if (v != null && v !== "") return v; }
     if (defEN !== undefined) return isAr ? (defAR !== undefined ? defAR : defEN) : defEN;
     var f = IDX[key];
     if (f) return isAr ? (f.ar || f.en) : (f.en || f.ar);
