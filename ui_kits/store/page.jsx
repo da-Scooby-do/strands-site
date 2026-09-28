@@ -33,23 +33,30 @@ function Page(){
     })();
     return ()=>{ live=false; };
   },[reloadKey]);
-  const v1=(variants||[]).find(v=>v.jars===1)||(variants||[])[0];
+  // Sizes are the single-jar variants (300 ml, 500 ml…). Each can carry its own
+  // stock; one without it shares the product's stock and in_stock flag.
+  const sizes=(variants||[]).filter(v=>v.jars===1);
+  const [sizeKey,setSizeKey]=React.useState(null);
+  const sel=sizes.find(v=>v.key===sizeKey)||sizes[0]||(variants||[])[0];
+  const vByKey=(key)=>(variants||[]).find(v=>v.key===key);
+  const stockOf=(v)=>(v&&v.stock!=null)?v.stock:((product&&product.stock!=null)?product.stock:Infinity);
+  const soldOut=(v)=>(v&&v.stock!=null)?v.stock<=0:!!(product&&(product.in_stock===false||(product.stock!=null&&product.stock<=0)));
+  const maxFor=(key)=>stockOf(vByKey(key)); // cap cart quantity at what's in stock
   const count=cart.reduce((a,c)=>a+c.qty,0);
-  const maxQty=(product&&product.stock!=null)?product.stock:Infinity; // cap cart quantity at what's in stock
-  const outOfStock=!!(product&&(product.in_stock===false||(product.stock!=null&&product.stock<=0)));
-  const addToCart=(key,qty)=>{ key=key||"1jar"; qty=qty||1; setCart(cs=>{ const i=cs.findIndex(c=>c.key===key); if(i>=0){ const n=cs.slice(); n[i]={...n[i],qty:Math.min(n[i].qty+qty,maxQty)}; return n; } return [...cs,{key,qty:Math.min(qty,maxQty)}]; }); };
-  const setQty=(key,qty)=>setCart(cs=>qty<=0?cs.filter(c=>c.key!==key):cs.map(c=>c.key===key?{...c,qty:Math.min(qty,maxQty)}:c));
+  const outOfStock=soldOut(sel);
+  const addToCart=(key,qty)=>{ key=key||"1jar"; qty=qty||1; const max=maxFor(key); setCart(cs=>{ const i=cs.findIndex(c=>c.key===key); if(i>=0){ const n=cs.slice(); n[i]={...n[i],qty:Math.min(n[i].qty+qty,max)}; return n; } return [...cs,{key,qty:Math.min(qty,max)}]; }); };
+  const setQty=(key,qty)=>setCart(cs=>qty<=0?cs.filter(c=>c.key!==key):cs.map(c=>c.key===key?{...c,qty:Math.min(qty,maxFor(key))}:c));
   const removeItem=(key)=>setCart(cs=>cs.filter(c=>c.key!==key));
   const clearCart=()=>setCart([]);
-  const add=(vk)=>{ addToCart(typeof vk==="string"?vk:"1jar",1); setCoOpen(true); };
+  const add=(vk)=>{ addToCart(typeof vk==="string"?vk:(sel?sel.key:"1jar"),1); setCoOpen(true); };
   return <div data-scroll-root style={{background:'var(--cream)'}}>
     {dataStatus==="error" && <div role="alert" style={{position:'sticky',top:0,zIndex:50,background:'#7A2E2E',color:'#fff',padding:'10px var(--gutter)',display:'flex',alignItems:'center',justifyContent:'center',gap:14,flexWrap:'wrap',fontSize:14,fontFamily:'var(--font-sans)'}}>
       <span>{window.copy('store.loadError',"We couldn’t load the latest product details.","تعذّر تحميل تفاصيل المنتج.")}</span>
       <button type="button" onClick={()=>setReloadKey(k=>k+1)} style={{background:'#fff',color:'#7A2E2E',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:700,cursor:'pointer',font:'inherit',fontFamily:'var(--font-sans)'}}>{window.copy('store.retry','Retry','إعادة المحاولة')}</button>
     </div>}
-    <window.StrandsCheckout open={coOpen} onClose={()=>setCoOpen(false)} cart={cart} variants={variants} ship={ship} onSetQty={setQty} onRemove={removeItem} onClear={clearCart} maxQty={maxQty}/>
+    <window.StrandsCheckout open={coOpen} onClose={()=>setCoOpen(false)} cart={cart} variants={variants} ship={ship} onSetQty={setQty} onRemove={removeItem} onClear={clearCart} maxQty={maxFor}/>
     <window.StrandsHeader onBuy={add} onCart={()=>setCoOpen(true)} cart={count}/>
-    <window.StrandsHero onAdd={add} product={product} variants={variants} status={dataStatus}/>
+    <window.StrandsHero onAdd={add} product={product} variants={variants} status={dataStatus} sizes={sizes} selected={sel} onSelect={setSizeKey} soldOut={soldOut}/>
     <window.StrandsStatement/>
     <window.StrandsOverTime/>
     <window.StrandsScience/>
@@ -57,8 +64,8 @@ function Page(){
     <window.StrandsReviews/>
     <window.StrandsFooter/>
     {phone && <div style={{position:'fixed',insetInline:0,bottom:0,zIndex:30,background:'var(--cream)',borderTop:'1px solid var(--rule)',padding:'10px var(--gutter)',display:'flex',alignItems:'center',gap:'var(--space-4)'}}>
-      <div style={{display:'grid'}}><span style={{fontFamily:'var(--font-numeric)',fontSize:18,fontWeight:500}}>{v1?window.money(v1.price_egp):(dataStatus==="error"?'—':'…')}</span><span style={{fontSize:11,color:'var(--ink-2)'}}>{window.copy('hero.cod','Cash on delivery','الدفع عند الاستلام')}</span></div>
-      <div style={{flex:1}}><window.DSButton fullWidth disabled={!v1||outOfStock} onClick={()=>add(v1?v1.key:"1jar")}>{outOfStock?window.copy('cta.outofstock','Out of stock','خلص من المخزون'):window.copy('cta.add','Add to cart','أضيفي للسلة')}</window.DSButton></div>
+      <div style={{display:'grid'}}><span style={{fontFamily:'var(--font-numeric)',fontSize:18,fontWeight:500}}>{sel?window.money(sel.price_egp):(dataStatus==="error"?'—':'…')}</span><span style={{fontSize:11,color:'var(--ink-2)'}}>{window.copy('hero.cod','Cash on delivery','الدفع عند الاستلام')}</span></div>
+      <div style={{flex:1}}><window.DSButton fullWidth disabled={!sel||outOfStock} onClick={()=>add(sel?sel.key:"1jar")}>{outOfStock?window.copy('cta.outofstock','Out of stock','خلص من المخزون'):window.copy('cta.add','Add to cart','أضيفي للسلة')}</window.DSButton></div>
     </div>}
     {phone && <div style={{height:76}}/>}
   </div>;

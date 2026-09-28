@@ -34,7 +34,11 @@ function Product() {
   async function save() {
     setSaved(null);
     if (!numOk(product.stock)) return setSaved({ ok: false, msg: "Nothing saved — jars in stock must be a whole number." });
-    for (const v of variants) { if (!numOk(v.price_egp)) return setSaved({ ok: false, msg: "Nothing saved — every bundle price must be a whole number." }); }
+    for (const v of variants) {
+      if (!numOk(v.price_egp)) return setSaved({ ok: false, msg: "Nothing saved — every bundle price must be a whole number." });
+      if (v.size_ml != null && String(v.size_ml).trim() !== "" && !numOk(v.size_ml)) return setSaved({ ok: false, msg: "Nothing saved — every size (ml) must be a whole number." });
+      if (v.stock != null && String(v.stock).trim() !== "" && !numOk(v.stock)) return setSaved({ ok: false, msg: "Nothing saved — every size's stock must be a whole number, or blank to share the main stock." });
+    }
     if (ship.flat_egp !== "" && !numOk(ship.flat_egp)) return setSaved({ ok: false, msg: "Nothing saved — the shipping flat rate must be a whole number." });
 
     setBusy(true);
@@ -54,6 +58,8 @@ function Product() {
           label_en: v.label_en, label_ar: v.label_ar,
           price_egp: Number(v.price_egp), save_egp: Number(v.save_egp || 0),
           badge_en: v.badge_en || null, badge_ar: v.badge_ar || null, active: !!v.active,
+          size_ml: v.size_ml != null && String(v.size_ml).trim() !== "" ? Number(v.size_ml) : null,
+          stock: v.stock != null && String(v.stock).trim() !== "" ? Number(v.stock) : null,
         }).eq("id", v.id);
         if (vUpd.error) return setSaved({ ok: false, msg: "Nothing saved — " + vUpd.error.message });
       }
@@ -75,9 +81,9 @@ function Product() {
       <div style={{ display: "grid", gap: "var(--space-5)" }}>
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
           <h2 style={{ fontSize: 22 }}>Stock.</h2>
-          <div style={{ maxWidth: 220 }}><Input label="Jars in stock" value={String(product.stock ?? "")} onChange={(v) => setP("stock", v)} /></div>
+          <div style={{ maxWidth: 220 }}><Input label="Jars in stock (300 ml)" value={String(product.stock ?? "")} onChange={(v) => setP("stock", v)} /></div>
           <Checkbox checked={!!product.in_stock} onChange={(v) => setP("in_stock", v)} label="Available to order" />
-          <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>Prices are set in <strong>“The three bundles”</strong> below — that’s what customers pay. The 1-jar price is the one shown on the product page.</p>
+          <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>Prices are set in <strong>“Sizes and bundles”</strong> below — that’s what customers pay. A size with its own <strong>Stock</strong> (like 500 ml) counts down separately from this number.</p>
           {saved && <InlineAlert tone={saved.ok ? "ok" : "error"}>{saved.msg}</InlineAlert>}
         </Card>
 
@@ -102,13 +108,15 @@ function Product() {
         </Card>
 
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
-          <h2 style={{ fontSize: 22 }}>The three bundles.</h2>
-          <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: "calc(var(--space-3) * -1) 0 0" }}>These <strong>Price</strong> fields are what customers pay on the shop. Change them here to change the store prices.</p>
+          <h2 style={{ fontSize: 22 }}>Sizes and bundles.</h2>
+          <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: "calc(var(--space-3) * -1) 0 0" }}>These <strong>Price</strong> fields are what customers pay on the shop. Every active 1-jar row is a size customers can pick. Leave <strong>Stock</strong> blank to share the main “Jars in stock”; set a number to give that size its own stock.</p>
           {variants.map((b, i) => (
-            <div key={b.id} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr 100px 130px 130px auto"), gap: "var(--space-3)", alignItems: "end", paddingTop: i ? "var(--space-4)" : 0, borderTop: i ? "1px solid var(--rule)" : "none" }}>
+            <div key={b.id} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr 90px 90px 90px 110px 120px auto"), gap: "var(--space-3)", alignItems: "end", paddingTop: i ? "var(--space-4)" : 0, borderTop: i ? "1px solid var(--rule)" : "none" }}>
               <Input label={i === 0 ? "Label (EN)" : ""} value={b.label_en || ""} onChange={(v) => setV(i, "label_en", v)} />
               <Input label={i === 0 ? "Label (AR)" : ""} value={b.label_ar || ""} onChange={(v) => setV(i, "label_ar", v)} />
               <Input label={i === 0 ? "Price" : ""} value={String(b.price_egp ?? "")} onChange={(v) => setV(i, "price_egp", v)} />
+              <Input label={i === 0 ? "Size (ml)" : ""} value={String(b.size_ml ?? "")} onChange={(v) => setV(i, "size_ml", v)} />
+              <Input label={i === 0 ? "Stock" : ""} value={String(b.stock ?? "")} onChange={(v) => setV(i, "stock", v)} placeholder="shared" />
               <Input label={i === 0 ? "Saving (EGP)" : ""} value={String(b.save_egp ?? "0")} onChange={(v) => setV(i, "save_egp", v)} />
               <Input label={i === 0 ? "Badge" : ""} value={b.badge_en || ""} onChange={(v) => setV(i, "badge_en", v)} />
               <div style={{ height: "var(--input-h)", display: "grid", alignItems: "center" }}><Switch checked={!!b.active} onChange={(v) => setV(i, "active", v)} label="Active" /></div>

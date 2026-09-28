@@ -2,7 +2,7 @@ const { ProductGallery, Chip, StarRating, PriceBlock, Button, CollapsibleRow, Bu
 
 /* product + variants come from the database (owner-controlled in the dashboard).
    Nothing here is a hardcoded price; copy switches EN/AR with the language toggle. */
-function Hero({ onAdd, added, product, variants, status }) {
+function Hero({ onAdd, added, product, variants, status, sizes, selected, onSelect, soldOut }) {
   const phone = window.useIsPhone();
   const lang = window.useLang();
   const ar = lang === "AR";
@@ -15,11 +15,13 @@ function Hero({ onAdd, added, product, variants, status }) {
     });
   }, []);
 
-  const v1 = (variants || []).find((v) => v.jars === 1) || (variants || [])[0];
+  const v1 = selected || (variants || []).find((v) => v.jars === 1) || (variants || [])[0];
   const v2 = (variants || []).find((v) => v.jars === 2);
   const price1 = v1 ? v1.price_egp : (product ? product.price_egp : null);
-  const outOfStock = !!(product && (product.in_stock === false || (product.stock != null && product.stock <= 0)));
-  const size = (product && product.size_ml) || 300;
+  const outOfStock = soldOut ? soldOut(v1) : !!(product && (product.in_stock === false || (product.stock != null && product.stock <= 0)));
+  const sizeOf = (v) => (v && v.size_ml) || (product && product.size_ml) || 300;
+  const size = sizeOf(v1);
+  const ml = ar ? " مل" : " ml";
   const name = product ? (ar ? product.name_ar : product.name_en) : (ar ? "ماسك فيلفيت تاتش" : "Velvet Touch Masque");
   const tagline = product ? (ar ? product.tagline_ar : product.tagline_en) : "";
 
@@ -42,7 +44,7 @@ function Hero({ onAdd, added, product, variants, status }) {
         { label: ar ? "القوام" : "Texture", src: "../../assets/photography/texture.jpg" },
       ]} />
       <div style={{ display: "grid", gap: "var(--space-4)" }}>
-        <div><Chip tone="green">{window.copy("hero.chip", "Hair masque", "ماسك شعر") + " · " + size + " " + (ar ? "مل" : "ml")}</Chip></div>
+        <div><Chip tone="green">{window.copy("hero.chip", "Hair masque", "ماسك شعر") + " · " + size + ml}</Chip></div>
         <h1 className="strands-hgrad" style={{ fontSize: phone ? 32 : 44, lineHeight: 1.1 }}>{name}</h1>
         {rev.count > 0 && <StarRating value={rev.avg} count={rev.count} />}
         <p style={{ color: "var(--ink-2)", fontSize: "var(--text-body-size)", maxWidth: "42ch" }}>
@@ -53,6 +55,23 @@ function Hero({ onAdd, added, product, variants, status }) {
           : status === "error"
             ? <div style={{ fontSize: "var(--text-body-size)", color: "var(--ink-2)" }}>{window.copy("hero.priceError", "Price couldn’t load — tap Retry at the top of the page.", "السعر ماحمّلش — دوسي إعادة المحاولة فوق.")}</div>
             : <div aria-live="polite" style={{ fontFamily: "var(--font-numeric)", fontSize: 32, fontWeight: 500, color: "var(--ink-2)" }}>{window.copy("hero.priceLoading", "Loading price…", "بيحمّل السعر…")}</div>}
+        {sizes && sizes.length > 1 && (
+          <div role="radiogroup" aria-label={window.copy("hero.size", "Size", "الحجم")} style={{ display: "grid", gap: 8 }}>
+            <span style={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--ink-2)", fontFamily: "var(--font-sans)" }}>{window.copy("hero.size", "Size", "الحجم")}</span>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(" + sizes.length + ", minmax(0, 1fr))", gap: "var(--space-3)" }}>
+              {sizes.map((s) => {
+                const on = v1 && s.key === v1.key;
+                const out = soldOut && soldOut(s);
+                return (
+                  <button key={s.key} type="button" role="radio" aria-checked={on} onClick={() => onSelect && onSelect(s.key)} style={{ textAlign: "start", cursor: "pointer", font: "inherit", fontFamily: "var(--font-sans)", background: on ? "var(--purple-tint)" : "var(--white)", border: "1.5px solid " + (on ? "var(--purple)" : "var(--rule)"), borderRadius: "var(--radius-card)", padding: "12px 14px", display: "grid", gap: 3, color: "var(--ink)" }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, fontFamily: "var(--font-numeric)" }}>{sizeOf(s) + ml}</span>
+                    <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{out ? window.copy("cta.outofstock", "Out of stock", "خلص من المخزون") : window.money(s.price_egp)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <Button fullWidth disabled={price1 == null || outOfStock} onClick={() => onAdd(v1 ? v1.key : "1jar")}>
           {outOfStock ? window.copy("cta.outofstock", "Out of stock", "خلص من المخزون")
             : added ? window.copy("hero.added", "Added to cart", "تمت الإضافة")
