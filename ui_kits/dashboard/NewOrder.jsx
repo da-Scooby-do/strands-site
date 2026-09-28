@@ -15,7 +15,7 @@ function NewOrder({ open, onClose, onCreated }) {
 
   React.useEffect(() => {
     if (!open || !window.SB_READY) return;
-    window.sb.from("product_variants").select("key,label_en,price_egp,active").eq("active", true).order("sort").then(({ data }) => {
+    window.sb.from("product_variants").select("key,label_en,size_ml,price_egp,active").eq("active", true).order("sort").then(({ data }) => {
       if (data) { setVariants(data); setItems((it) => it.map((x) => ({ ...x, variant_key: x.variant_key || (data[0] && data[0].key) || "" }))); }
     });
   }, [open]);
@@ -85,7 +85,7 @@ function NewOrder({ open, onClose, onCreated }) {
             <span style={lbl}>Items</span>
             {items.map((it, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 80px auto auto", gap: "var(--space-2)", alignItems: "end" }}>
-                <Select label={i === 0 ? "Product" : ""} value={it.variant_key} onChange={(v) => setItem(i, "variant_key", v)} options={variants.map((v) => ({ value: v.key, label: v.label_en + " — " + egp(v.price_egp) }))} />
+                <Select label={i === 0 ? "Product" : ""} value={it.variant_key} onChange={(v) => setItem(i, "variant_key", v)} options={variants.map((v) => ({ value: v.key, label: (v.size_ml ? v.size_ml + " ml · " : "") + v.label_en + " — " + egp(v.price_egp) }))} />
                 <Input label={i === 0 ? "Qty" : ""} value={String(it.qty)} onChange={(v) => setItem(i, "qty", v.replace(/[^0-9]/g, ""))} />
                 <div style={{ fontFamily: "var(--font-numeric)", height: "var(--input-h)", display: "grid", alignItems: "center", minWidth: 70 }}>{egp(priceOf(it.variant_key) * (Number(it.qty) || 0))}</div>
                 <div style={{ height: "var(--input-h)", display: "grid", alignItems: "center" }}>

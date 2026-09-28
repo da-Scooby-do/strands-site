@@ -78,7 +78,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
 
   const lines = (cart || []).map((c) => {
     const v = (variants || []).find((x) => x.key === c.key) || { key: c.key, label_en: c.key, label_ar: c.key, price_egp: 0 };
-    return { key: c.key, qty: c.qty, label: ar ? (v.label_ar || v.label_en) : v.label_en, price: v.price_egp, lineTotal: v.price_egp * c.qty };
+    const label = ar ? (v.label_ar || v.label_en) : v.label_en;
+    const max = typeof maxQty === "function" ? maxQty(c.key) : maxQty;
+    return { key: c.key, qty: c.qty, label: v.size_ml ? v.size_ml + (ar ? " مل · " : " ml · ") + label : label, price: v.price_egp, lineTotal: v.price_egp * c.qty, max };
   });
   const subtotal = lines.reduce((a, l) => a + l.lineTotal, 0);
   const count = lines.reduce((a, l) => a + l.qty, 0);
@@ -259,9 +261,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <button type="button" aria-label={T("Fewer", "أقل")} onClick={() => onSetQty(l.key, l.qty - 1)} style={stepBtn}>–</button>
                       <span style={{ minWidth: 22, textAlign: "center", fontFamily: "var(--font-numeric)" }}>{l.qty}</span>
-                      <button type="button" aria-label={T("More", "أكتر")} disabled={Number.isFinite(maxQty) && l.qty >= maxQty} onClick={() => onSetQty(l.key, l.qty + 1)} style={Number.isFinite(maxQty) && l.qty >= maxQty ? { ...stepBtn, opacity: 0.4, cursor: "not-allowed" } : stepBtn}>+</button>
+                      <button type="button" aria-label={T("More", "أكتر")} disabled={Number.isFinite(l.max) && l.qty >= l.max} onClick={() => onSetQty(l.key, l.qty + 1)} style={Number.isFinite(l.max) && l.qty >= l.max ? { ...stepBtn, opacity: 0.4, cursor: "not-allowed" } : stepBtn}>+</button>
                       <button type="button" onClick={() => onRemove(l.key)} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-fine-size)", marginInlineStart: 6 }}>{window.copy("co.remove", "Remove", "إزالة")}</button>
-                      {Number.isFinite(maxQty) && l.qty >= maxQty && <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", marginInlineStart: 4 }}>{T("Max in stock", "الحد المتاح")}</span>}
+                      {Number.isFinite(l.max) && l.qty >= l.max && <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", marginInlineStart: 4 }}>{T("Max in stock", "الحد المتاح")}</span>}
                     </div>
                   </div>
                   <span style={{ fontFamily: "var(--font-numeric)", fontWeight: 600 }}>{money(l.lineTotal)}</span>

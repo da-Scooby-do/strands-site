@@ -47,7 +47,7 @@ function emailStatusOf(nr){
 }
 window.emailStatusOf=emailStatusOf;
 function mapOrder(o){
-  const items=(o.order_items||[]).map(i=>({n:i.title_en,q:i.qty,p:i.unit_price}));
+  const items=(o.order_items||[]).map(i=>({n:i.title_en+(i.meta_en?" — "+i.meta_en:""),q:i.qty,p:i.unit_price}));
   const events=(o.order_events||[]).slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).map(e=>(
     {s:ST_LABEL[e.status]||e.status,t:fmtDT(e.created_at),notify:e.notify_result||null,to:e.notified_email||o.email}
   ));
