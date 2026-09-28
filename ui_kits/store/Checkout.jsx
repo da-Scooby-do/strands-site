@@ -16,35 +16,95 @@ function egPhone(n) {
   if (d[0] === "0") return "+20" + d.slice(1);
   return "+20" + d;
 }
-// Country codes for the phone picker — Egypt default, then Gulf + common.
-const DIAL_CODES = [
-  { f: "🇪🇬", d: "+20", n: "Egypt" }, { f: "🇸🇦", d: "+966", n: "Saudi Arabia" }, { f: "🇦🇪", d: "+971", n: "UAE" },
-  { f: "🇰🇼", d: "+965", n: "Kuwait" }, { f: "🇶🇦", d: "+974", n: "Qatar" }, { f: "🇧🇭", d: "+973", n: "Bahrain" },
-  { f: "🇴🇲", d: "+968", n: "Oman" }, { f: "🇯🇴", d: "+962", n: "Jordan" }, { f: "🇱🇧", d: "+961", n: "Lebanon" },
-  { f: "🇸🇩", d: "+249", n: "Sudan" }, { f: "🇱🇾", d: "+218", n: "Libya" }, { f: "🇲🇦", d: "+212", n: "Morocco" },
-  { f: "🇺🇸", d: "+1", n: "United States" }, { f: "🇬🇧", d: "+44", n: "United Kingdom" }, { f: "🇩🇪", d: "+49", n: "Germany" },
-  { f: "🇫🇷", d: "+33", n: "France" }, { f: "🇮🇹", d: "+39", n: "Italy" }, { f: "🇹🇷", d: "+90", n: "Türkiye" },
-];
+// Every country's calling code as ISO + dial digits. Names (EN/AR) come from the
+// browser's Intl.DisplayNames so the list stays short; flags are built from the ISO.
+const DIAL_RAW = "AF93 AX358 AL355 DZ213 AS1684 AD376 AO244 AI1264 AG1268 AR54 AM374 AW297 AU61 AT43 AZ994 BS1242 BH973 BD880 BB1246 BY375 BE32 BZ501 BJ229 BM1441 BT975 BO591 BQ599 BA387 BW267 BR55 IO246 VG1284 BN673 BG359 BF226 BI257 KH855 CM237 CA1 CV238 KY1345 CF236 TD235 CL56 CN86 CX61 CC61 CO57 KM269 CG242 CD243 CK682 CR506 CI225 HR385 CU53 CW599 CY357 CZ420 DK45 DJ253 DM1767 DO1809 EC593 EG20 SV503 GQ240 ER291 EE372 SZ268 ET251 FK500 FO298 FJ679 FI358 FR33 GF594 PF689 GA241 GM220 GE995 DE49 GH233 GI350 GR30 GL299 GD1473 GP590 GU1671 GT502 GG44 GN224 GW245 GY592 HT509 HN504 HK852 HU36 IS354 IN91 ID62 IR98 IQ964 IE353 IM44 IL972 IT39 JM1876 JP81 JE44 JO962 KZ7 KE254 KI686 XK383 KW965 KG996 LA856 LV371 LB961 LS266 LR231 LY218 LI423 LT370 LU352 MO853 MG261 MW265 MY60 MV960 ML223 MT356 MH692 MQ596 MR222 MU230 YT262 MX52 FM691 MD373 MC377 MN976 ME382 MS1664 MA212 MZ258 MM95 NA264 NR674 NP977 NL31 NC687 NZ64 NI505 NE227 NG234 NU683 NF672 KP850 MK389 MP1670 NO47 OM968 PK92 PW680 PS970 PA507 PG675 PY595 PE51 PH63 PL48 PT351 PR1787 QA974 RE262 RO40 RU7 RW250 BL590 SH290 KN1869 LC1758 MF590 PM508 VC1784 WS685 SM378 ST239 SA966 SN221 RS381 SC248 SL232 SG65 SX1721 SK421 SI386 SB677 SO252 ZA27 KR82 SS211 ES34 LK94 SD249 SR597 SJ47 SE46 CH41 SY963 TW886 TJ992 TZ255 TH66 TL670 TG228 TK690 TO676 TT1868 TN216 TR90 TM993 TC1649 TV688 UG256 UA380 AE971 GB44 US1 UY598 UZ998 VU678 VA39 VE58 VN84 VI1340 WF681 YE967 ZM260 ZW263";
+// When several countries share a code, a saved number maps back to this one.
+const DIAL_PREFERRED = { "+1": "US", "+7": "RU", "+44": "GB", "+61": "AU", "+39": "IT", "+47": "NO", "+262": "RE", "+358": "FI", "+590": "GP", "+599": "CW" };
+function regionNames(locale) { try { return new Intl.DisplayNames([locale], { type: "region" }); } catch (e) { return null; } }
+const DN_EN = regionNames("en"), DN_AR = regionNames("ar");
+const flagOf = (iso) => String.fromCodePoint(...[...iso].map((c) => 0x1f1a5 + c.charCodeAt(0)));
+const DIAL_CODES = DIAL_RAW.split(" ").map((t) => {
+  const iso = t.slice(0, 2), d = "+" + t.slice(2);
+  const n = (DN_EN && DN_EN.of(iso)) || iso, a = (DN_AR && DN_AR.of(iso)) || n;
+  return { iso, f: flagOf(iso), d, n, a };
+}).sort((x, y) => (x.iso === "EG" ? -1 : y.iso === "EG" ? 1 : x.n.localeCompare(y.n)));
+const DIAL_BY_LEN = DIAL_CODES.slice().sort((a, b) => b.d.length - a.d.length);
 function splitPhone(value) {
   const v = String(value || "").replace(/[^\d+]/g, "");
   if (v[0] === "+") {
-    const m = DIAL_CODES.slice().sort((a, b) => b.d.length - a.d.length).find((x) => v.startsWith(x.d));
+    const m = DIAL_BY_LEN.find((x) => v.startsWith(x.d));
     if (m) return { code: m.d, local: v.slice(m.d.length) };
     return { code: "+20", local: v.replace(/^\+/, "") };
   }
   if (v && v[0] === "0") return { code: "+20", local: v.slice(1) };
   return { code: "+20", local: v };
 }
+const defaultIso = (code) => DIAL_PREFERRED[code] || ((DIAL_CODES.find((c) => c.d === code) || {}).iso) || "EG";
+const norm = (t) => String(t || "").toLowerCase().normalize("NFKD").replace(/[̀-ًͯ-ٟ]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي");
+
+/* Searchable country-code picker: type a country (English or Arabic) or a code. */
+function DialPicker({ iso, onPick, ar }) {
+  const [open, setOpen] = React.useState(false);
+  const [q, setQ] = React.useState("");
+  const wrap = React.useRef(null), search = React.useRef(null);
+  const cur = DIAL_CODES.find((c) => c.iso === iso) || DIAL_CODES[0];
+  React.useEffect(() => {
+    if (!open) return;
+    setQ(""); setTimeout(() => search.current && search.current.focus(), 0);
+    const out = (e) => { if (wrap.current && !wrap.current.contains(e.target)) setOpen(false); };
+    const esc = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", out); document.addEventListener("touchstart", out); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", out); document.removeEventListener("touchstart", out); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const nq = norm(q.trim()), digits = q.replace(/\D/g, "");
+  const list = !nq ? DIAL_CODES : DIAL_CODES.filter((c) =>
+    (digits && digits === q.replace(/[\s+]/g, "") ? c.d.slice(1).startsWith(digits)
+      : norm(c.n).includes(nq) || norm(c.a).includes(nq) || c.iso.toLowerCase() === nq));
+  const pick = (c) => { onPick(c); setOpen(false); };
+  const box = { boxSizing: "border-box", height: 46, border: "1px solid var(--rule)", borderRadius: "var(--radius-control)", padding: "0 10px", font: "inherit", fontFamily: "var(--font-sans)", fontSize: 15, background: "var(--white)", color: "var(--ink)" };
+  return (
+    <div ref={wrap} style={{ position: "relative", flex: "0 0 auto" }}>
+      <button type="button" aria-haspopup="listbox" aria-expanded={open} aria-label={ar ? "كود الدولة" : "Country code"} onClick={() => setOpen(!open)} style={{ ...box, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", whiteSpace: "nowrap" }}>
+        <span>{cur.f}</span><bdi dir="ltr" style={{ fontFamily: "var(--font-numeric)", direction: "ltr", unicodeBidi: "isolate" }}>{cur.d}</bdi><Icon name="chevron-down" size={14} />
+      </button>
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineStart: 0, zIndex: 5, width: "min(300px, calc(100vw - 48px))", background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", boxShadow: "0 12px 32px rgba(0,0,0,.14)", overflow: "hidden" }}>
+          <div style={{ padding: 8, borderBottom: "1px solid var(--rule)" }}>
+            <input ref={search} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={ar ? "ابحثي بالدولة أو الكود" : "Search country or code"}
+              onKeyDown={(e) => { if (e.key === "Enter" && list[0]) { e.preventDefault(); pick(list[0]); } }}
+              style={{ ...box, height: 40, width: "100%" }} />
+          </div>
+          <ul role="listbox" style={{ listStyle: "none", margin: 0, padding: 4, maxHeight: 260, overflowY: "auto" }}>
+            {list.map((c) => (
+              <li key={c.iso} role="option" aria-selected={c.iso === cur.iso} onClick={() => pick(c)}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 6, cursor: "pointer", fontSize: 14, background: c.iso === cur.iso ? "var(--purple-tint)" : "transparent" }}
+                onMouseEnter={(e) => { if (c.iso !== cur.iso) e.currentTarget.style.background = "var(--cream)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = c.iso === cur.iso ? "var(--purple-tint)" : "transparent"; }}>
+                <span>{c.f}</span>
+                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ar ? c.a : c.n}</span>
+                <bdi dir="ltr" style={{ color: "var(--ink-2)", fontFamily: "var(--font-numeric)", direction: "ltr", unicodeBidi: "isolate" }}>{c.d}</bdi>
+              </li>
+            ))}
+            {!list.length && <li style={{ padding: "12px 10px", fontSize: 14, color: "var(--ink-2)" }}>{ar ? "مفيش نتايج" : "No matches"}</li>}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 function PhoneField({ label, value, onChange, hint, placeholder }) {
+  const ar = window.useLang() === "AR";
   const { code, local } = splitPhone(value);
+  // Remember the exact country picked (several share +1, +7, +44…); fall back to the code's usual one.
+  const [iso, setIso] = React.useState(() => defaultIso(code));
+  const shownIso = (DIAL_CODES.find((c) => c.iso === iso) || {}).d === code ? iso : defaultIso(code);
   const box = { boxSizing: "border-box", height: 46, border: "1px solid var(--rule)", borderRadius: "var(--radius-control)", padding: "0 12px", font: "inherit", fontFamily: "var(--font-sans)", fontSize: 15, background: "var(--white)", color: "var(--ink)" };
   return (
     <div style={{ display: "grid", gap: 6 }}>
       <label style={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--ink-2)", fontFamily: "var(--font-sans)" }}>{label}</label>
       <div style={{ display: "flex", gap: 8 }}>
-        <select value={code} onChange={(e) => onChange(e.target.value + local)} aria-label="Country code" style={{ ...box, width: "auto", flex: "0 0 auto", maxWidth: 128, cursor: "pointer" }}>
-          {DIAL_CODES.map((c) => <option key={c.n} value={c.d}>{c.f} {c.d} {c.n}</option>)}
-        </select>
+        <DialPicker iso={shownIso} ar={ar} onPick={(c) => { setIso(c.iso); onChange(c.d + local); }} />
         <input type="tel" inputMode="tel" value={local} onChange={(e) => onChange(code + e.target.value.replace(/\D/g, ""))} placeholder={placeholder} style={{ ...box, flex: 1, minWidth: 0 }} />
       </div>
       {hint && <span style={{ fontSize: 12, color: "var(--ink-2)" }}>{hint}</span>}
