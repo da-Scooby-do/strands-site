@@ -20,7 +20,7 @@ function parseCSV(text) {
   if (field !== "" || row.length) { row.push(field); rows.push(row); }
   return rows.filter((r) => r.some((x) => String(x).trim() !== ""));
 }
-const TEMPLATE_COLS = ["name", "phone", "whatsapp", "governorate", "street", "area", "landmark", "jars", "qty", "shipping", "discount", "status", "source", "note"];
+const TEMPLATE_COLS = ["name", "phone", "whatsapp", "governorate", "street", "area", "landmark", "size", "jars", "qty", "shipping", "discount", "status", "source", "note"];
 
 function ImportOrders({ open, onClose, onDone }) {
   const [variants, setVariants] = React.useState([]);
@@ -34,11 +34,12 @@ function ImportOrders({ open, onClose, onDone }) {
 
   React.useEffect(() => {
     if (!open || !window.SB_READY) return;
-    window.sb.from("product_variants").select("key,jars").then(({ data }) => { if (data) setVariants(data); });
+    window.sb.from("product_variants").select("key,jars,size_ml,sort").order("sort").then(({ data }) => { if (data) setVariants(data); });
     setRows(null); setResult(null); setErr(""); setFileName(""); setProgress(null);
   }, [open]);
 
-  const variantByJars = {}; variants.forEach((v) => { variantByJars[v.jars] = v.key; });
+  // Match on jars AND size — 300 ml and 500 ml are both "1 jar". A variant without its own size is 300 ml.
+  const variantFor = (jars, size) => (variants.find((v) => v.jars === jars && (v.size_ml || 300) === size) || {}).key;
   const validKeys = new Set(variants.map((v) => v.key));
 
   function onFile(e) {
@@ -62,6 +63,7 @@ function ImportOrders({ open, onClose, onDone }) {
           area: get(r, "area"),
           landmark: get(r, "landmark"),
           jars: get(r, "jars", "bundle"),
+          size: get(r, "size", "ml"),
           variant: get(r, "variant", "variant_key"),
           qty: get(r, "qty", "quantity") || "1",
           shipping: get(r, "shipping"),
@@ -79,7 +81,8 @@ function ImportOrders({ open, onClose, onDone }) {
   function variantKeyFor(r) {
     if (r.variant && validKeys.has(r.variant)) return r.variant;
     const j = parseInt(String(r.jars).replace(/[^0-9]/g, ""), 10);
-    if (j && variantByJars[j]) return variantByJars[j];
+    const s = parseInt(String(r.size).replace(/[^0-9]/g, ""), 10) || 300;
+    if (j && variantFor(j, s)) return variantFor(j, s);
     return null;
   }
 
@@ -94,7 +97,7 @@ function ImportOrders({ open, onClose, onDone }) {
       if (!r.name) { fail.push({ row: rowNo, reason: "missing name" }); continue; }
       if (!r.phone) { fail.push({ row: rowNo, reason: "missing phone" }); continue; }
       const vkey = variantKeyFor(r);
-      if (!vkey) { fail.push({ row: rowNo, reason: "unknown product (set jars = 1, 2 or 3)" }); continue; }
+      if (!vkey) { fail.push({ row: rowNo, reason: "unknown product (set size = 300 or 500, jars = 1, 2 or 3)" }); continue; }
       const payload = {
         source: r.source, status: r.status || "confirmed",
         full_name: r.name, phone: r.phone, phone2: r.phone2, governorate: r.governorate,
@@ -116,8 +119,8 @@ function ImportOrders({ open, onClose, onDone }) {
 
   function downloadTemplate() {
     window.downloadCSV("strands-orders-template.csv", TEMPLATE_COLS, [
-      ["Mona Adel", "01012345678", "01012345678", "Cairo", "12 Sharia Gamal", "Zamalek", "", "1", "1", "60", "0", "confirmed", "whatsapp", "paid on delivery"],
-      ["Salma Ramy", "01198765432", "", "Alexandria", "8 Sharia Fouad", "Sidi Gaber", "Blue building", "2", "1", "0", "0", "confirmed", "instagram", ""],
+      ["Mona Adel", "01012345678", "01012345678", "Cairo", "12 Sharia Gamal", "Zamalek", "", "500", "1", "1", "60", "0", "confirmed", "whatsapp", "paid on delivery"],
+      ["Salma Ramy", "01198765432", "", "Alexandria", "8 Sharia Fouad", "Sidi Gaber", "Blue building", "300", "2", "1", "0", "0", "confirmed", "instagram", ""],
     ]);
   }
 
@@ -132,7 +135,7 @@ function ImportOrders({ open, onClose, onDone }) {
         </header>
         <div style={{ padding: "var(--space-5)", display: "grid", gap: "var(--space-4)" }}>
           <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)", margin: 0, lineHeight: 1.6 }}>
-            Upload a CSV with one order per row. Columns: name, phone, whatsapp, governorate, street, area, landmark, <strong>jars</strong> (1, 2 or 3), qty, shipping, discount, status, source, note. Prices come from the product’s bundles automatically.
+            Upload a CSV with one order per row. Columns: name, phone, whatsapp, governorate, street, area, landmark, <strong>size</strong> (300 or 500 — blank means 300), <strong>jars</strong> (1, 2 or 3), qty, shipping, discount, status, source, note. Prices come from the product’s bundles automatically.
           </p>
           <Button variant="quiet" size="sm" onClick={downloadTemplate}>Download template</Button>
 

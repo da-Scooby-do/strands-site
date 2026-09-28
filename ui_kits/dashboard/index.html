@@ -46,8 +46,13 @@ function emailStatusOf(nr){
   return {label:"Failed", color:"#8A2B2B", bg:"#F6E5E5"};
 }
 window.emailStatusOf=emailStatusOf;
+// Size and jar count per line, read from the stored "300 ml · 2 jars" label.
+function itemFacts(i){ const m=String(i.meta_en||"").match(/(\d+)\s*ml/i), j=String(i.meta_en||"").match(/(\d+)\s*jar/i); return {size:m?+m[1]:null, jars:j?+j[1]:1}; }
+// Jars to pack per size across an order's items, e.g. {300:2, 500:1}.
+window.jarsBySize=function(items){ const out={}; (items||[]).forEach(i=>{ const k=i.size||"?"; out[k]=(out[k]||0)+(i.jars||1)*(i.q||1); }); return out; };
+window.itemsSummary=function(items){ const by=window.jarsBySize(items); return Object.keys(by).sort((a,b)=>a-b).map(k=>(k==="?"?"":k+" ml ")+"× "+by[k]).join(" · "); };
 function mapOrder(o){
-  const items=(o.order_items||[]).map(i=>({n:i.title_en+(i.meta_en?" — "+i.meta_en:""),q:i.qty,p:i.unit_price}));
+  const items=(o.order_items||[]).map(i=>({n:i.title_en+(i.meta_en?" — "+i.meta_en:""),q:i.qty,p:i.unit_price,k:i.variant_key,...itemFacts(i)}));
   const events=(o.order_events||[]).slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).map(e=>(
     {s:ST_LABEL[e.status]||e.status,t:fmtDT(e.created_at),notify:e.notify_result||null,to:e.notified_email||o.email}
   ));
