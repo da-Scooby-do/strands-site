@@ -38,11 +38,14 @@ function Orders({ orders, onOpen, onReload, onBulkAction }) {
   const exportCSV = () => {
     // Force phone numbers to text (="…") so Excel doesn't turn them into 2.0E+11.
     const xlText = (v) => v ? '="' + String(v).replace(/"/g, "") + '"' : "";
-    const headers = ["Order", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Items", "Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"];
+    // One numeric "jars" column per size (always 300 and 500) so Excel can total what to pack.
+    const sizes = Array.from(new Set([300, 500].concat(rows.flatMap((o) => o.items.map((i) => i.size).filter(Boolean))))).sort((a, b) => a - b);
+    const headers = ["Order", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Items"].concat(sizes.map((s) => s + " ml jars"), ["Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"]);
     const data = rows.map((o) => {
       const sub = o.items.reduce((a, i) => a + i.p * i.q, 0);
       const items = o.items.map((i) => i.n + " x" + i.q).join(" | ");
-      return [o.id, o.source, o.customer, xlText(o.phone), xlText(o.whatsapp), o.email, o.gov, o.area, o.street, o.landmark, items, sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note];
+      const by = window.jarsBySize(o.items);
+      return [o.id, o.source, o.customer, xlText(o.phone), xlText(o.whatsapp), o.email, o.gov, o.area, o.street, o.landmark, items].concat(sizes.map((s) => by[s] || 0), [sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note]);
     });
     window.downloadCSV("strands-orders.csv", headers, data);
   };
@@ -87,6 +90,7 @@ function Orders({ orders, onOpen, onReload, onBulkAction }) {
           {r.pay === "instapay" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "#FBEFD8", color: "#7A5200", whiteSpace: "nowrap" }}>InstaPay</span>}
           {r.pay === "instapay" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: r.paid ? "#E9F2E4" : "#F6E5E5", color: r.paid ? "#3C5A2C" : "#8A2B2B", whiteSpace: "nowrap" }}>{r.paid ? "Paid" : "Unpaid"}</span>}
         </span> },
+        { key: "items", label: "Items", render: (r) => <span style={{ whiteSpace: "nowrap", fontFamily: "var(--font-numeric)" }}>{window.itemsSummary(r.items) || "—"}</span> },
         { key: "phone", label: "Phone", numeric: true },
         { key: "address", label: "Address", maxWidth: "220px", render: (r) => r.street + ", " + r.area },
         { key: "total", label: "Total", numeric: true, align: "end", render: (r) => {
