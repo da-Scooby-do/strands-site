@@ -28,6 +28,7 @@ function Footer() {
   const stores = [
     { name: C("stores.s1.name", "Sheel Store", "متجر شيل"), area: C("stores.s1.area", "Madinaty — Craft Zone, Block 6", "مدينتي — كرافت زون، بلوك ٦"), map: "https://maps.app.goo.gl/pqCYUzCYoNH7VbAj8", phone: "+20 104 488 2958" },
     { name: C("stores.s2.name", "Glow Up", "جلو أب"), area: C("stores.s2.area", "Faisal — Al-Talbiya, Haram", "فيصل — الطالبية، الهرم"), map: "https://maps.app.goo.gl/ZTiPDXJc2wc2efy48", phone: "+20 11 5434 2207" },
+    { name: C("stores.s3.name", "Nubia Store", "نوبيه استور"), area: C("stores.s3.area", "Nasr City — 53 Ahmed Kasem Gouda", "مدينة نصر — ٥٣ أحمد قاسم جودة"), map: "https://maps.app.goo.gl/2jfG8HgdN7DkuNvp8", phone: "+20 11 4432 3672" },
   ];
   const cols = [
     { h: C("footer.shop", "Shop", "المتجر"), links: [
@@ -76,7 +77,7 @@ function Footer() {
           </div>
           <div style={{ borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-5)", display: "grid", gap: "var(--space-4)" }}>
             <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--green-on-anchor)" }}>{C("stores.heading", "Where to buy", "أماكن البيع")}</span>
-            <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr"), gap: "var(--space-5) var(--space-6)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "repeat(" + stores.length + ", 1fr)"), gap: "var(--space-5) var(--space-6)" }}>
               {stores.map((s) => (
                 <div key={s.name} style={{ display: "grid", gap: "var(--space-2)", alignContent: "start" }}>
                   <span style={{ fontSize: "var(--text-small)", color: "var(--white)", fontWeight: 600 }}>{s.name}</span>
