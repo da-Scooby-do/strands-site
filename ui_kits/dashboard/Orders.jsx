@@ -6,7 +6,7 @@ const BULK_ACTIONS = [
   { key: "delivered", label: "Delivered" },
 ];
 const BULK_DONE_LABEL = { confirmed: "Confirmed", with_courier: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned" };
-function Orders({ orders, onOpen, onReload, onBulkAction }) {
+function Orders({ orders, onOpen, onReload, onBulkAction, market, markets }) {
   const [filter, setFilter] = React.useState("To action");
   const [q, setQ] = React.useState("");
   const [newOpen, setNewOpen] = React.useState(false);
@@ -40,19 +40,19 @@ function Orders({ orders, onOpen, onReload, onBulkAction }) {
     const xlText = (v) => v ? '="' + String(v).replace(/"/g, "") + '"' : "";
     // One numeric "jars" column per size (always 300 and 500) so Excel can total what to pack.
     const sizes = Array.from(new Set([300, 500].concat(rows.flatMap((o) => o.items.map((i) => i.size).filter(Boolean))))).sort((a, b) => a - b);
-    const headers = ["Order", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Items"].concat(sizes.map((s) => s + " ml jars"), ["Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"]);
+    const headers = ["Order", "Country", "Currency", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Items"].concat(sizes.map((s) => s + " ml jars"), ["Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"]);
     const data = rows.map((o) => {
       const sub = o.items.reduce((a, i) => a + i.p * i.q, 0);
       const items = o.items.map((i) => i.n + " x" + i.q).join(" | ");
       const by = window.jarsBySize(o.items);
-      return [o.id, o.source, o.customer, xlText(o.phone), xlText(o.whatsapp), o.email, o.gov, o.area, o.street, o.landmark, items].concat(sizes.map((s) => by[s] || 0), [sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note]);
+      return [o.id, o.country, o.currency, o.source, o.customer, xlText(o.phone), xlText(o.whatsapp), o.email, o.gov, o.area, o.street, o.landmark, items].concat(sizes.map((s) => by[s] || 0), [sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note]);
     });
-    window.downloadCSV("strands-orders.csv", headers, data);
+    window.downloadCSV("strands-orders-" + (market ? market.code : "all") + ".csv", headers, data);
   };
   return (
     <div>
-      <window.DashNewOrder open={newOpen} onClose={() => setNewOpen(false)} onCreated={() => { if (onReload) onReload(); }} />
-      <window.DashImportOrders open={importOpen} onClose={() => setImportOpen(false)} onDone={() => { if (onReload) onReload(); }} />
+      <window.DashNewOrder open={newOpen} country={market ? market.code : "EG"} markets={markets} onClose={() => setNewOpen(false)} onCreated={() => { if (onReload) onReload(); }} />
+      <window.DashImportOrders open={importOpen} country={market ? market.code : "EG"} onClose={() => setImportOpen(false)} onDone={() => { if (onReload) onReload(); }} />
       <PageHeader label="Orders" title="What needs packing." action={<span style={{ display: "inline-flex", gap: "var(--space-2)", flexWrap: "wrap" }}><Button size="sm" onClick={() => setNewOpen(true)}>New order</Button><Button size="sm" variant="quiet" onClick={() => setImportOpen(true)}>Import CSV</Button><Button size="sm" variant="quiet" onClick={exportCSV}>Export CSV</Button></span>} />
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginBottom: "var(--space-4)" }}>
         {FILTERS.map((f) => (
@@ -86,9 +86,10 @@ function Orders({ orders, onOpen, onReload, onBulkAction }) {
         { key: "id", label: "Order", numeric: true },
         { key: "customer", label: "Customer" },
         { key: "source", label: "From", render: (r) => <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+          {!market && <span title={r.country} style={{ fontSize: 14 }}>{window.marketFlag(r.country)}</span>}
           {(r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--green)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span>}
-          {r.pay === "instapay" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "#FBEFD8", color: "#7A5200", whiteSpace: "nowrap" }}>InstaPay</span>}
-          {r.pay === "instapay" && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: r.paid ? "#E9F2E4" : "#F6E5E5", color: r.paid ? "#3C5A2C" : "#8A2B2B", whiteSpace: "nowrap" }}>{r.paid ? "Paid" : "Unpaid"}</span>}
+          {(r.pay === "instapay" || r.pay === "bank") && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "#FBEFD8", color: "#7A5200", whiteSpace: "nowrap" }}>{r.pay === "bank" ? "Bank" : "InstaPay"}</span>}
+          {(r.pay === "instapay" || r.pay === "bank") && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: r.paid ? "#E9F2E4" : "#F6E5E5", color: r.paid ? "#3C5A2C" : "#8A2B2B", whiteSpace: "nowrap" }}>{r.paid ? "Paid" : "Unpaid"}</span>}
         </span> },
         { key: "items", label: "Items", render: (r) => <span style={{ whiteSpace: "nowrap", fontFamily: "var(--font-numeric)" }}>{window.itemsSummary(r.items) || "—"}</span> },
         { key: "phone", label: "Phone", numeric: true },
@@ -96,7 +97,7 @@ function Orders({ orders, onOpen, onReload, onBulkAction }) {
         { key: "total", label: "Total", numeric: true, align: "end", render: (r) => {
           const t = (r.total != null) ? r.total : (r.items.reduce((a, i) => a + i.p * i.q, 0) - (r.discount || 0) + r.shipping);
           return <span style={{ display: "inline-grid", justifyItems: "end", gap: 2 }}>
-            <span style={{ fontFamily: "var(--font-numeric)" }}>{t.toLocaleString("en-US")} EGP</span>
+            <span style={{ fontFamily: "var(--font-numeric)", whiteSpace: "nowrap" }}>{window.fmtMoney(t, r.currency)}</span>
             {r.discount > 0 && <span style={{ fontSize: 10, color: "var(--green)", fontFamily: "var(--font-sans)", whiteSpace: "nowrap" }}>−{r.discount.toLocaleString("en-US")}{r.promo ? " · " + r.promo : ""}</span>}
           </span>;
         } },

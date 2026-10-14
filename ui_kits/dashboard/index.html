@@ -17,6 +17,7 @@
 <script type="text/babel" src="Delivery.jsx"></script>
 <script type="text/babel" src="ReviewQuotes.jsx"></script>
 <script type="text/babel" src="Waitlist.jsx"></script>
+<script type="text/babel" src="Countries.jsx"></script>
 <script type="text/babel" src="Emails.jsx"></script>
 <script type="text/babel" data-presets="react">
 const ST_LABEL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",with_courier:"With courier",delivered:"Delivered",cancelled:"Cancelled",returned:"Returned"};
@@ -58,7 +59,24 @@ function mapOrder(o){
   ));
   const emailResult=events.length?events[events.length-1].notify:null;
   return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,whatsapp:o.phone2||null,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,pay:o.payment_method||"cod",paid:!!o.paid_at,
-    source:o.source||"website",items,shipping:o.shipping||0,discount:o.discount||0,promo:o.promo_code||null,total:o.total,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
+    source:o.source||"website",country:o.country||"EG",currency:o.currency||"EGP",items,shipping:o.shipping||0,discount:o.discount||0,promo:o.promo_code||null,total:o.total,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
+}
+
+// Countries the shop sells in. Read from public.markets; these defaults are used
+// until that table exists, so the dashboard keeps working on the old database.
+const DEFAULT_MARKETS=[{code:"EG",name_en:"Egypt",currency:"EGP"},{code:"SA",name_en:"Saudi Arabia",currency:"SAR"},{code:"SD",name_en:"Sudan",currency:"SDG"}];
+const DASH_MKT_KEY="strands-dash-market";
+window.marketFlag=(c)=>((window.MARKET_INFO||{})[c]||{}).flag||"";
+// "1,200 EGP · 300 SAR" — totals kept apart per currency, never added together.
+window.sumByCurrency=function(list,fn){ const by={}; (list||[]).forEach(o=>{ by[o.currency||"EGP"]=(by[o.currency||"EGP"]||0)+fn(o); }); const ks=Object.keys(by); return ks.length?ks.map(c=>window.fmtMoney(by[c],c)).join(" · "):window.fmtMoney(0,"EGP"); };
+function CountryBar({markets,value,onChange,orders}){
+  const open=(c)=>orders.filter(o=>(c==="ALL"||o.country===c)&&!["Delivered","Cancelled","Returned"].includes(o.status)).length;
+  const pill=(on)=>({font:"inherit",fontFamily:"var(--font-sans)",fontSize:"var(--text-small)",padding:"8px 14px",borderRadius:"var(--radius-pill)",cursor:"pointer",border:"1.5px solid "+(on?"var(--purple)":"var(--rule)"),background:on?"var(--purple)":"var(--white)",color:on?"var(--white)":"var(--ink)",display:"inline-flex",alignItems:"center",gap:8});
+  const badge=(n,on)=>n?<span style={{fontSize:11,minWidth:20,padding:"1px 7px",borderRadius:"var(--radius-pill)",background:on?"rgba(255,255,255,.22)":"var(--purple-tint)",color:on?"var(--white)":"var(--purple)"}}>{n}</span>:null;
+  return <div role="tablist" aria-label="Country" style={{display:"flex",gap:"var(--space-2)",flexWrap:"wrap",marginBottom:"var(--space-5)"}}>
+    {markets.map(m=>{ const on=value===m.code; return <button key={m.code} type="button" role="tab" aria-selected={on} onClick={()=>onChange(m.code)} style={pill(on)}><span>{window.marketFlag(m.code)}</span>{m.name_en}{badge(open(m.code),on)}</button>; })}
+    <button type="button" role="tab" aria-selected={value==="ALL"} onClick={()=>onChange("ALL")} style={pill(value==="ALL")}>All countries{badge(open("ALL"),value==="ALL")}</button>
+  </div>;
 }
 
 function Splash({msg}){return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",color:"var(--ink-2)",fontFamily:"var(--font-sans)"}}>{msg}</div>;}
@@ -82,6 +100,10 @@ function App(){
   const [page,setPage]=React.useState("Overview");
   const [orders,setOrders]=React.useState([]);
   const [openId,setOpenId]=React.useState(null);
+  const [markets,setMarkets]=React.useState(DEFAULT_MARKETS);
+  const [mkt,setMkt]=React.useState(()=>{ try{ return localStorage.getItem(DASH_MKT_KEY)||"EG"; }catch(e){ return "EG"; } });
+  React.useEffect(()=>{ try{ localStorage.setItem(DASH_MKT_KEY,mkt); }catch(e){} },[mkt]);
+  const loadMarkets=()=>window.sb.from("markets").select("*").order("sort").then(({data,error})=>{ if(!error&&data&&data.length) setMarkets(data); },()=>{});
 
   React.useEffect(()=>{
     if(!window.SB_READY){ setReady(true); return; }
@@ -96,7 +118,7 @@ function App(){
       const r=await window.sb.rpc("is_admin");
       const ok=!r.error && r.data===true;
       setAdmin(ok);
-      if(ok) loadOrders();
+      if(ok){ loadOrders(); loadMarkets(); }
     })();
   },[session]);
 
@@ -160,10 +182,15 @@ function App(){
   if(admin===false) return <Splash msg="Taking you to your account…"/>;
 
   const go=(p)=>{setOpenId(null);setPage(p);};
+  // The country tabs filter Overview and Orders (and so the CSV export).
+  const shown=mkt==="ALL"?orders:orders.filter(o=>o.country===mkt);
+  const mktObj=markets.find(m=>m.code===mkt)||null;
+  const bar=<CountryBar markets={markets} value={mkt} onChange={(c)=>{setMkt(c);setOpenId(null);}} orders={orders}/>;
   let body;
   if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onReturned={()=>setStatus(order,"returned")} onSaveNote={saveNote} onSetPaid={(val)=>setPaid(order,val)}/>;
-  else if(page==="Overview") body=<window.DashOverview orders={orders} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/>;
-  else if(page==="Orders") body=<window.DashOrders orders={orders} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders} onBulkAction={bulkSetStatus}/>;
+  else if(page==="Overview") body=<>{bar}<window.DashOverview orders={shown} market={mktObj} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/></>;
+  else if(page==="Orders") body=<>{bar}<window.DashOrders orders={shown} market={mktObj} markets={markets} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders} onBulkAction={bulkSetStatus}/></>;
+  else if(page==="Countries") body=<window.DashCountries onSaved={loadMarkets}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
   else if(page==="Site text") body=<window.DashSiteText/>;
   else if(page==="Promo codes") body=<window.DashPromos/>;
@@ -173,6 +200,6 @@ function App(){
   else body=<window.DashEmails/>;
   return <window.DashShell page={page} setPage={go} onSignOut={()=>{window.sb.auth.signOut();setPage("Overview");setOpenId(null);}}>{body}</window.DashShell>;
 }
-const mount=()=>{ if(!window.DashEmails||!window.DASH||!window.DashProduct||!window.DashSiteText){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
+const mount=()=>{ if(!window.DashEmails||!window.DASH||!window.DashProduct||!window.DashSiteText||!window.DashCountries){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
 mount();
 </script></body></html>

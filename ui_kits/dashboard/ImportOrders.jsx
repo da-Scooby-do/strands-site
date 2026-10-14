@@ -20,9 +20,18 @@ function parseCSV(text) {
   if (field !== "" || row.length) { row.push(field); rows.push(row); }
   return rows.filter((r) => r.some((x) => String(x).trim() !== ""));
 }
-const TEMPLATE_COLS = ["name", "phone", "whatsapp", "governorate", "street", "area", "landmark", "size", "jars", "qty", "shipping", "discount", "status", "source", "note"];
+const TEMPLATE_COLS = ["country", "name", "phone", "whatsapp", "governorate", "street", "area", "landmark", "size", "jars", "qty", "shipping", "discount", "status", "source", "note"];
 
-function ImportOrders({ open, onClose, onDone }) {
+// "EG", "Egypt", "مصر", "Saudi", "KSA", "السعودية", "SD", "Sudan"… → country code.
+function countryCode(v, fallback) {
+  const t = String(v || "").trim().toLowerCase();
+  if (!t) return fallback || "EG";
+  if (/^(eg|egy|egypt|مصر)$/.test(t)) return "EG";
+  if (/^(sa|ksa|sau|saudi|saudi arabia|السعودية|السعوديه)$/.test(t)) return "SA";
+  if (/^(sd|sdn|sudan|السودان)$/.test(t)) return "SD";
+  return t.toUpperCase().slice(0, 2);
+}
+function ImportOrders({ open, onClose, onDone, country }) {
   const [variants, setVariants] = React.useState([]);
   const [rows, setRows] = React.useState(null);     // parsed data objects
   const [fileName, setFileName] = React.useState("");
@@ -55,6 +64,7 @@ function ImportOrders({ open, onClose, onDone }) {
         const idx = (name) => headers.indexOf(name);
         const get = (r, ...names) => { for (const n of names) { const k = idx(n); if (k >= 0) return String(r[k] || "").trim(); } return ""; };
         const data = grid.slice(1).map((r) => ({
+          country: countryCode(get(r, "country"), country && country !== "ALL" ? country : "EG"),
           name: get(r, "name", "full_name", "customer"),
           phone: get(r, "phone", "mobile"),
           phone2: get(r, "whatsapp", "phone2"),
@@ -99,7 +109,7 @@ function ImportOrders({ open, onClose, onDone }) {
       const vkey = variantKeyFor(r);
       if (!vkey) { fail.push({ row: rowNo, reason: "unknown product (set size = 300 or 500, jars = 1, 2 or 3)" }); continue; }
       const payload = {
-        source: r.source, status: r.status || "confirmed",
+        country: r.country, source: r.source, status: r.status || "confirmed",
         full_name: r.name, phone: r.phone, phone2: r.phone2, governorate: r.governorate,
         area: r.area, street: r.street, landmark: r.landmark,
         shipping: parseInt(String(r.shipping).replace(/[^0-9]/g, ""), 10) || 0,
@@ -109,7 +119,7 @@ function ImportOrders({ open, onClose, onDone }) {
       };
       const res = await window.sbRpc("create_manual_order", { payload });
       if (res && res.ok) ok++;
-      else fail.push({ row: rowNo, reason: (res && res.error) || "failed" });
+      else fail.push({ row: rowNo, reason: res && res.error === "no_price_for_country" ? "no price set for " + r.country + " (see Countries)" : res && res.error === "country_unknown" ? "unknown country " + r.country : (res && res.error) || "failed" });
     }
     setProgress({ done: rows.length, total: rows.length });
     setBusy(false);
@@ -119,8 +129,8 @@ function ImportOrders({ open, onClose, onDone }) {
 
   function downloadTemplate() {
     window.downloadCSV("strands-orders-template.csv", TEMPLATE_COLS, [
-      ["Mona Adel", "01012345678", "01012345678", "Cairo", "12 Sharia Gamal", "Zamalek", "", "500", "1", "1", "60", "0", "confirmed", "whatsapp", "paid on delivery"],
-      ["Salma Ramy", "01198765432", "", "Alexandria", "8 Sharia Fouad", "Sidi Gaber", "Blue building", "300", "2", "1", "0", "0", "confirmed", "instagram", ""],
+      ["EG", "Mona Adel", "01012345678", "01012345678", "Cairo", "12 Sharia Gamal", "Zamalek", "", "500", "1", "1", "60", "0", "confirmed", "whatsapp", "paid on delivery"],
+      ["SA", "Salma Ramy", "+966501234567", "", "Riyadh", "King Fahd Rd 12", "Olaya", "", "300", "1", "2", "25", "0", "confirmed", "instagram", ""],
     ]);
   }
 
@@ -135,7 +145,7 @@ function ImportOrders({ open, onClose, onDone }) {
         </header>
         <div style={{ padding: "var(--space-5)", display: "grid", gap: "var(--space-4)" }}>
           <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)", margin: 0, lineHeight: 1.6 }}>
-            Upload a CSV with one order per row. Columns: name, phone, whatsapp, governorate, street, area, landmark, <strong>size</strong> (300 or 500 — blank means 300), <strong>jars</strong> (1, 2 or 3), qty, shipping, discount, status, source, note. Prices come from the product’s bundles automatically.
+            Upload a CSV with one order per row. Columns: <strong>country</strong> (EG, SA or SD — blank means the country tab you’re on), name, phone, whatsapp, governorate, street, area, landmark, <strong>size</strong> (300 or 500 — blank means 300), <strong>jars</strong> (1, 2 or 3), qty, shipping, discount, status, source, note. Prices come from the product’s bundles automatically.
           </p>
           <Button variant="quiet" size="sm" onClick={downloadTemplate}>Download template</Button>
 
