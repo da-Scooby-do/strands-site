@@ -2,7 +2,7 @@ const { ProductGallery, Chip, StarRating, PriceBlock, Button, CollapsibleRow, Bu
 
 /* product + variants come from the database (owner-controlled in the dashboard).
    Nothing here is a hardcoded price; copy switches EN/AR with the language toggle. */
-function Hero({ onAdd, added, product, variants, status, sizes, selected, onSelect, soldOut }) {
+function Hero({ onAdd, added, product, variants, status, sizes, selected, onSelect, soldOut, market, markets, onMarket }) {
   const phone = window.useIsPhone();
   const lang = window.useLang();
   const ar = lang === "AR";
@@ -53,8 +53,11 @@ function Hero({ onAdd, added, product, variants, status, sizes, selected, onSele
         <p style={{ color: "var(--ink-2)", fontSize: "var(--text-body-size)", maxWidth: "42ch" }}>
           {tagline || window.copy("hero.tagline", "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.", "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر.")}
         </p>
+        {window.StrandsMarketSelect && <div><window.StrandsMarketSelect markets={markets} value={market ? market.code : "EG"} onChange={onMarket} /></div>}
         {price1 != null
-          ? <PriceBlock price={price1} note={window.copy("hero.priceNote", "Cash on delivery, 4–6 working days across Egypt.", "الدفع عند الاستلام، من ٤ لـ ٦ أيام عمل في كل مصر.")} />
+          ? <PriceBlock price={price1} currency={market && market.code !== "EG" && window.CURRENCY_LABEL[market.currency] ? window.CURRENCY_LABEL[market.currency][ar ? 1 : 0] : "EGP"} note={!market || market.code === "EG"
+              ? window.copy("hero.priceNote", "Cash on delivery, 4–6 working days across Egypt.", "الدفع عند الاستلام، من ٤ لـ ٦ أيام عمل في كل مصر.")
+              : ((ar ? market.eta_ar : market.eta_en) || ((ar ? "التوصيل إلى " + market.name_ar : "Delivery to " + market.name_en) + "."))} />
           : status === "error"
             ? <div style={{ fontSize: "var(--text-body-size)", color: "var(--ink-2)" }}>{window.copy("hero.priceError", "Price couldn’t load — tap Retry at the top of the page.", "السعر ماحمّلش — دوسي إعادة المحاولة فوق.")}</div>
             : <div aria-live="polite" style={{ fontFamily: "var(--font-numeric)", fontSize: 32, fontWeight: 500, color: "var(--ink-2)" }}>{window.copy("hero.priceLoading", "Loading price…", "بيحمّل السعر…")}</div>}
@@ -87,7 +90,8 @@ function Hero({ onAdd, added, product, variants, status, sizes, selected, onSele
           ))}
         </div>
         {v2 && <BundleCard
-          title={ar ? ("علبتين — وفّري " + (v2.save_egp || 0) + " ج.م") : ("2 jars — save " + (v2.save_egp || 0) + " EGP")}
+          title={market && market.code !== "EG" ? (ar ? "علبتين" : "2 jars")  /* the saving is set in EGP */
+            : ar ? ("علبتين — وفّري " + (v2.save_egp || 0) + " ج.م") : ("2 jars — save " + (v2.save_egp || 0) + " EGP")}
           saving={(ar ? v2.badge_ar : v2.badge_en) || (ar ? "الأكثر طلبًا" : "Bundle")}
           price={window.money(v2.price_egp)} onAdd={() => onAdd(v2.key)} />}
       </div>

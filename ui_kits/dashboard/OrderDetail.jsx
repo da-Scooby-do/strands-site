@@ -8,6 +8,7 @@ function Row({ k, v }) {
 }
 // Egyptian numbers to wa.me international format (drop leading 0, add 20).
 function waNumber(n) {
+  if (String(n || "").trim()[0] === "+") return String(n).replace(/\D/g, "");  // already international (+966…, +249…)
   let d = String(n || "").replace(/\D/g, "");
   if (!d) return "";
   if (d.slice(0, 2) === "20") return d;
@@ -28,7 +29,7 @@ function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, o
   return (
     <div>
       <button type="button" onClick={onBack} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: 0, color: "var(--green)", cursor: "pointer", fontSize: "var(--text-small)", marginBottom: "var(--space-4)" }}>← All orders</button>
-      <PageHeader label={"Order " + order.id} title={order.customer} action={<StatusPill status={order.status} />} />
+      <PageHeader label={"Order " + order.id + " · " + window.marketFlag(order.country) + " " + order.country} title={order.customer} action={<StatusPill status={order.status} />} />
       <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1.2fr 1fr"), gap: "var(--space-5)", alignItems: "start" }}>
         <div style={{ display: "grid", gap: "var(--space-5)" }}>
           <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
@@ -53,20 +54,20 @@ function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, o
             <div>
               {order.items.map((i) => (
                 <div key={i.n} style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-4)", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)" }}>
-                  <span>{i.n} × {i.q}</span><span style={{ fontFamily: "var(--font-numeric)" }}>{(i.p * i.q).toLocaleString("en-US")} EGP</span>
+                  <span>{i.n} × {i.q}</span><span style={{ fontFamily: "var(--font-numeric)" }}>{window.fmtMoney(i.p * i.q, order.currency)}</span>
                 </div>
               ))}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}><span>Subtotal</span><span style={{ fontFamily: "var(--font-numeric)" }}>{sub.toLocaleString("en-US")} EGP</span></div>
-              {order.discount > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--green)" }}><span>Discount{order.promo ? " · " + order.promo : ""}</span><span style={{ fontFamily: "var(--font-numeric)" }}>– {order.discount.toLocaleString("en-US")} EGP</span></div>}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}><span>Shipping</span><span style={{ fontFamily: "var(--font-numeric)" }}>{order.shipping ? order.shipping + " EGP" : "Free"}</span></div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-body-size)", fontWeight: 500 }}><span>{order.pay === "instapay" ? "Total (InstaPay)" : "Total to collect"}</span><span style={{ fontFamily: "var(--font-numeric)" }}>{(sub - (order.discount || 0) + order.shipping).toLocaleString("en-US")} EGP</span></div>
-              {order.pay === "instapay" && (order.paid
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}><span>Subtotal</span><span style={{ fontFamily: "var(--font-numeric)" }}>{window.fmtMoney(sub, order.currency)}</span></div>
+              {order.discount > 0 && <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--green)" }}><span>Discount{order.promo ? " · " + order.promo : ""}</span><span style={{ fontFamily: "var(--font-numeric)" }}>– {window.fmtMoney(order.discount, order.currency)}</span></div>}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)", color: "var(--ink-2)" }}><span>Shipping</span><span style={{ fontFamily: "var(--font-numeric)" }}>{order.shipping ? window.fmtMoney(order.shipping, order.currency) : "Free"}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-body-size)", fontWeight: 500 }}><span>{order.pay === "instapay" ? "Total (InstaPay)" : order.pay === "bank" ? "Total (bank transfer)" : "Total to collect"}</span><span style={{ fontFamily: "var(--font-numeric)" }}>{window.fmtMoney(sub - (order.discount || 0) + order.shipping, order.currency)}</span></div>
+              {(order.pay === "instapay" || order.pay === "bank") && (order.paid
                 ? <div style={{ marginTop: "var(--space-3)", padding: "10px 12px", borderRadius: "var(--radius-control)", background: "#E9F2E4", color: "#3C5A2C", fontSize: "var(--text-small)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--space-3)", flexWrap: "wrap" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="check" size={14} /> InstaPay payment confirmed</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="check" size={14} /> {order.pay === "bank" ? "Bank transfer" : "InstaPay payment"} confirmed</span>
                     <button type="button" onClick={() => onSetPaid && onSetPaid(false)} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-2)", fontSize: "var(--text-fine-size)", textDecoration: "underline" }}>Mark unpaid</button>
                   </div>
                 : <div style={{ marginTop: "var(--space-3)", padding: "10px 12px", borderRadius: "var(--radius-control)", background: "#FBEFD8", color: "#7A5200", fontSize: "var(--text-small)", display: "grid", gap: "var(--space-3)" }}>
-                    <span style={{ lineHeight: 1.4 }}>Paid by <strong>InstaPay</strong> — confirm the customer’s transfer screenshot (on WhatsApp) before shipping.</span>
+                    <span style={{ lineHeight: 1.4 }}>Paid by <strong>{order.pay === "bank" ? "bank transfer" : "InstaPay"}</strong> — confirm the customer’s transfer screenshot (on WhatsApp) before shipping.</span>
                     <div><Button size="sm" onClick={() => onSetPaid && onSetPaid(true)}>Mark as paid</Button></div>
                   </div>)}
             </div>

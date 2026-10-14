@@ -21,8 +21,8 @@ function AccountOrders({ orders, open, setOpen }) {
               </div>
               <div style={{ display: "grid", gap: "var(--space-3)", justifyItems: phone ? "start" : "end" }}>
                 <div style={{ display: "grid", gap: 2, justifyItems: phone ? "start" : "end" }}>
-                  <span style={{ fontFamily: "var(--font-numeric)", fontSize: 20, fontWeight: 500 }}>{total.toLocaleString("en-US")} EGP</span>
-                  {o.discount > 0 && <span style={{ fontSize: 11, color: "var(--green)", fontFamily: "var(--font-sans)" }}>−{o.discount.toLocaleString("en-US")} EGP{o.promo ? " · " + o.promo : ""}</span>}
+                  <span style={{ fontFamily: "var(--font-numeric)", fontSize: 20, fontWeight: 500 }}>{window.fmtMoney(total, o.currency)}</span>
+                  {o.discount > 0 && <span style={{ fontSize: 11, color: "var(--green)", fontFamily: "var(--font-sans)" }}>−{window.fmtMoney(o.discount, o.currency)}{o.promo ? " · " + o.promo : ""}</span>}
                 </div>
                 <Button size="sm" variant="quiet" onClick={() => setOpen(isOpen ? null : o.id)}>{isOpen ? "Hide details" : "Track this order"}</Button>
               </div>
@@ -40,7 +40,7 @@ function AccountOrders({ orders, open, setOpen }) {
                   </div>
                   <div style={{ display: "grid", gap: "var(--space-2)" }}>
                     <span style={{ fontSize: "var(--text-eyebrow-size)", letterSpacing: "var(--track-eyebrow)", textTransform: "uppercase", color: "var(--green)" }}>Payment</span>
-                    <span style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>Cash on delivery — {total.toLocaleString("en-US")} EGP to the courier.</span>
+                    <span style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>{o.pay === "cod" ? <>Cash on delivery — {window.fmtMoney(total, o.currency)} to the courier.</> : <>Total {window.fmtMoney(total, o.currency)} — {o.pay === "bank" ? "bank transfer" : "InstaPay"}.</>}</span>
                     <span><Badge>Nothing charged online</Badge></span>
                   </div>
                   <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>

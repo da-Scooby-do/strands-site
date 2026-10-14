@@ -20,7 +20,9 @@ const cors = {
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
 function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
-function money(n, lang) { return (Math.round(Number(n) || 0)).toLocaleString("en-US") + (lang === "ar" ? " ج.م" : " EGP"); }
+// Each order is in its own country's currency (orders.currency; older orders are EGP).
+const CUR: Record<string, [string, string]> = { EGP: ["EGP", "ج.م"], SAR: ["SAR", "ر.س"], SDG: ["SDG", "ج.س"] };
+function money(n, lang, currency = "EGP") { const c = CUR[currency || "EGP"] || [currency, currency]; return (Math.round(Number(n) || 0)).toLocaleString("en-US") + " " + (lang === "ar" ? c[1] : c[0]); }
 
 const PLUM = "#45254A", CREAM = "#FBF6EE", INK = "#2A2130", MUTED = "#615468", RULE = "#E6D9CB", LILAC = "#BEA8D1";
 const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
@@ -45,13 +47,13 @@ function itemsTable(order, lang) {
   const row = (k, v, bold = false) =>
     `<tr><td style="padding:12px 0;border-top:1px solid ${RULE};font-family:${SANS};color:${bold ? INK : MUTED};font-size:16px;${bold ? "font-weight:700;" : ""}${rtl ? "text-align:right;" : ""}">${k}</td>
        <td align="${rtl ? "left" : "right"}" style="padding:12px 0;border-top:1px solid ${RULE};font-family:${SANS};color:${bold ? INK : MUTED};font-size:16px;${bold ? "font-weight:700;" : ""}">${v}</td></tr>`;
-  const items = (order.order_items || []).map((i) => row(`${esc(rtl ? (i.title_ar || i.title_en) : i.title_en)} × ${i.qty}`, money(i.line_total, lang))).join("");
+  const items = (order.order_items || []).map((i) => row(`${esc(rtl ? (i.title_ar || i.title_en) : i.title_en)} × ${i.qty}`, money(i.line_total, lang, order.currency))).join("");
   const L = rtl
     ? { sub: "الإجمالي الفرعي", disc: "خصم", ship: "الشحن", free: "مجاني", total: "الإجمالي" }
     : { sub: "Subtotal", disc: "Discount", ship: "Shipping", free: "Free", total: "Total" };
-  const disc = order.discount ? row(L.disc, "– " + money(order.discount, lang)) : "";
+  const disc = order.discount ? row(L.disc, "– " + money(order.discount, lang, order.currency)) : "";
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-collapse:collapse;${rtl ? "direction:rtl;" : ""}">
-    ${items}${row(L.sub, money(order.subtotal, lang))}${disc}${row(L.ship, order.shipping ? money(order.shipping, lang) : L.free)}${row(L.total, money(order.total, lang), true)}
+    ${items}${row(L.sub, money(order.subtotal, lang, order.currency))}${disc}${row(L.ship, order.shipping ? money(order.shipping, lang, order.currency) : L.free)}${row(L.total, money(order.total, lang, order.currency), true)}
   </table>`;
 }
 
@@ -95,7 +97,7 @@ function fill(s, order, lang, doEsc) {
   return out.replace(/\{name\}/g, doEsc ? esc(first) : first)
             .replace(/\{first\}/g, doEsc ? esc(first) : first)
             .replace(/\{order\}/g, doEsc ? esc(order.order_number) : order.order_number)
-            .replace(/\{total\}/g, money(order.total, lang));
+            .replace(/\{total\}/g, money(order.total, lang, order.currency));
 }
 
 function renderEmail(status, order, tmpl, lang) {
@@ -109,8 +111,9 @@ function renderEmail(status, order, tmpl, lang) {
   const orderLabel = BTN.orderNo[lang];
 
   let inner = h1(head, rtl) + p(bodyText, rtl) + numberCard(num, orderLabel);
-  if (status === "placed") inner += itemsTable(order, lang) + green(fill(GREEN.placed[lang], order, lang, false), rtl) + button(BTN.track[lang], track);
-  else if (status === "with_courier") inner += green(fill(GREEN.with_courier[lang], order, lang, false), rtl) + button(BTN.track[lang], track);
+  const cod = (order.payment_method || "cod") === "cod";  // InstaPay / bank transfer: nothing to pay the courier
+  if (status === "placed") inner += itemsTable(order, lang) + (cod ? green(fill(GREEN.placed[lang], order, lang, false), rtl) : "") + button(BTN.track[lang], track);
+  else if (status === "with_courier") inner += (cod ? green(fill(GREEN.with_courier[lang], order, lang, false), rtl) : "") + button(BTN.track[lang], track);
   else if (status === "delivered") inner += button(BTN.share[lang], igHref);
   else if (status === "cancelled") inner += button(BTN.shop[lang], shopHref);
   else inner += button(BTN.track[lang], track);

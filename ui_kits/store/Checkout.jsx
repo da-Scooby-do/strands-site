@@ -93,9 +93,9 @@ function DialPicker({ iso, onPick, ar }) {
     </div>
   );
 }
-function PhoneField({ label, value, onChange, hint, placeholder }) {
+function PhoneField({ label, value, onChange, hint, placeholder, defaultCode }) {
   const ar = window.useLang() === "AR";
-  const { code, local } = splitPhone(value);
+  const { code, local } = value ? splitPhone(value) : { code: defaultCode || "+20", local: "" };
   // Remember the exact country picked (several share +1, +7, +44…); fall back to the code's usual one.
   const [iso, setIso] = React.useState(() => defaultIso(code));
   const shownIso = (DIAL_CODES.find((c) => c.iso === iso) || {}).d === code ? iso : defaultIso(code);
@@ -112,12 +112,17 @@ function PhoneField({ label, value, onChange, hint, placeholder }) {
   );
 }
 
-function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onClear, maxQty }) {
+function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onClear, maxQty, market, markets, onMarket }) {
   const ar = window.useLang() === "AR";
   const T = (en, arr) => (ar ? arr : en);
   const money = window.money;
   const [step, setStep] = React.useState("cart");
-  const [pay, setPay] = React.useState("cod");  // "cod" | "instapay"
+  const [pay, setPay] = React.useState("cod");  // "cod" | "instapay" (Egypt) | "bank" (other countries)
+  const mkt = market || { code: "EG", currency: "EGP", pay_cod: true };
+  const isEG = mkt.code === "EG";
+  const minfo = (window.MARKET_INFO && window.MARKET_INFO[mkt.code]) || { dial: "+20", regions: window.EG_GOVERNORATES, region: ["Governorate", "المحافظة"] };
+  const payOptions = isEG ? ["cod", "instapay"] : [mkt.pay_cod && "cod", mkt.pay_bank && "bank"].filter(Boolean);
+  React.useEffect(() => { if (payOptions.length && !payOptions.includes(pay)) setPay(payOptions[0]); /* eslint-disable-next-line */ }, [mkt.code, payOptions.join()]);
   const shipCfg = ship || { flat_egp: 80, free_over_egp: 2000 };
   const [zones, setZones] = React.useState([]);
 
@@ -145,11 +150,19 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   const subtotal = lines.reduce((a, l) => a + l.lineTotal, 0);
   const count = lines.reduce((a, l) => a + l.qty, 0);
   const zonePrice = (gov) => { if (!gov) return null; const z = zones.find((z) => (z.governorates || []).includes(gov)); return z ? z.price_egp : (shipCfg.flat_egp || 80); };
-  let shipping = zonePrice(form.governorate);            // null until a governorate is chosen
-  if (promo && promo.free_shipping) shipping = 0;
-  else if (shipping != null && shipCfg.free_over_egp && subtotal >= shipCfg.free_over_egp) shipping = 0;
+  // Egypt: by governorate zone (unknown until one is chosen). Elsewhere: the country's flat fee.
+  let shipping = isEG ? zonePrice(form.governorate) : (mkt.shipping_fee || 0);
+  if (isEG && promo && promo.free_shipping) shipping = 0;
+  else if (isEG && shipping != null && shipCfg.free_over_egp && subtotal >= shipCfg.free_over_egp) shipping = 0;
+  else if (!isEG && mkt.free_over != null && subtotal >= mkt.free_over) shipping = 0;
   const shipKnown = shipping != null;
-  const discount = promo ? (promo.discount || 0) : 0;
+  const discount = isEG && promo ? (promo.discount || 0) : 0;
+  // Switching country: clear a region that isn't in the new country's list, and any promo (Egypt only).
+  React.useEffect(() => {
+    setForm((f) => ((minfo.regions || []).some((g) => g[0] === f.governorate) ? f : { ...f, governorate: "" }));
+    if (!isEG) { setPromo(null); setPromoInput(""); setPromoErr(""); }
+    /* eslint-disable-next-line */
+  }, [mkt.code]);
   const total = Math.max(0, subtotal - discount) + (shipKnown ? shipping : 0);
 
   React.useEffect(() => {
@@ -220,8 +233,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   async function placeOrder() {
     if (busy) return; setErr("");
     if (!form.phone2 || !form.phone2.trim()) { setErr(T("Enter your WhatsApp number.", "اكتبي رقم الواتساب.")); return; }
+    if (!(minfo.regions || []).some((g) => g[0] === form.governorate)) { setErr(isEG ? T("Choose your governorate.", "اختاري المحافظة.") : T("Choose your region.", "اختاري المنطقة.")); return; }
     // If a code was typed but "Apply" wasn't pressed, validate it now so the discount still counts.
-    const typedCode = promoInput.trim();
+    const typedCode = isEG ? promoInput.trim() : "";
     let usePromo = promo;
     if (typedCode && (!promo || String(promo.code).toLowerCase() !== typedCode.toLowerCase())) {
       usePromo = await applyPromo();
@@ -231,8 +245,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
       const payload = {
         lang: ar ? "ar" : "en", full_name: form.full_name, phone: egPhone(form.phone), phone2: egPhone(form.phone2),
         governorate: form.governorate, area: form.area, street: form.street, landmark: form.landmark,
-        promo_code: usePromo ? usePromo.code : null,
+        promo_code: isEG && usePromo ? usePromo.code : null,
         payment_method: pay,
+        country: mkt.code,
         items: lines.map((l) => ({ variant_key: l.key, qty: l.qty })),
       };
       const r = await window.sbRpc("place_order", { payload });
@@ -264,6 +279,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           too_fast: T("You just placed an order — give it a moment before trying again.", "لسه دلوقتي عملتي طلب — استني شوية قبل ما تحاولي تاني."),
           rate_limited: T("Too many orders in a short time. Please try again later.", "طلبات كتير في وقت قصير. حاولي تاني بعد شوية."),
           out_of_stock: T("Sorry — this just went out of stock.", "للأسف المنتج خلص من المخزون."),
+          country_unavailable: T("We can’t deliver to this country right now.", "مش بنوصّل للبلد دي دلوقتي."),
+          payment_unavailable: T("Choose another way to pay.", "اختاري طريقة دفع تانية."),
+          variant_not_found: T("Something in your cart isn’t sold in this country.", "في حاجة في سلتك مش متاحة في البلد دي."),
         };
         setErr((r && map[r.error]) || (r && r.error) || T("Could not place the order.", "معرفناش نكمّل الطلب."));
       }
@@ -295,13 +313,17 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             <div style={{ display: "grid", placeItems: "center", gap: "var(--space-3)", textAlign: "center", padding: "var(--space-4) 0" }}>
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--green)", color: "var(--white)", display: "grid", placeItems: "center" }}><Icon name="check" size={28} /></div>
               <h2 style={{ fontSize: 24 }}>{window.copy("co.done.title", "Thank you.", "شكرًا ليكي.")}</h2>
-              {pay === "instapay"
+              {pay === "bank"
+                ? <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is placed. Transfer", "اتسجّل. حوّلي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("to the account below, then send the screenshot on WhatsApp.", "للحساب اللي تحت، وابعتي صورة التحويل على واتساب.")}</p>
+                : pay === "instapay"
                 ? <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is placed. Tap WhatsApp below — your order number is already in the message. Pay", "اتسجّل. اضغطي واتساب تحت — رقم طلبك موجود في الرسالة. حوّلي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("by InstaPay to", "بإنستاباي لـ")} <strong style={{ color: "var(--ink)" }}>{INSTAPAY_HANDLE}</strong>{T(", then send the screenshot in the same chat.", "، وابعتي صورة التحويل في نفس المحادثة.")}</p>
                 : <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is in. We’ll message you as it moves. Pay", "وصلنا. هنبعتلك مع كل خطوة. ادفعي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("on delivery.", "عند الاستلام.")}</p>}
             </div>
+            {pay === "bank" && mkt.bank_details && <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "var(--font-sans)", fontSize: "var(--text-small)", background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", color: "var(--ink)" }}>{mkt.bank_details}</pre>}
+            {pay === "bank" && <Button fullWidth onClick={() => window.open("https://wa.me/" + SHOP_WA + "?text=" + encodeURIComponent(T("Hi Strands! My order ", "أهلاً ستراندز! طلبي ") + done.order_number + T(" — total ", " — الإجمالي ") + money(done.total) + T(". Paying by bank transfer — I’ll send the screenshot here.", ". بدفع بتحويل بنكي — وهبعت صورة التحويل هنا.")), "_blank", "noopener")}>{T("Send the screenshot on WhatsApp", "ابعتي صورة التحويل على واتساب")}</Button>}
             {pay === "instapay" && <Button fullWidth onClick={() => window.open("https://wa.me/" + SHOP_WA + "?text=" + encodeURIComponent(T("Hi Strands! My order ", "أهلاً ستراندز! طلبي ") + done.order_number + T(" — total ", " — الإجمالي ") + money(done.total) + T(". Paying by InstaPay — I’ll send the screenshot here.", ". بدفع بإنستاباي — وهبعت صورة التحويل هنا.")), "_blank", "noopener")}>{T("Message us on WhatsApp", "كلّمينا على واتساب")}</Button>}
             {pay === "instapay" && <Button fullWidth variant="quiet" onClick={() => window.open(INSTAPAY_URL, "_blank", "noopener")}>{T("Open InstaPay to pay", "افتحي إنستاباي للدفع")} {money(done.total)}</Button>}
-            <Button fullWidth variant={pay === "instapay" ? "text" : undefined} onClick={() => (window.location.href = "../account/index.html")}>{window.copy("co.done.track", "Track it in your account", "تابعي طلبك من حسابك")}</Button>
+            <Button fullWidth variant={pay === "instapay" || pay === "bank" ? "text" : undefined} onClick={() => (window.location.href = "../account/index.html")}>{window.copy("co.done.track", "Track it in your account", "تابعي طلبك من حسابك")}</Button>
             <Button fullWidth variant="quiet" onClick={() => { setDone(null); onClose(); }}>{window.copy("co.done.keep", "Keep browsing", "كملي تسوّق")}</Button>
           </div>
         ) : lines.length === 0 ? (
@@ -340,14 +362,19 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           </div>
         ) : (
           <div style={{ padding: "var(--space-5)", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "var(--space-5)" }}>
-            <section style={field}>
+            {!isEG || (markets && markets.length > 1) ? (
+              <section style={{ ...field, background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "12px 14px" }}>
+                {window.StrandsMarketSelect && <window.StrandsMarketSelect markets={markets} value={mkt.code} onChange={onMarket} compact />}
+              </section>
+            ) : null}
+            {isEG && <section style={field}>
               <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "end" }}>
                 <div style={{ flex: 1, minWidth: 0 }}><Input label={window.copy("co.promo.label", "Discount code", "كود الخصم")} value={promoInput} onChange={setPromoInput} placeholder={T("e.g. NOUR10", "مثال: NOUR10")} /></div>
                 <Button size="sm" variant="quiet" onClick={applyPromo}>{window.copy("co.promo.apply", "Apply", "تطبيق")}</Button>
               </div>
               {promo && <InlineAlert tone="ok">{T("Code", "الكود")} {promo.code} {T("applied.", "اتفعّل.")}</InlineAlert>}
               {promoErr && <InlineAlert tone="error">{promoErr}</InlineAlert>}
-            </section>
+            </section>}
 
             {!user ? (
               <section style={{ ...field, background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)" }}>
@@ -368,12 +395,12 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                   <button type="button" onClick={() => window.sb.auth.signOut()} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>{T("Sign out", "خروج")}</button>
                 </div>
                 <Input label={window.copy("co.fullName", "Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
-                <PhoneField label={window.copy("co.phone", "Phone", "التليفون")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="10 1234 5678" />
-                <PhoneField label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} placeholder="10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} />
-                <Select label={window.copy("co.gov", "Governorate", "المحافظة")} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((window.EG_GOVERNORATES || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
+                <PhoneField defaultCode={minfo.dial} label={window.copy("co.phone", "Phone", "التليفون")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="10 1234 5678" />
+                <PhoneField defaultCode={minfo.dial} label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} placeholder="10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} />
+                <Select label={isEG ? window.copy("co.gov", "Governorate", "المحافظة") : (ar ? minfo.region[1] : minfo.region[0])} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((minfo.regions || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
                 <Input label={window.copy("co.street", "Street address", "عنوان الشارع")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} placeholder={T("Building, street", "العمارة، الشارع")} />
                 <div style={row2}>
-                  <Input label={window.copy("co.area", "Area (optional)", "المنطقة (اختياري)")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} />
+                  <Input label={isEG ? window.copy("co.area", "Area (optional)", "المنطقة (اختياري)") : T("City / district", "المدينة / الحي")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} />
                   <Input label={window.copy("co.landmark", "Landmark (optional)", "علامة مميزة (اختياري)")} value={form.landmark} onChange={(v) => setForm({ ...form, landmark: v })} />
                 </div>
               </section>
@@ -381,10 +408,12 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
 
             <section style={field}>
               <strong style={{ fontSize: 15 }}>{T("How would you like to pay?", "طريقة الدفع")}</strong>
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: "var(--space-3)" }}>
-                <PayOption active={pay === "cod"} onClick={() => setPay("cod")} title={T("Cash on delivery", "الدفع عند الاستلام")} sub={T("Pay the courier", "ادفعي للمندوب")} />
-                <PayOption active={pay === "instapay"} onClick={() => setPay("instapay")} title={T("InstaPay", "إنستاباي")} sub={T("Pay now, send proof", "ادفعي وابعتي الإيصال")} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(" + Math.max(1, payOptions.length) + ", minmax(0,1fr))", gap: "var(--space-3)" }}>
+                {payOptions.includes("cod") && <PayOption active={pay === "cod"} onClick={() => setPay("cod")} title={T("Cash on delivery", "الدفع عند الاستلام")} sub={T("Pay the courier", "ادفعي للمندوب")} />}
+                {payOptions.includes("instapay") && <PayOption active={pay === "instapay"} onClick={() => setPay("instapay")} title={T("InstaPay", "إنستاباي")} sub={T("Pay now, send proof", "ادفعي وابعتي الإيصال")} />}
+                {payOptions.includes("bank") && <PayOption active={pay === "bank"} onClick={() => setPay("bank")} title={T("Bank transfer", "تحويل بنكي")} sub={T("Pay now, send proof", "حوّلي وابعتي الإيصال")} />}
               </div>
+              {pay === "bank" && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("After you place the order you’ll see our bank details. Transfer the total, then send us a screenshot on WhatsApp with your order number.", "بعد ما تعملي الطلب هتظهرلك بيانات الحساب. حوّلي الإجمالي وابعتيلنا صورة التحويل على واتساب مع رقم الطلب.")}</p>}
               {pay === "instapay" && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("After you place the order you’ll get the InstaPay link. Pay, then send us a screenshot on WhatsApp with your order number.", "بعد ما تعملي الطلب هيظهرلك لينك إنستاباي. ادفعي وابعتيلنا صورة التحويل على واتساب مع رقم الطلب.")}</p>}
             </section>
 
@@ -393,7 +422,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
               <Row k={window.copy("co.subtotal", "Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
               {discount ? <Row k={window.copy("co.discount", "Discount", "خصم") + " (" + promo.code + ")"} v={"– " + money(discount)} green /> : null}
               <Row k={window.copy("co.shipping", "Shipping", "الشحن")} v={shipKnown ? (shipping ? money(shipping) : window.copy("co.free", "Free", "مجاني")) : window.copy("co.shipping.tbd", "Set at checkout", "تُحسب عند الطلب")} />
-              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={pay === "instapay" ? T("Total (pay by InstaPay)", "الإجمالي (الدفع بإنستاباي)") : window.copy("co.total", "Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(total)} bold /></div>
+              <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={pay === "instapay" ? T("Total (pay by InstaPay)", "الإجمالي (الدفع بإنستاباي)") : pay === "bank" ? T("Total (bank transfer)", "الإجمالي (تحويل بنكي)") : window.copy("co.total", "Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(total)} bold /></div>
             </section>
             {user && <Button fullWidth onClick={placeOrder} disabled={busy}>{busy ? T("Placing…", "بنكمّل…") : window.copy("co.placeOrder", "Place order — ", "إتمام الطلب — ") + money(total)}</Button>}
           </div>

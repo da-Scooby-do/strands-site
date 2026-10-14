@@ -32,8 +32,12 @@
     }, []);
     return l;
   }
-  // Egyptian pound, Western digits (as most EG shops show), Arabic currency label.
+  // Prices in the shopper's chosen country's currency (EGP unless the store page
+  // sets another with setStrandsCurrency), Western digits, Arabic label in Arabic.
+  var _cur = "EGP";
+  function setCurrency(c) { _cur = c || "EGP"; }
   function money(n) {
+    if (window.fmtMoney) return window.fmtMoney(n, _cur, _lang === "AR");
     n = n | 0;
     return n.toLocaleString("en-US") + (_lang === "AR" ? " ج.م" : " EGP");
   }
@@ -41,5 +45,5 @@
   function toggleValue() { return _lang === "AR" ? "ع" : "EN"; }
 
   apply(_lang);
-  Object.assign(window, { setStrandsLang: setLang, getStrandsLang: getLang, useLang: useLang, money: money, langToggleValue: toggleValue });
+  Object.assign(window, { setStrandsLang: setLang, getStrandsLang: getLang, useLang: useLang, money: money, setStrandsCurrency: setCurrency, langToggleValue: toggleValue });
 })();
