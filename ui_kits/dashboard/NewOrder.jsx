@@ -21,7 +21,7 @@ function NewOrder({ open, onClose, onCreated, country, markets }) {
 
   React.useEffect(() => {
     if (!open || !window.SB_READY) return;
-    window.sb.from("product_variants").select("key,label_en,size_ml,price_egp,active").eq("active", true).order("sort").then(({ data }) => {
+    window.sb.from("product_variants").select("key,label_en,size_ml,price_egp,active").order("sort").then(({ data }) => {
       if (data) { setVariants(data); setItems((it) => it.map((x) => ({ ...x, variant_key: x.variant_key || (data[0] && data[0].key) || "" }))); }
     });
     window.sb.from("market_variants").select("market,variant_key,price").then(({ data }) => { if (data) setMv(data); }, () => {});
@@ -30,7 +30,7 @@ function NewOrder({ open, onClose, onCreated, country, markets }) {
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const setItem = (i, k, v) => setItems((a) => a.map((x, n) => (n === i ? { ...x, [k]: v } : x)));
   // Egypt: the shop price. Elsewhere: that country's price (null = not sold there).
-  const priceOf = (key) => { if (cc === "EG") { const v = variants.find((x) => x.key === key); return v ? v.price_egp : 0; } const m = mv.find((x) => x.market === cc && x.variant_key === key); return m && m.price != null ? m.price : null; };
+  const priceOf = (key) => { if (cc === "EG") { const v = variants.find((x) => x.key === key && x.active); return v ? v.price_egp : null; } const m = mv.find((x) => x.market === cc && x.variant_key === key); return m && m.price != null ? m.price : null; };
   const offered = variants.filter((v) => priceOf(v.key) != null);
   React.useEffect(() => { setItems((it) => it.map((x) => (offered.some((v) => v.key === x.variant_key) ? x : { ...x, variant_key: (offered[0] && offered[0].key) || "" }))); set("governorate", ""); /* eslint-disable-next-line */ }, [cc, mv.length, variants.length]);
   const subtotal = items.reduce((a, it) => a + (priceOf(it.variant_key) || 0) * (Number(it.qty) || 0), 0);
