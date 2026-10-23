@@ -39,7 +39,8 @@ function Page(){
     // others down (the old Promise.all silently blanked price + product on any 3G hiccup).
     const attempt=async(fn,n)=>{ let last; for(let i=0;i<n;i++){ try{ const r=await fn(); if(r&&!r.error) return r; last=r; }catch(e){ last={error:e}; } if(i<n-1) await new Promise(res=>setTimeout(res,600*(i+1))); } return last||{error:true}; };
     const qProduct=()=>window.sb.from("products").select("*").eq("active",true).order("created_at").limit(1).maybeSingle();
-    const qVariants=()=>window.sb.from("product_variants").select("*").eq("active",true).order("sort");
+    // Every size visible to the shop: on for Egypt, or priced in an open country.
+    const qVariants=()=>window.sb.from("product_variants").select("*").order("sort");
     const qShip=()=>window.sb.from("settings").select("value").eq("key","shipping").maybeSingle();
     // Other countries. If these tables don't exist yet the shop simply stays Egypt-only.
     window.sb.from("markets").select("*").eq("enabled",true).order("sort").then(({data})=>{ if(live&&data) setMarkets(data.filter(m=>m.code!=="EG")); },()=>{});
@@ -62,7 +63,8 @@ function Page(){
   window.setStrandsCurrency&&window.setStrandsCurrency(market.currency);
   // Outside Egypt a variant is sold only if it has a price there, and uses that
   // country's price and stock (price_egp below holds the price in the market's currency).
-  const mVariants=market.code==="EG"?variants:(variants||[]).map(v=>{ const x=marketVariants.find(m=>m.market===market.code&&m.variant_key===v.key); return x?{...v,price_egp:x.price,stock:x.stock}:null; }).filter(Boolean);
+  // "active" is Egypt's switch; other countries sell whatever has a price there.
+  const mVariants=market.code==="EG"?(variants&&variants.filter(v=>v.active!==false)):(variants||[]).map(v=>{ const x=marketVariants.find(m=>m.market===market.code&&m.variant_key===v.key); return x?{...v,price_egp:x.price,stock:x.stock}:null; }).filter(Boolean);
   // Keep the cart to what this country sells.
   React.useEffect(()=>{ if(!variants) return; setCart(cs=>{ const n=cs.filter(c=>(mVariants||[]).some(v=>v.key===c.key)); return n.length===cs.length?cs:n; }); /* eslint-disable-next-line */ },[market.code,variants,marketVariants]);
   // Sizes are the single-jar variants (300 ml, 500 ml…). Each can carry its own

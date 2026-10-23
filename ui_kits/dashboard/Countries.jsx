@@ -24,7 +24,10 @@ function MarketCard({ m, variants, rows, onChange, onRowChange, onSave, busy, ms
           const r = rows[v.key] || {};
           return (
             <div key={v.key} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1.4fr 1fr 1fr"), gap: "var(--space-3)", alignItems: "end" }}>
-              <div style={{ height: "var(--input-h)", display: "grid", alignItems: "center", fontSize: "var(--text-small)" }}>{(v.size_ml ? v.size_ml + " ml · " : "") + v.label_en}</div>
+              <div style={{ height: "var(--input-h)", display: "grid", alignContent: "center", fontSize: "var(--text-small)" }}>
+                <span>{(v.size_ml ? v.size_ml + " ml · " : "") + v.label_en}</span>
+                {v.active === false && <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>off in Egypt — still sold here if priced</span>}
+              </div>
               <Input label={i === 0 ? "Price (" + cur + ")" : ""} value={r.price == null ? "" : String(r.price)} onChange={(x) => onRowChange(v.key, "price", x)} placeholder="not sold" />
               <Input label={i === 0 ? "Jars in stock" : ""} value={r.stock == null ? "" : String(r.stock)} onChange={(x) => onRowChange(v.key, "stock", x)} placeholder="0" />
             </div>
@@ -69,7 +72,7 @@ function Countries({ onSaved }) {
     if (!window.SB_READY) return;
     const [m, v, mv] = await Promise.all([
       window.sb.from("markets").select("*").order("sort"),
-      window.sb.from("product_variants").select("key,label_en,size_ml,jars,sort,active").eq("active", true).order("sort"),
+      window.sb.from("product_variants").select("key,label_en,size_ml,jars,sort,active").order("sort"),  // all sizes: the Egypt switch doesn't apply here
       window.sb.from("market_variants").select("*"),
     ]);
     if (m.error) { setMissing(true); setMarkets([]); return; }
