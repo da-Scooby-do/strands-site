@@ -216,15 +216,23 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
     /* eslint-disable-next-line */
   }, [promoInput]);
 
+  const authBox = React.useRef(null);
+  React.useEffect(() => { window.authPrep && window.authPrep(authBox.current); });
   async function doAuth() {
-    if (busy) return; setErr(""); setBusy(true);
+    if (busy) return; setErr("");
+    // Read the boxes themselves: phone autofill can fill them without telling the page.
+    const v = window.authValues(authBox.current, email, pw);
+    if (v.email !== email) setEmail(v.email);
+    const bad = window.authCheck(v, ar);
+    if (bad) { setErr(bad); return; }
+    setBusy(true);
     try {
       if (authMode === "signin") {
-        const { error } = await window.sb.auth.signInWithPassword({ email: email.trim(), password: pw });
-        if (error) setErr(error.message);
+        const { error } = await window.sb.auth.signInWithPassword({ email: v.email, password: v.password });
+        if (error) setErr(window.authErrorText(error, ar));
       } else {
-        const { data, error } = await window.sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { full_name: form.full_name || null, phone: form.phone || null, lang: ar ? "ar" : "en" } } });
-        if (error) { setErr(error.message); return; }
+        const { data, error } = await window.sb.auth.signUp({ email: v.email, password: v.password, options: { data: { full_name: form.full_name || null, phone: form.phone || null, lang: ar ? "ar" : "en" } } });
+        if (error) { setErr(window.authErrorText(error, ar)); return; }
         if (!data.session) { setNotice(T("Account created. Check your email to confirm, then sign in to finish your order.", "تم إنشاء الحساب. راجعي بريدك للتأكيد، وبعدين سجّلي دخول عشان تكمّلي الطلب.")); setAuthMode("signin"); }
       }
     } finally { setBusy(false); }
@@ -377,12 +385,13 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             </section>}
 
             {!user ? (
-              <section style={{ ...field, background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)" }}>
+              <section ref={authBox} style={{ ...field, background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)" }}>
                 <strong style={{ fontSize: 15 }}>{authMode === "signin" ? window.copy("co.auth.signinTitle", "Sign in to order", "سجّلي دخول للطلب") : window.copy("co.auth.createTitle", "Create your account", "أنشئي حسابك")}</strong>
                 <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{window.copy("co.auth.note", "Orders are cash on delivery. An account lets you track them.", "الطلبات بالدفع عند الاستلام. الحساب بيخليكي تتابعي طلباتك.")}</p>
                 <Input label={window.copy("co.email", "Email", "البريد الإلكتروني")} type="email" value={email} onChange={setEmail} />
                 <Input label={window.copy("co.password", "Password", "كلمة السر")} type="password" value={pw} onChange={setPw} />
                 {notice && <InlineAlert tone="ok">{notice}</InlineAlert>}
+                {err && <InlineAlert tone="error">{err}</InlineAlert>}
                 <Button fullWidth onClick={doAuth} disabled={busy}>{busy ? "…" : authMode === "signin" ? window.copy("co.signin", "Sign in", "دخول") : window.copy("co.createAccount", "Create account", "إنشاء حساب")}</Button>
                 <button type="button" onClick={() => { setAuthMode(authMode === "signin" ? "signup" : "signin"); setErr(""); setNotice(""); }} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>
                   {authMode === "signin" ? T("New here? Create an account", "أول مرة؟ أنشئي حساب") : T("Already have an account? Sign in", "عندك حساب؟ سجّلي دخول")}
@@ -417,7 +426,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
               {pay === "instapay" && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("After you place the order you’ll get the InstaPay link. Pay, then send us a screenshot on WhatsApp with your order number.", "بعد ما تعملي الطلب هيظهرلك لينك إنستاباي. ادفعي وابعتيلنا صورة التحويل على واتساب مع رقم الطلب.")}</p>}
             </section>
 
-            {err && <InlineAlert tone="error">{err}</InlineAlert>}
+            {user && err && <InlineAlert tone="error">{err}</InlineAlert>}
             <section style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", display: "grid", gap: 8, fontSize: "var(--text-small)" }}>
               <Row k={window.copy("co.subtotal", "Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
               {discount ? <Row k={window.copy("co.discount", "Discount", "خصم") + " (" + promo.code + ")"} v={"– " + money(discount)} green /> : null}

@@ -13,22 +13,28 @@ function Login({ onSignedIn, heading }) {
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState("");
   const [note, setNote] = React.useState("");
+  const box = React.useRef(null);
+  React.useEffect(() => { window.authPrep && window.authPrep(box.current); });
 
   async function submit() {
     setErr(""); setNote("");
     if (!window.SB_READY) { setErr("Still loading — try again in a moment."); return; }
+    const v = window.authValues(box.current, email, pw);
+    if (v.email !== email) setEmail(v.email);
+    const bad = window.authCheck(v, false);
+    if (bad) { setErr(bad); return; }
     setBusy(true);
     try {
       if (mode === "signin") {
-        const { data, error } = await window.sb.auth.signInWithPassword({ email: email.trim(), password: pw });
-        if (error) { setErr(error.message); return; }
+        const { data, error } = await window.sb.auth.signInWithPassword({ email: v.email, password: v.password });
+        if (error) { setErr(window.authErrorText(error, false)); return; }
         if (data.session && onSignedIn) onSignedIn(data.session);
       } else {
         const { data, error } = await window.sb.auth.signUp({
-          email: email.trim(), password: pw,
+          email: v.email, password: v.password,
           options: { data: { full_name: name || null, phone: phone || null, lang: "en" } },
         });
-        if (error) { setErr(error.message); return; }
+        if (error) { setErr(window.authErrorText(error, false)); return; }
         if (data.session) { if (onSignedIn) onSignedIn(data.session); }
         else { setNote("Account created. Check your email to confirm, then sign in."); setMode("signin"); }
       }
@@ -37,16 +43,17 @@ function Login({ onSignedIn, heading }) {
 
   async function forgot() {
     setErr(""); setNote("");
-    if (!email.trim()) { setErr("Enter your email first."); return; }
-    await window.sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.href });
-    setNote("If " + email.trim() + " has an account, a reset link is on its way.");
+    const em = window.authValues(box.current, email, pw).email;
+    if (!em) { setErr("Enter your email first."); return; }
+    await window.sb.auth.resetPasswordForEmail(em, { redirectTo: window.location.href });
+    setNote("If " + em + " has an account, a reset link is on its way.");
   }
 
   return (
     <DamaskPanel pad={isPhone ? "var(--space-4)" : "var(--space-7)"} style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
       <div style={{ width: "100%", maxWidth: 380, display: "grid", gap: "var(--space-5)", justifyItems: "center" }}>
         <Wordmark size={30} color="var(--green-tint)" />
-        <div style={{ background: "var(--white)", border: "var(--border-card)", borderRadius: "var(--radius-card)", padding: "var(--space-6)", display: "grid", gap: "var(--space-4)", width: "100%" }}>
+        <div ref={box} style={{ background: "var(--white)", border: "var(--border-card)", borderRadius: "var(--radius-card)", padding: "var(--space-6)", display: "grid", gap: "var(--space-4)", width: "100%" }}>
           <h1 style={{ fontSize: 26 }}>{heading || (mode === "signin" ? "Sign in." : "Create your account.")}</h1>
           {mode === "signup" && <Input label="Full name" value={name} onChange={setName} />}
           {mode === "signup" && <Input label="Phone" type="tel" value={phone} onChange={setPhone} />}
