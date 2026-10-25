@@ -36,6 +36,48 @@
     }
   };
 
+  /* Sign-in / sign-up helpers shared by checkout and the account page.
+     Phone autofill (iOS keyboard, password managers) can fill a box without the
+     page hearing about it, so the button reads the boxes themselves, and the
+     boxes are labelled so autofill fills them in the first place. */
+  window.authPrep = function (root) {
+    if (!root) return;
+    root.querySelectorAll('input[type="email"]').forEach(function (el) {
+      el.setAttribute("name", "email"); el.setAttribute("autocomplete", "email");
+      el.setAttribute("autocapitalize", "off"); el.setAttribute("spellcheck", "false");
+    });
+    root.querySelectorAll('input[data-auth="password"], input[type="password"]').forEach(function (el) {
+      el.setAttribute("data-auth", "password"); el.setAttribute("name", "password");
+    });
+  };
+  // { email, password } from the boxes on screen, falling back to the page's own values.
+  window.authValues = function (root, email, password) {
+    var e = root && root.querySelector('input[type="email"]');
+    var p = root && root.querySelector('input[data-auth="password"], input[type="password"]');
+    return { email: String((e && e.value) || email || "").trim(), password: String((p && p.value) || password || "") };
+  };
+  // Check before sending; returns a message or "" when fine.
+  window.authCheck = function (v, ar) {
+    if (!v.email) return ar ? "اكتبي بريدك الإلكتروني." : "Enter your email.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) return ar ? "البريد الإلكتروني ده مش صحيح." : "That email doesn’t look right.";
+    if (!v.password) return ar ? "اكتبي كلمة السر." : "Enter a password.";
+    return "";
+  };
+  // Supabase's English error -> a clear message in the shopper's language.
+  window.authErrorText = function (error, ar) {
+    var m = String((error && error.message) || error || "").toLowerCase();
+    var T = function (en, a) { return ar ? a : en; };
+    if (/anonymous|missing email|email.*required/.test(m)) return T("Enter your email.", "اكتبي بريدك الإلكتروني.");
+    if (/invalid login credentials/.test(m)) return T("Wrong email or password.", "البريد أو كلمة السر غلط.");
+    if (/already registered|already been registered|user already exists/.test(m)) return T("This email already has an account — sign in instead.", "البريد ده عليه حساب بالفعل — سجّلي دخول.");
+    if (/password.*(at least|characters|short|weak)/.test(m)) return T("Choose a longer password (at least 6 characters).", "اختاري كلمة سر أطول (٦ حروف على الأقل).");
+    if (/email not confirmed/.test(m)) return T("Confirm your email first — check your inbox for our link.", "أكّدي بريدك الأول — هتلاقي اللينك في الإيميل.");
+    if (/invalid.*email|email.*invalid/.test(m)) return T("That email doesn’t look right.", "البريد الإلكتروني ده مش صحيح.");
+    if (/rate limit|too many|security purposes/.test(m)) return T("Too many tries — wait a minute and try again.", "محاولات كتير — استني دقيقة وحاولي تاني.");
+    if (/signups? not allowed|signup.*disabled/.test(m)) return T("New accounts are closed right now.", "إنشاء الحسابات مقفول دلوقتي.");
+    return (error && error.message) || T("Something went wrong — try again.", "حصلت مشكلة — حاولي تاني.");
+  };
+
   /* Egyptian governorates, English + Arabic, for the checkout address form. */
   window.EG_GOVERNORATES = [
     ["Cairo", "القاهرة"], ["Giza", "الجيزة"], ["Alexandria", "الإسكندرية"],
