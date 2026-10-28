@@ -16,7 +16,45 @@ function waNumber(n) {
   if (d.length <= 10) return "20" + d;
   return d;
 }
-function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, onSaveNote, onSetPaid }) {
+// Flextock (warehouse + delivery): where this order stands there, and what can be done.
+function FlextockCard({ order, fxCfg, onFlextock }) {
+  const [busy, setBusy] = React.useState(null);
+  const [msg, setMsg] = React.useState(null);
+  const fx = order.fx || {};
+  const egypt = order.country === "EG";
+  if (!fxCfg || (!fxCfg.enabled && !fx.state) || !egypt) return null;
+  const finished = ["Delivered", "Cancelled", "Returned"].includes(order.status);
+  const run = async (action) => {
+    setBusy(action); setMsg(null);
+    const r = (await onFlextock(action)) || {};
+    setBusy(null);
+    if (action === "send") setMsg(r.sent ? { ok: true, t: "Sent to Flextock." } : r.state === "waiting_payment" ? { ok: false, t: "Waiting for payment — press Mark as paid first." } : { ok: false, t: r.error || r.skipped || "Not sent." });
+    else if (action === "cancel") setMsg(r.ok ? { ok: true, t: r.pending ? "Flextock is cancelling it at the warehouse." : "Cancelled at Flextock." } : { ok: false, t: r.error || "Couldn’t cancel at Flextock." });
+  };
+  const LABEL = { sent: "Sent", failed: "Not sent — failed", waiting_payment: "Waiting for payment", cancelled: "Cancelled at Flextock" };
+  const canSend = !finished && fx.state !== "sent" && fx.state !== "cancelled";
+  const canCancel = fx.state === "sent";
+  return (
+    <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-3)" }}>
+      <h2 style={{ fontSize: 22 }}>Flextock.</h2>
+      <Row k="At Flextock" v={LABEL[fx.state] || "Not sent yet"} />
+      {fx.status && <Row k="Their status" v={fx.status} />}
+      {fx.courier && <Row k="Courier" v={fx.courier} />}
+      {fx.tracking && <Row k="Tracking" v={fx.trackingUrl ? <a href={fx.trackingUrl} target="_blank" rel="noopener noreferrer">{fx.tracking}</a> : fx.tracking} />}
+      {!fx.tracking && fx.trackingUrl && <Row k="Tracking" v={<a href={fx.trackingUrl} target="_blank" rel="noopener noreferrer">Open tracking</a>} />}
+      {fx.sentAt && <Row k="Sent" v={fx.sentAt} />}
+      {fx.syncedAt && <Row k="Last checked" v={fx.syncedAt} />}
+      {fx.error && <InlineAlert tone="error">{fx.error}</InlineAlert>}
+      {order.status === "Cancelled" && fx.state === "sent" && <InlineAlert tone="error">This order is cancelled here but still active at Flextock — cancel it there too, or it may be delivered.</InlineAlert>}
+      {msg && <InlineAlert tone={msg.ok ? "ok" : "error"}>{msg.t}</InlineAlert>}
+      <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
+        {canSend && <Button size="sm" variant="quiet" disabled={!!busy} onClick={() => run("send")}>{busy === "send" ? "Sending…" : fx.state === "failed" ? "Try sending again" : "Send to Flextock"}</Button>}
+        {canCancel && <Button size="sm" variant="text" disabled={!!busy} onClick={() => { if (window.confirm("Cancel " + order.id + " at Flextock?")) run("cancel"); }}>{busy === "cancel" ? "Cancelling…" : "Cancel at Flextock"}</Button>}
+      </div>
+    </Card>
+  );
+}
+function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, onSaveNote, onSetPaid, fxCfg, onFlextock }) {
   const phone = window.useIsPhone();
   const { FLOW, NEXT_LABEL, HISTORY } = window.DASH;
   const STEP_LABEL = { Confirmed: "Mark confirmed", "With courier": "Mark out for delivery", Delivered: "Mark delivered" };
@@ -79,6 +117,7 @@ function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, o
           </Card>
         </div>
         <div style={{ display: "grid", gap: "var(--space-5)" }}>
+          <FlextockCard order={order} fxCfg={fxCfg} onFlextock={onFlextock} />
           <Card pad="var(--space-5)">
             <h2 style={{ fontSize: 22, marginBottom: "var(--space-3)" }}>Deliver to.</h2>
             <Row k="Name" v={order.customer} />

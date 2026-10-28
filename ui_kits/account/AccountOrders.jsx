@@ -44,6 +44,7 @@ function AccountOrders({ orders, open, setOpen }) {
                     <span><Badge>Nothing charged online</Badge></span>
                   </div>
                   <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
+                    {o.trackingUrl && <Button size="sm" onClick={() => window.open(o.trackingUrl, "_blank", "noopener")}>Track shipment{o.courier ? " · " + o.courier : ""}</Button>}
                     <Button size="sm" variant="quiet" onClick={() => window.open("https://wa.me/201023789109?text=" + encodeURIComponent("Hi Strands, I have a question about order " + o.id), "_blank", "noopener")}>Message us on WhatsApp</Button>
                     <Button size="sm" variant="text" onClick={() => {
                       try {

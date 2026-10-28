@@ -123,7 +123,9 @@ Deno.serve(async (req) => {
     const { data: order, error: oErr } = await admin.from("orders").select("*, order_items(*)").eq("id", order_id).maybeSingle();
     if (oErr || !order) return json({ ok: false, error: "order_not_found" }, 404);
 
-    const allowed = isAdmin === true || ((status === "placed" || status === "confirmed") && uid && uid === order.user_id);
+    // The Flextock sync (server side, with the service key) may send status emails too.
+    const fromServer = auth === "Bearer " + SERVICE;
+    const allowed = fromServer || isAdmin === true || ((status === "placed" || status === "confirmed") && uid && uid === order.user_id);
     if (!allowed) return json({ ok: false, error: "forbidden" }, 403);
 
     const lang = order.lang === "ar" ? "ar" : "en";
