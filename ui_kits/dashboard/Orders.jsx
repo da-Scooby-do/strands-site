@@ -1,4 +1,4 @@
-const { PageHeader, DataTable, StatusPill, SearchField, Button } = window.StrandsDesignSystem_6d0a65;
+const { PageHeader, DataTable, StatusPill, SearchField, Button, InlineAlert } = window.StrandsDesignSystem_6d0a65;
 const FILTERS = ["To action", "All", "Confirmed", "With courier", "Delivered", "Returned", "Cancelled"];
 const BULK_ACTIONS = [
   { key: "confirmed", label: "Confirm" },
@@ -6,7 +6,18 @@ const BULK_ACTIONS = [
   { key: "delivered", label: "Delivered" },
 ];
 const BULK_DONE_LABEL = { confirmed: "Confirmed", with_courier: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned" };
-function Orders({ orders, onOpen, onReload, onBulkAction, market, markets }) {
+// Flextock state as a small label in the orders list.
+const FX_CHIP = { sent: ["Flextock ✓", "#E9F2E4", "#3C5A2C"], failed: ["Flextock ✗", "#F6E5E5", "#8A2B2B"], waiting_payment: ["Flextock: unpaid", "#FBEFD8", "#7A5200"], cancelled: ["Flextock cancelled", "var(--purple-tint)", "var(--ink-2)"] };
+function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg }) {
+  const [fxBusy, setFxBusy] = React.useState(false);
+  const [fxMsg, setFxMsg] = React.useState(null);
+  const syncFx = async () => {
+    setFxBusy(true); setFxMsg(null);
+    const r = await window.flextockCall("sync");
+    setFxBusy(false);
+    setFxMsg(r && r.ok ? { ok: true, t: "Checked " + (r.checked || 0) + " order(s) at Flextock · " + (r.moved || 0) + " updated." } : { ok: false, t: (r && r.error) || "Sync failed." });
+    if (onReload) onReload();
+  };
   const [filter, setFilter] = React.useState("To action");
   const [q, setQ] = React.useState("");
   const [newOpen, setNewOpen] = React.useState(false);
@@ -53,7 +64,8 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets }) {
     <div>
       <window.DashNewOrder open={newOpen} country={market ? market.code : "EG"} markets={markets} onClose={() => setNewOpen(false)} onCreated={() => { if (onReload) onReload(); }} />
       <window.DashImportOrders open={importOpen} country={market ? market.code : "EG"} onClose={() => setImportOpen(false)} onDone={() => { if (onReload) onReload(); }} />
-      <PageHeader label="Orders" title="What needs packing." action={<span style={{ display: "inline-flex", gap: "var(--space-2)", flexWrap: "wrap" }}><Button size="sm" onClick={() => setNewOpen(true)}>New order</Button><Button size="sm" variant="quiet" onClick={() => setImportOpen(true)}>Import CSV</Button><Button size="sm" variant="quiet" onClick={exportCSV}>Export CSV</Button></span>} />
+      <PageHeader label="Orders" title="What needs packing." action={<span style={{ display: "inline-flex", gap: "var(--space-2)", flexWrap: "wrap" }}><Button size="sm" onClick={() => setNewOpen(true)}>New order</Button><Button size="sm" variant="quiet" onClick={() => setImportOpen(true)}>Import CSV</Button><Button size="sm" variant="quiet" onClick={exportCSV}>Export CSV</Button>{fxCfg && fxCfg.enabled && <Button size="sm" variant="quiet" disabled={fxBusy} onClick={syncFx}>{fxBusy ? "Syncing…" : "Sync Flextock"}</Button>}</span>} />
+      {fxMsg && <div style={{ marginBottom: "var(--space-4)" }}><InlineAlert tone={fxMsg.ok ? "ok" : "error"}>{fxMsg.t}</InlineAlert></div>}
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginBottom: "var(--space-4)" }}>
         {FILTERS.map((f) => (
           <button key={f} type="button" onClick={() => setFilter(f)}
@@ -88,7 +100,9 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets }) {
         { key: "source", label: "From", render: (r) => <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
           {!market && <span title={r.country} style={{ fontSize: 14 }}>{window.marketFlag(r.country)}</span>}
           {(r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--green)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span>}
+          {r.fx && FX_CHIP[r.fx.state] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: FX_CHIP[r.fx.state][1], color: FX_CHIP[r.fx.state][2], whiteSpace: "nowrap" }}>{FX_CHIP[r.fx.state][0]}</span>}
           {(r.pay === "instapay" || r.pay === "bank") && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "#FBEFD8", color: "#7A5200", whiteSpace: "nowrap" }}>{r.pay === "bank" ? "Bank" : "InstaPay"}</span>}
+          {r.fx && FX_CHIP[r.fx.state] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: FX_CHIP[r.fx.state][1], color: FX_CHIP[r.fx.state][2], whiteSpace: "nowrap" }}>{FX_CHIP[r.fx.state][0]}</span>}
           {(r.pay === "instapay" || r.pay === "bank") && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: r.paid ? "#E9F2E4" : "#F6E5E5", color: r.paid ? "#3C5A2C" : "#8A2B2B", whiteSpace: "nowrap" }}>{r.paid ? "Paid" : "Unpaid"}</span>}
         </span> },
         { key: "items", label: "Items", render: (r) => <span style={{ whiteSpace: "nowrap", fontFamily: "var(--font-numeric)" }}>{window.itemsSummary(r.items) || "—"}</span> },
