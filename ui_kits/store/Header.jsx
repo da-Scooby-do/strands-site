@@ -11,7 +11,7 @@ const MENU = [
   { key: "nav.ingredients", en: "Ingredients", ar: "المكونات", href: "#ingredients" },
   { key: "menu.shopnow", en: "Shop now", ar: "تسوّقي الآن", href: "#the-masque" },
 ];
-function Header({ onBuy, onCart, cart }) {
+function Header({ onBuy, onCart, cart, market, onCountry }) {
   const phone = window.useIsPhone();
   const lang = window.useLang();
   const ar = lang === "AR";
@@ -37,6 +37,11 @@ function Header({ onBuy, onCart, cart }) {
           ))}
         </nav>
         <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+          {/* The shopper's country (picked on arrival); tap to change it. */}
+          {market && onCountry && <button type="button" onClick={onCountry} aria-label={(ar ? "الدولة: " + market.name_ar : "Country: " + market.name_en)}
+            style={{ font: "inherit", fontFamily: "var(--font-sans)", height: 36, padding: "0 8px", display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "1px solid var(--rule)", borderRadius: "var(--radius-control)", cursor: "pointer", color: "var(--ink)", fontSize: 13 }}>
+            <span style={{ fontSize: 17 }}>{((window.MARKET_INFO || {})[market.code] || {}).flag}</span>{!phone && <span>{market.code}</span>}
+          </button>}
           {!phone && <LanguageToggle value={window.langToggleValue()} onChange={window.setStrandsLang} />}
           <a href="../account/index.html" style={{ borderBottom: "none", display: "inline-flex" }}><IconButton name="user" label={ar ? "حسابك" : "Account"} /></a>
           <IconButton name="shopping-bag" label={ar ? "السلة" : "Cart"} badge={cart || undefined} onClick={onCart} />
