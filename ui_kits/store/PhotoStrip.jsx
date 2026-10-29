@@ -1,13 +1,13 @@
 const PHOTOS = [
-  { src: "../../assets/photography/jar-in-hands.jpg", alt: "The masque held in both hands", pos: "center 62%" },
-  { src: "../../assets/photography/texture.jpg", alt: "The texture of the masque", pos: "center" },
-  { src: "../../assets/photography/three-jars.jpg", alt: "Three jars stacked", pos: "center 55%" },
-  { src: "../../assets/photography/jar-and-gift-bag.jpg", alt: "The masque with its gift bag", pos: "center 45%" },
-  { src: "../../assets/photography/gift-bag.jpg", alt: "The Strands gift bag", pos: "center 55%" },
-  { src: "../../assets/photography/mango-butter-flaxseed.jpg", alt: "Mango butter and flaxseed", pos: "center" },
-  { src: "../../assets/photography/ingredient-mango-butter.jpg", alt: "Mango and mango butter", pos: "center" },
-  { src: "../../assets/photography/ingredient-flaxseed.jpg", alt: "Flaxseed oil and seed", pos: "center" },
-  { src: "../../assets/photography/ingredient-hibiscus.jpg", alt: "Hibiscus extract", pos: "center" },
+  { src: "../../assets/photography/sm/jar-in-hands.jpg", alt: "The masque held in both hands", pos: "center 62%" },
+  { src: "../../assets/photography/sm/texture.jpg", alt: "The texture of the masque", pos: "center" },
+  { src: "../../assets/photography/sm/three-jars.jpg", alt: "Three jars stacked", pos: "center 55%" },
+  { src: "../../assets/photography/sm/jar-and-gift-bag.jpg", alt: "The masque with its gift bag", pos: "center 45%" },
+  { src: "../../assets/photography/sm/gift-bag.jpg", alt: "The Strands gift bag", pos: "center 55%" },
+  { src: "../../assets/photography/sm/mango-butter-flaxseed.jpg", alt: "Mango butter and flaxseed", pos: "center" },
+  { src: "../../assets/photography/sm/ingredient-mango-butter.jpg", alt: "Mango and mango butter", pos: "center" },
+  { src: "../../assets/photography/sm/ingredient-flaxseed.jpg", alt: "Flaxseed oil and seed", pos: "center" },
+  { src: "../../assets/photography/sm/ingredient-hibiscus.jpg", alt: "Hibiscus extract", pos: "center" },
 ];
 function PhotoStrip({ height = 520, horizontal = false }) {
   const phone = window.useIsPhone();

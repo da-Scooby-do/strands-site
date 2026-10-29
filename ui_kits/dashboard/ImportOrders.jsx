@@ -47,8 +47,14 @@ function ImportOrders({ open, onClose, onDone, country }) {
     setRows(null); setResult(null); setErr(""); setFileName(""); setProgress(null);
   }, [open]);
 
-  // Match on jars AND size — 300 ml and 500 ml are both "1 jar". A variant without its own size is 300 ml.
-  const variantFor = (jars, size) => (variants.find((v) => v.jars === jars && (v.size_ml || 300) === size) || {}).key;
+  // Match on jars AND size — the small and big jar are both "1 jar". A variant without its own size is 300 ml.
+  // The nearest size counts (within 100 ml), so "500" still finds the big jar saved as 460 ml.
+  const variantFor = (jars, size) => {
+    const same = variants.filter((v) => v.jars === jars).map((v) => ({ v, gap: Math.abs((v.size_ml || 300) - size) })).sort((a, b) => a.gap - b.gap);
+    return same.length && same[0].gap <= 100 ? same[0].v.key : undefined;
+  };
+  const shopSizes = Array.from(new Set(variants.filter((v) => v.jars === 1).map((v) => v.size_ml || 300))).sort((a, b) => a - b);
+  const sizesText = (shopSizes.length ? shopSizes : [300]).join(" or ");
   const validKeys = new Set(variants.map((v) => v.key));
 
   function onFile(e) {
@@ -107,7 +113,7 @@ function ImportOrders({ open, onClose, onDone, country }) {
       if (!r.name) { fail.push({ row: rowNo, reason: "missing name" }); continue; }
       if (!r.phone) { fail.push({ row: rowNo, reason: "missing phone" }); continue; }
       const vkey = variantKeyFor(r);
-      if (!vkey) { fail.push({ row: rowNo, reason: "unknown product (set size = 300 or 500, jars = 1, 2 or 3)" }); continue; }
+      if (!vkey) { fail.push({ row: rowNo, reason: "unknown product (set size = " + sizesText + ", jars = 1, 2 or 3)" }); continue; }
       const payload = {
         country: r.country, source: r.source, status: r.status || "confirmed",
         full_name: r.name, phone: r.phone, phone2: r.phone2, governorate: r.governorate,
@@ -145,7 +151,7 @@ function ImportOrders({ open, onClose, onDone, country }) {
         </header>
         <div style={{ padding: "var(--space-5)", display: "grid", gap: "var(--space-4)" }}>
           <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)", margin: 0, lineHeight: 1.6 }}>
-            Upload a CSV with one order per row. Columns: <strong>country</strong> (EG, SA or SD — blank means the country tab you’re on), name, phone, whatsapp, governorate, street, area, landmark, <strong>size</strong> (300 or 500 — blank means 300), <strong>jars</strong> (1, 2 or 3), qty, shipping, discount, status, source, note. Prices come from the product’s bundles automatically.
+            Upload a CSV with one order per row. Columns: <strong>country</strong> (EG, SA or SD — blank means the country tab you’re on), name, phone, whatsapp, governorate, street, area, landmark, <strong>size</strong> ({sizesText} — blank means 300), <strong>jars</strong> (1, 2 or 3), qty, shipping, discount, status, source, note. Prices come from the product’s bundles automatically.
           </p>
           <Button variant="quiet" size="sm" onClick={downloadTemplate}>Download template</Button>
 

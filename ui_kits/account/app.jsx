@@ -1,0 +1,76 @@
+const ST_LABEL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",with_courier:"With courier",delivered:"Delivered",cancelled:"Cancelled"};
+function pad2(n){return (n<10?"0":"")+n;}
+function fmtDate(d){try{const x=new Date(d);return pad2(x.getDate())+"/"+pad2(x.getMonth()+1)+"/"+x.getFullYear();}catch(e){return "";}}
+function mapOrder(o){
+  const items=(o.order_items||[]).map(i=>({n:i.title_en+(i.meta_en?" — "+i.meta_en:""),q:i.qty,p:i.unit_price,k:i.variant_key}));
+  const dates={};
+  (o.order_events||[]).forEach(e=>{ dates[ST_LABEL[e.status]||e.status]=fmtDate(e.created_at); });
+  return {id:o.order_number,uuid:o.id,currency:o.currency||"EGP",trackingUrl:o.tracking_url||null,courier:o.courier_name||null,pay:o.payment_method||"cod",status:ST_LABEL[o.status]||o.status,items,shipping:o.shipping||0,discount:o.discount||0,total:o.total,promo:o.promo_code||null,
+    placed:fmtDate(o.created_at),dates,street:o.street,area:o.area,gov:o.governorate,phone:o.phone};
+}
+function Splash({msg}){return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",color:"var(--ink-2)",fontFamily:"var(--font-sans)"}}>{msg}</div>;}
+function RecoveryForm({email,onDone}){
+  const { Input, Button, InlineAlert } = window.StrandsDesignSystem_6d0a65;
+  const [pw,setPw]=React.useState(""); const [busy,setBusy]=React.useState(false);
+  const [err,setErr]=React.useState(""); const [ok,setOk]=React.useState(false);
+  async function submit(){
+    if(pw.length<6){ setErr("Password must be at least 6 characters."); return; }
+    setBusy(true); setErr("");
+    const { error } = await window.sb.auth.updateUser({ password: pw });
+    setBusy(false);
+    if(error){ setErr(error.message); return; }
+    setOk(true); setTimeout(onDone,1400);
+  }
+  return <div style={{minHeight:"100vh",display:"grid",placeItems:"center",background:"var(--cream)",padding:"var(--gutter)",fontFamily:"var(--font-sans)"}}>
+    <div style={{width:"min(400px,100%)",background:"var(--white)",border:"1px solid var(--rule)",borderRadius:"var(--radius-card)",padding:"var(--space-6)",display:"grid",gap:"var(--space-4)"}}>
+      <h1 style={{fontSize:24,margin:0}}>Set a new password</h1>
+      <p style={{fontSize:"var(--text-small)",color:"var(--ink-2)",margin:0}}>For {email}. Choose a new password to finish.</p>
+      <Input label="New password" type="password" value={pw} onChange={setPw} />
+      {err && <InlineAlert tone="error">{err}</InlineAlert>}
+      {ok && <InlineAlert tone="ok">Password updated. Taking you to your account…</InlineAlert>}
+      <Button fullWidth onClick={submit} disabled={busy||ok}>{busy?"Saving…":"Save new password"}</Button>
+    </div>
+  </div>;
+}
+
+function App(){
+  const [ready,setReady]=React.useState(false);
+  const [session,setSession]=React.useState(null);
+  const [recovery,setRecovery]=React.useState(false);
+  const [orders,setOrders]=React.useState([]);
+  const [name,setName]=React.useState("");
+  const [isOwner,setIsOwner]=React.useState(false);
+
+  React.useEffect(()=>{
+    if(!window.SB_READY){ setReady(true); return; }
+    window.sb.auth.getSession().then(({data})=>{ setSession(data.session||null); setReady(true); });
+    const {data:sub}=window.sb.auth.onAuthStateChange((_e,s)=>{ setSession(s||null); if(_e==="PASSWORD_RECOVERY") setRecovery(true); });
+    return ()=>{ sub&&sub.subscription&&sub.subscription.unsubscribe(); };
+  },[]);
+
+  React.useEffect(()=>{
+    if(!session){ setOrders([]); setName(""); setIsOwner(false); return; }
+    (async()=>{
+      const uid=session.user.id;
+      const [ord,prof,adm]=await Promise.all([
+        // Only this person's orders. (Row security alone would hand the owner every customer's.)
+        window.sb.from("orders").select("*, order_items(*), order_events(*)").eq("user_id",uid).order("created_at",{ascending:false}),
+        window.sb.from("profiles").select("full_name").eq("user_id",uid).maybeSingle(),
+        window.sb.rpc("is_admin"),
+      ]);
+      if(ord.data) setOrders(ord.data.map(mapOrder));
+      setName((prof.data&&prof.data.full_name)||session.user.email);
+      setIsOwner(!adm.error && adm.data===true);
+    })();
+  },[session]);
+
+  if(!ready) return <Splash msg="Loading…"/>;
+  if(!window.SB_READY) return <Splash msg="Could not reach the database. Refresh to try again."/>;
+  if(recovery && session) return <RecoveryForm email={session.user.email} onDone={()=>setRecovery(false)}/>;
+  if(!session) return <window.DashLogin heading="Sign in to your account." onSignedIn={(s)=>setSession(s)}/>;
+  return <window.StrandsAccount user={name} isOwner={isOwner} orders={orders}
+    onDashboard={()=>{window.location.href="../dashboard/index.html";}}
+    onSignOut={()=>window.sb.auth.signOut()}/>;
+}
+const mount=()=>{ if(!window.StrandsAccount||!window.DASH){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
+mount();
