@@ -267,6 +267,59 @@ export async function runCron(deps: any) {
   return { sent, failed, ...sync };
 }
 
+// ---------- products (SKU codes) ----------
+
+// Flextock's product list -> [{ sku_code, sku_name, quantity, price }].
+export function readProducts(data: any) {
+  const list = Array.isArray(data) ? data : (data && (data.products || data.results || data.data)) || [];
+  return (Array.isArray(list) ? list : []).filter((x: any) => x && x.sku_code).map((x: any) => ({
+    sku_code: String(x.sku_code), sku_name: x.sku_name || "", quantity: Number(x.item_quantity ?? x.quantity ?? 0) || 0,
+    price: x.sku_price ?? null,
+  }));
+}
+
+export async function listProducts(deps: any) {
+  const token = await fxLogin(deps);
+  const r = await call(deps, "/external-integration/list-products/", token, { request: "product listing" });
+  if (!r.ok) throw new Error("Flextock product list failed (" + r.status + "): " + short(r.data));
+  return { ok: true, products: readProducts(r.data) };
+}
+
+// Register sizes on Flextock. items: [{ variant_id, sku_code }]. Product details
+// come from our database. A code that already exists there counts as done.
+// Every code that's done is saved on the size.
+export async function createProducts(deps: any, items: any[]) {
+  const sizes = await deps.db.sizesForFlextock();  // [{ id, size_ml, label_en, price_egp, name_en, description, image_url }]
+  const wanted: any[] = [];
+  for (const it of items || []) {
+    const v = sizes.find((x: any) => x.id === it.variant_id);
+    const code = String(it.sku_code || "").trim();
+    if (v && code) wanted.push({ v, code });
+  }
+  if (!wanted.length) return { ok: false, error: "Type a code next to at least one size first." };
+  const codes = wanted.map((w) => w.code);
+  if (new Set(codes).size !== codes.length) return { ok: false, error: "Each size needs its own code." };
+  const token = await fxLogin(deps);
+  const body = { products: wanted.map(({ v, code }) => ({
+    sku_code: code,
+    sku_name: (v.name_en || "Velvet Touch Masque") + " " + (v.size_ml || 300) + " ml",
+    sku_description: v.description || "",
+    sku_image_url: v.image_url || "",
+    price: Number(v.price_egp) || 0,
+  })) };
+  const r = await call(deps, "/external-integration/create-products/", token, body);
+  const replies: any[] = (r.data && Array.isArray(r.data.response)) ? r.data.response : [];
+  const results = wanted.map(({ v, code }) => {
+    const rep = replies.find((x) => String(x.sku_code) === code);
+    const msg = rep ? String(rep.message || "") : (r.ok ? "Created." : short(r.data));
+    const done = /created successfully|already exists/i.test(msg) || (r.ok && !rep);
+    return { variant_id: v.id, size_ml: v.size_ml || 300, sku_code: code, done, message: msg };
+  });
+  for (const x of results) if (x.done) await deps.db.saveSku(x.variant_id, x.sku_code);
+  if (!r.ok && !results.some((x) => x.done)) return { ok: false, error: "Flextock refused (" + r.status + "): " + short(r.data), results };
+  return { ok: true, results };
+}
+
 export async function testLogin(deps: any) {
   await fxLogin(deps);
   return { ok: true };

@@ -12,6 +12,8 @@ function Flextock({ onSaved }) {
   const [busy, setBusy] = React.useState(null);
   const [msg, setMsg] = React.useState(null);
   const [conn, setConn] = React.useState(null);
+  const [fxProducts, setFxProducts] = React.useState(null);  // what's registered on Flextock
+  const [skuMsg, setSkuMsg] = React.useState(null);
 
   React.useEffect(() => { load(); }, []);
   async function load() {
@@ -63,6 +65,28 @@ function Flextock({ onSaved }) {
   }
 
 
+  // "Get products from Flextock": show what's registered there, to pick codes from.
+  async function getProducts() {
+    setBusy("products"); setSkuMsg(null);
+    const r = await window.flextockCall("products");
+    setBusy(null);
+    if (r && r.ok) { setFxProducts(r.products || []); if (!(r.products || []).length) setSkuMsg({ ok: false, t: "No products are registered on your Flextock account yet — type a code for each size and press Create on Flextock." }); }
+    else setSkuMsg({ ok: false, t: (r && r.error) || "Couldn’t get the products from Flextock." });
+  }
+  // "Create on Flextock": register each size that has a typed code (name, price, photo from the site).
+  async function createProducts() {
+    const items = sizes.filter((x) => String(x.sku_code || "").trim()).map((x) => ({ variant_id: x.id, sku_code: String(x.sku_code).trim() }));
+    if (!items.length) return setSkuMsg({ ok: false, t: "Type a code next to each size you want to register first." });
+    setBusy("create"); setSkuMsg(null);
+    const r = await window.flextockCall("create_products", { items });
+    setBusy(null);
+    if (r && r.ok) {
+      const lines = (r.results || []).map((x) => x.size_ml + " ml → " + x.sku_code + ": " + (x.done ? (/exists/i.test(x.message) ? "already on Flextock, saved" : "created and saved") : "not created (" + x.message + ")"));
+      setSkuMsg({ ok: (r.results || []).every((x) => x.done), t: lines.join(" · ") });
+      if (onSaved) onSaved();
+    } else setSkuMsg({ ok: false, t: (r && r.error) || "Couldn’t create the products on Flextock." });
+  }
+
   if (!cfg) return <div style={{ color: "var(--ink-2)" }}>Loading Flextock…</div>;
   const fmt = (d) => { try { return d ? new Date(d).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "never"; } catch (e) { return d; } };
   const two = { display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr"), gap: "var(--space-3) var(--space-4)" };
@@ -104,7 +128,30 @@ function Flextock({ onSaved }) {
 
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-3)" }}>
           <h2 style={{ fontSize: 22 }}>SKU codes.</h2>
-          <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)", margin: 0 }}>The product code Flextock uses for each size — ask Flextock for them. Bundles (2 or 3 jars) are sent as that many jars of their size.</p>
+          <p style={{ fontSize: "var(--text-small)", color: "var(--ink-2)", margin: 0, lineHeight: 1.6 }}>The code Flextock knows each size by. You choose it — but if Flextock already registered your jars (for example when they received your stock), use <strong>their</strong> code, since the stock in their warehouse is tied to it.
+            Press <strong>Get products from Flextock</strong> to see what’s there. If nothing is, type a code for each size (e.g. STR-VTM-300) and press <strong>Create on Flextock</strong>. Bundles (2 or 3 jars) are sent as that many jars of their size.</p>
+          <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
+            <Button size="sm" variant="quiet" onClick={getProducts} disabled={!!busy}>{busy === "products" ? "Loading…" : "Get products from Flextock"}</Button>
+            <Button size="sm" variant="quiet" onClick={createProducts} disabled={!!busy}>{busy === "create" ? "Creating…" : "Create on Flextock"}</Button>
+          </div>
+          {skuMsg && <InlineAlert tone={skuMsg.ok ? "ok" : "error"}>{skuMsg.t}</InlineAlert>}
+          {fxProducts && fxProducts.length > 0 && (
+            <div style={{ display: "grid", gap: 6, background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-3) var(--space-4)" }}>
+              <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>On your Flextock account — tap a button to use that code:</span>
+              {fxProducts.map((p) => (
+                <div key={p.sku_code} style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid var(--rule)", fontSize: "var(--text-small)" }}>
+                  <strong style={{ fontFamily: "var(--font-numeric)" }}>{p.sku_code}</strong>
+                  <span style={{ color: "var(--ink-2)" }}>{p.sku_name || "—"} · {p.quantity} in their warehouse</span>
+                  <span style={{ marginInlineStart: "auto", display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
+                    {sizes.map((x) => (
+                      <Button key={x.id} size="sm" variant={x.sku_code === p.sku_code ? undefined : "text"} onClick={() => setSku(x.id, p.sku_code)}>{x.sku_code === p.sku_code ? "✓ " : "Use for "}{(x.size_ml || 300) + " ml"}</Button>
+                    ))}
+                  </span>
+                </div>
+              ))}
+              <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>Then press Save changes at the top.</span>
+            </div>
+          )}
           {sizes.map((x) => (
             <div key={x.id} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1.4fr"), gap: "var(--space-3)", alignItems: "end" }}>
               <div style={{ height: "var(--input-h)", display: "grid", alignContent: "center", fontSize: "var(--text-small)" }}>
