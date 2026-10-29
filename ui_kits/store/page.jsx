@@ -89,17 +89,14 @@ function Page(){
     let live=true; setDataStatus("loading");
     // Run each query up to n times with backoff, and NEVER let one reject take the
     // others down (the old Promise.all silently blanked price + product on any 3G hiccup).
-    const attempt=async(fn,n)=>{ let last; for(let i=0;i<n;i++){ try{ const r=await fn(); if(r&&!r.error) return r; last=r; }catch(e){ last={error:e}; } if(i<n-1) await new Promise(res=>setTimeout(res,600*(i+1))); } return last||{error:true}; };
-    const qProduct=()=>window.sb.from("products").select("*").eq("active",true).order("created_at").limit(1).maybeSingle();
-    // Every size visible to the shop: on for Egypt, or priced in an open country.
-    const qVariants=()=>window.sb.from("product_variants").select("*").order("sort");
-    const qShip=()=>window.sb.from("settings").select("value").eq("key","shipping").maybeSingle();
+    // The first try uses the request mount() already started, if there is one.
+    const attempt=async(k,n)=>{ let last; for(let i=0;i<n;i++){ try{ const r=await ((i===0&&takeEarly(k))||STORE_Q[k]()); if(r&&!r.error) return r; last=r; }catch(e){ last={error:e}; } if(i<n-1) await new Promise(res=>setTimeout(res,600*(i+1))); } return last||{error:true}; };
     // Other countries. If these tables don't exist yet the shop simply stays Egypt-only.
     const done=()=>{ if(live) setMLoaded(n=>n+1); };
-    window.sb.from("markets").select("*").eq("enabled",true).order("sort").then(({data})=>{ if(live&&data) setMarkets(data.filter(m=>m.code!=="EG")); done(); },done);
-    window.sb.from("market_variants").select("*").not("price","is",null).then(({data})=>{ if(live&&data) setMarketVariants(data); done(); },done);
+    (takeEarly("markets")||STORE_Q.markets()).then(({data})=>{ if(live&&data) setMarkets(data.filter(m=>m.code!=="EG")); done(); },done);
+    (takeEarly("marketVariants")||STORE_Q.marketVariants()).then(({data})=>{ if(live&&data) setMarketVariants(data); done(); },done);
     (async()=>{
-      const [p,v,s]=await Promise.all([ attempt(qProduct,3), attempt(qVariants,3), attempt(qShip,2) ]);
+      const [p,v,s]=await Promise.all([ attempt("product",3), attempt("variants",3), attempt("ship",2) ]);
       if(!live) return;
       if(p&&p.data) setProduct(p.data);
       if(v&&v.data) setVariants(v.data);
@@ -162,10 +159,24 @@ function Page(){
   </div>;
 }
 let _rendered=false;
+// What the page needs first. mount() starts these alongside the site copy, so the
+// page waits one round trip to the database instead of two.
+const STORE_Q={
+  product:()=>window.sb.from("products").select("*").eq("active",true).order("created_at").limit(1).maybeSingle(),
+  // Every size visible to the shop: on for Egypt, or priced in an open country.
+  variants:()=>window.sb.from("product_variants").select("*").order("sort"),
+  ship:()=>window.sb.from("settings").select("value").eq("key","shipping").maybeSingle(),
+  markets:()=>window.sb.from("markets").select("*").eq("enabled",true).order("sort"),
+  marketVariants:()=>window.sb.from("market_variants").select("*").not("price","is",null),
+};
+let early=null;  // started requests, each handed out once
+const takeEarly=(k)=>{ const r=early&&early[k]; if(r) early[k]=null; return r||null; };
+const startEarly=()=>{ early={}; for(const k of Object.keys(STORE_Q)) early[k]=STORE_Q[k]().then((r)=>r,(e)=>({error:e})); };
 const render=()=>{ if(_rendered) return; _rendered=true; ReactDOM.createRoot(document.getElementById('root')).render(<Page/>); };
 const mount=()=>{ if(!window.StrandsFooter||!window.StrandsPhotoStrip){return setTimeout(mount,60);}
   // Load owner-edited copy (settings.content) before first paint so there's no flash.
   if(window.SB_READY){
+    startEarly();
     setTimeout(render, 2500); // safety: never leave the page blank if the query stalls
     window.sb.from("settings").select("value").eq("key","content").maybeSingle()
       .then(({data})=>{ if(data&&data.value) window.setSiteCopy(data.value); }, ()=>{})

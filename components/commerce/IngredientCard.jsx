@@ -5,7 +5,7 @@ export function IngredientCard({ name, children, arabic, image, figureLabel = "I
     <div style={{ background: "var(--white)", border: "var(--border-card)", borderRadius: "var(--radius-card)", overflow: "hidden", display: "grid" }}>
       <div style={{ position: "relative", aspectRatio: "16 / 10", background: "var(--green-tint)", overflow: "hidden" }}>
         {image
-          ? <img src={image} alt={name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 50%", display: "block" }} />
+          ? <img src={image} alt={name} loading="lazy" decoding="async" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 50%", display: "block" }} />
           : <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--green)", fontFamily: "var(--font-sans)" }}>{figureLabel}</span>}
       </div>
       <div style={{ padding: "var(--space-4)", display: "grid", gap: 6 }}>

@@ -1,16 +1,12 @@
-# Store build — drop Babel Standalone
+# Site build: precompiled, light pages
 
-The store page loads its `.jsx` and transpiles it **in the browser** with Babel
-Standalone (~900 KB gzipped) on every visit. This one-step build transpiles that
-JSX **ahead of time** so the live page ships production React + a single
-precompiled bundle, with **no Babel** — a big win on slow connections.
-
-It only affects `ui_kits/store/`. The account and dashboard pages are untouched.
+The three pages (store, account, dashboard) are written as `.jsx`. This build
+compiles them ahead of time, so visitors download plain JavaScript. There is no
+Babel in the browser and no development React.
 
 ## Run it
 
-You need **Node 18+** (this repo's dev machine doesn't have Node — run this
-wherever Node is available, or in CI).
+You need Node 18 or newer.
 
 ```bash
 cd build
@@ -18,36 +14,48 @@ npm install
 npm run build
 ```
 
-Then commit the regenerated files and deploy:
+Run it after you change any of these, then commit what it lists at the end:
+
+- a `.jsx` file
+- `styles.css` or a file in `tokens/`
+- `_ds_bundle.js`
+- an icon name
+
+## What it makes
+
+| File | What it is |
+| --- | --- |
+| `_vendor.js` | React and ReactDOM (production), supabase-js, and only the lucide icons the site uses. These are found by scanning the code for icon names. One file on the site's own domain, instead of three outside CDNs and all 1,700 icons. |
+| `_styles.css` | `styles.css` with its `@import`s inlined. Google Fonts is linked from each page's `<head>` instead, so it starts loading at once. |
+| `_ds_bundle.min.js` | `_ds_bundle.js` (the design-system components), minified. |
+| `ui_kits/store/_bundle.store.js` | The store. Each file is wrapped in its own scope. |
+| `ui_kits/account/_bundle.account.js` | The account page. |
+| `ui_kits/dashboard/_bundle.dashboard.js` | The dashboard. |
+
+The account and dashboard files share top-level names, as they did under
+in-browser Babel, where every file was its own `<script>` and `const` became
+`var`. The build keeps that behaviour: it uses the same Babel version
+(7.29.0) and compiles block scoping to `var`, leaving everything else modern.
+Each page's inline script now lives in `ui_kits/<page>/app.jsx`, and the store's
+in `ui_kits/store/page.jsx`.
+
+Each `index.html` is rewritten in place, and it's safe to run again:
+
+- Babel and the CDN scripts are removed.
+- The marked `<!--build:head-->` block (styles, fonts, vendor) is regenerated.
+- Every script and stylesheet gets a `?v=<hash>` stamp.
+
+`vercel.json` lets browsers keep stamped files for a year, because any change
+gives them a new address. Photos and fonts can be kept for a day and are then
+refreshed in the background.
+
+## Photos
+
+`assets/photography/sm/` (480 px wide) holds the copies used in the photo strip.
+`assets/photography/xs/` (160 px) holds the gallery thumbnails. If you replace
+a photo, make new copies with ImageMagick:
 
 ```bash
-git add ui_kits/store/index.html ui_kits/store/_bundle.store.js ui_kits/store/page.jsx
-git commit -m "store: precompile JSX, drop Babel Standalone"
-git push
+convert photo.jpg -resize '480x>' -strip -interlace Plane -quality 72 sm/photo.jpg
+convert photo.jpg -resize '160x>' -strip -interlace Plane -quality 74 xs/photo.jpg
 ```
-
-## What it does
-
-1. **First run only:** lifts the inline page script out of `index.html` into
-   `ui_kits/store/page.jsx` (so it becomes an editable source file).
-2. Transpiles every store component + `page.jsx` (JSX → `React.createElement`),
-   wraps each in its own scope, and writes them to
-   `ui_kits/store/_bundle.store.js`.
-3. Rewrites `ui_kits/store/index.html` to production form: production React,
-   **Babel Standalone removed**, per-file `text/babel` scripts replaced by the
-   one precompiled bundle. (Idempotent — safe to re-run.)
-
-## Day-to-day workflow after this
-
-The `.jsx` files (and `page.jsx`) stay the **source you edit**.
-`index.html` + `_bundle.store.js` are **generated** — after editing any store
-`.jsx`, run `npm run build` again, then commit. Head/styles in `index.html`
-(preconnect, preload, `<style>`) are preserved across builds, so you can still
-hand-edit those.
-
-## Wiring into Vercel (optional)
-
-To build automatically on deploy instead of committing the output, set the
-project's **Build Command** to `cd build && npm install && npm run build` and
-leave the output directory as the repo root. (Left to you — this script does not
-change any Vercel config.)

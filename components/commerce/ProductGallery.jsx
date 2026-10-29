@@ -21,7 +21,7 @@ export function ProductGallery({ images = [], alt = "Strands Velvet Touch Masque
         {images.map((im, n) => (
           <button key={n} type="button" onClick={() => setI(n)} aria-label={im.label}
             style={{ width: "var(--thumb)", height: "var(--thumb)", padding: 0, borderRadius: "var(--radius-control)", overflow: "hidden", cursor: "pointer", background: im.ground || "var(--purple-tint)", border: "1px solid " + (n === i ? "var(--purple)" : "var(--rule)") }}>
-            {im.src ? <img src={im.src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            {im.src ? <img src={im.thumb || im.src} alt="" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : <span style={{ fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--ink-2)", fontFamily: "var(--font-sans)" }}>{im.label}</span>}
           </button>
         ))}

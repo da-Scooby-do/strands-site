@@ -49,8 +49,8 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg
   const exportCSV = () => {
     // Force phone numbers to text (="…") so Excel doesn't turn them into 2.0E+11.
     const xlText = (v) => v ? '="' + String(v).replace(/"/g, "") + '"' : "";
-    // One numeric "jars" column per size (always 300 and 500) so Excel can total what to pack.
-    const sizes = Array.from(new Set([300, 500].concat(rows.flatMap((o) => o.items.map((i) => i.size).filter(Boolean))))).sort((a, b) => a - b);
+    // One numeric "jars" column per size (300, plus every size in these orders) so Excel can total what to pack.
+    const sizes = Array.from(new Set([300].concat(rows.flatMap((o) => o.items.map((i) => i.size).filter(Boolean))))).sort((a, b) => a - b);
     const headers = ["Order", "Country", "Currency", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Items"].concat(sizes.map((s) => s + " ml jars"), ["Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"]);
     const data = rows.map((o) => {
       const sub = o.items.reduce((a, i) => a + i.p * i.q, 0);

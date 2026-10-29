@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Precompiles the Strands store JSX and removes Babel Standalone from the live page.",
+  "description": "Precompiles the Strands pages (store, account, dashboard) and bundles their libraries, so no Babel or CDN code runs in the browser.",
   "scripts": {
     "build": "node build.mjs"
   },
   "devDependencies": {
-    "esbuild": "^0.24.0"
+    "@babel/standalone": "7.29.0",
+    "@supabase/supabase-js": "2.114.0",
+    "esbuild": "^0.24.0",
+    "lucide": "0.454.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }

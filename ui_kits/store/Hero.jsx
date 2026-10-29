@@ -39,12 +39,13 @@ function Hero({ onAdd, added, product, variants, status, sizes, selected, onSele
     <section id="the-masque" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: phone ? "var(--space-6) var(--gutter)" : "var(--space-8) var(--gutter)", display: "grid", gridTemplateColumns: window.cols(phone, "60fr 40fr"), gap: phone ? "var(--space-5)" : "var(--space-8)", alignItems: "start" }}>
       {/* key={size} resets the gallery to its first photo whenever the size changes. */}
       <ProductGallery key={size} ratio={phone ? "1 / 1" : "4 / 5"} images={[
-        size === 500
-          ? { label: ar ? "علبة ٥٠٠ مل" : "The 500 ml jar", src: "../../assets/photography/jar-500ml.jpg", position: phone ? "center 72%" : "center 66%" }
-          : { label: ar ? "العلبة" : "The jar", src: "../../assets/photography/jar-in-hands.jpg", position: phone ? "center 78%" : "center 62%" },
-        { label: ar ? "ثلاث علب" : "Three jars", src: "../../assets/photography/three-jars.jpg", position: phone ? "center 62%" : "center 55%" },
-        { label: ar ? "كيس الهدية" : "The gift bag", src: "../../assets/photography/gift-bag.jpg", position: "center 55%" },
-        { label: ar ? "القوام" : "Texture", src: "../../assets/photography/texture.jpg" },
+        // The big jar (saved as 460 ml) has its own photo; anything 400 ml and up uses it.
+        size >= 400
+          ? { label: ar ? "علبة " + size + " مل" : "The " + size + " ml jar", src: "../../assets/photography/jar-500ml.jpg", thumb: "../../assets/photography/xs/jar-500ml.jpg", position: phone ? "center 72%" : "center 66%" }
+          : { label: ar ? "العلبة" : "The jar", src: "../../assets/photography/jar-in-hands.jpg", thumb: "../../assets/photography/xs/jar-in-hands.jpg", position: phone ? "center 78%" : "center 62%" },
+        { label: ar ? "ثلاث علب" : "Three jars", src: "../../assets/photography/three-jars.jpg", thumb: "../../assets/photography/xs/three-jars.jpg", position: phone ? "center 62%" : "center 55%" },
+        { label: ar ? "كيس الهدية" : "The gift bag", src: "../../assets/photography/gift-bag.jpg", thumb: "../../assets/photography/xs/gift-bag.jpg", position: "center 55%" },
+        { label: ar ? "القوام" : "Texture", src: "../../assets/photography/texture.jpg", thumb: "../../assets/photography/xs/texture.jpg" },
       ]} />
       <div style={{ display: "grid", gap: "var(--space-4)" }}>
         <div><Chip tone="green">{window.copy("hero.chip", "Hair masque", "ماسك شعر") + " · " + size + ml}</Chip></div>

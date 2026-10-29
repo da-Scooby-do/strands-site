@@ -498,6 +498,8 @@ function IngredientCard({
   }, image ? /*#__PURE__*/React.createElement("img", {
     src: image,
     alt: name,
+    loading: "lazy",
+    decoding: "async",
     style: {
       position: "absolute",
       inset: 0,
@@ -724,8 +726,9 @@ function ProductGallery({
       border: "1px solid " + (n === i ? "var(--purple)" : "var(--rule)")
     }
   }, im.src ? /*#__PURE__*/React.createElement("img", {
-    src: im.src,
+    src: im.thumb || im.src,
     alt: "",
+    decoding: "async",
     style: {
       width: "100%",
       height: "100%",
