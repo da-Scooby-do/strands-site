@@ -198,9 +198,9 @@ function App(){
   const bar=<CountryBar markets={markets} value={mkt} onChange={(c)=>{setMkt(c);setOpenId(null);}} orders={orders}/>;
   let body;
   if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onReturned={()=>setStatus(order,"returned")} onSaveNote={saveNote} onSetPaid={(val)=>setPaid(order,val)} fxCfg={fxCfg} onFlextock={(a)=>flextock(order,a)}/>;
-  else if(page==="Overview") body=<>{bar}<window.DashOverview orders={shown} market={mktObj} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}} goOrders={()=>go("Orders")}/></>;
+  else if(page==="Overview") body=<>{bar}<window.DashOverview orders={shown} market={mktObj} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}}/></>;
   else if(page==="Orders") body=<>{bar}<window.DashOrders orders={shown} market={mktObj} markets={markets} fxCfg={fxCfg} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders} onBulkAction={bulkSetStatus}/></>;
-  else if(page==="Flextock") body=<window.DashFlextock onSaved={loadFx} onSynced={loadOrders}/>;
+  else if(page==="Flextock") body=<window.DashFlextock onSaved={loadFx}/>;
   else if(page==="Countries") body=<window.DashCountries onSaved={loadMarkets}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
   else if(page==="Site text") body=<window.DashSiteText/>;

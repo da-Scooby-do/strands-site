@@ -4,7 +4,7 @@
    (InstaPay ones once marked paid) and statuses + tracking come back every 30 min. */
 const { PageHeader, Button, Card, Input, Switch, InlineAlert } = window.StrandsDesignSystem_6d0a65;
 
-function Flextock({ onSaved, onSynced }) {
+function Flextock({ onSaved }) {
   const phone = window.useIsPhone();
   const [cfg, setCfg] = React.useState(null);
   const [sizes, setSizes] = React.useState([]);     // single-jar variants: one SKU code per size
@@ -61,14 +61,7 @@ function Flextock({ onSaved, onSynced }) {
     setBusy(null);
     setConn(r && r.ok ? { ok: true, t: "Connected — Flextock accepted the login." } : { ok: false, t: (r && r.error) || "Couldn’t reach Flextock." });
   }
-  async function syncNow() {
-    setBusy("sync"); setConn(null);
-    const r = await window.flextockCall("sync");
-    setBusy(null);
-    setConn(r && r.ok ? { ok: true, t: "Checked " + (r.checked || 0) + " order(s) · " + (r.moved || 0) + " updated." } : { ok: false, t: (r && r.error) || "Sync failed." });
-    if (onSynced) onSynced();
-    load();
-  }
+
 
   if (!cfg) return <div style={{ color: "var(--ink-2)" }}>Loading Flextock…</div>;
   const fmt = (d) => { try { return d ? new Date(d).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "never"; } catch (e) { return d; } };
@@ -78,6 +71,7 @@ function Flextock({ onSaved, onSynced }) {
     <div>
       <PageHeader label="Flextock" title="Warehouse and delivery." action={<Button size="sm" onClick={() => save()} disabled={!!busy}>{busy === "save" ? "Saving…" : "Save changes"}</Button>} />
       <div style={{ display: "grid", gap: "var(--space-5)" }}>
+        {msg && <InlineAlert tone={msg.ok ? "ok" : "error"}>{msg.t}</InlineAlert>}
         {missing && <InlineAlert tone="error">The database hasn’t been updated for Flextock yet. Run the “flextock” update in Supabase, then refresh this page.</InlineAlert>}
 
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-3)" }}>
@@ -92,7 +86,7 @@ function Flextock({ onSaved, onSynced }) {
             Cancelling here does <strong>not</strong> cancel at Flextock: use “Cancel at Flextock” on the order.
           </p>
           <div style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>
-            {cfg.enabled ? "On since " + fmt(cfg.enabled_at) : "Off"} · Last checked with Flextock: {fmt(cfg.last_sync)}
+            {cfg.enabled ? "On since " + fmt(cfg.enabled_at) : "Off"} · Last checked with Flextock: {fmt(cfg.last_sync)}{cfg.enabled ? " · to check now, press “Sync Flextock” on Orders" : ""}
           </div>
         </Card>
 
@@ -105,7 +99,6 @@ function Flextock({ onSaved, onSynced }) {
           {conn && <InlineAlert tone={conn.ok ? "ok" : "error"}>{conn.t}</InlineAlert>}
           <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
             <Button size="sm" variant="quiet" onClick={test} disabled={!!busy}>{busy === "test" ? "Testing…" : "Test connection"}</Button>
-            {cfg.enabled && <Button size="sm" variant="quiet" onClick={syncNow} disabled={!!busy}>{busy === "sync" ? "Syncing…" : "Sync statuses now"}</Button>}
           </div>
         </Card>
 
@@ -132,8 +125,6 @@ function Flextock({ onSaved, onSynced }) {
             ))}
           </div>
         </Card>
-        {msg && <InlineAlert tone={msg.ok ? "ok" : "error"}>{msg.t}</InlineAlert>}
-        <div><Button onClick={() => save()} disabled={!!busy}>{busy === "save" ? "Saving…" : "Save changes"}</Button></div>
       </div>
     </div>
   );
