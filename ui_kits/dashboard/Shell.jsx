@@ -40,8 +40,12 @@ function Shell({ page, setPage, onSignOut, children }) {
   );
   return (
     <div style={{ display: "grid", gridTemplateColumns: "210px 1fr", minHeight: "100vh", background: "var(--cream)" }}>
-      <aside style={{ background: "var(--purple)", padding: "var(--space-5) var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-6)", position: "sticky", top: 0, height: "100vh" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={30} height={30} style={{ display: "block", flex: "0 0 auto" }} /><Wordmark size={19} color="var(--green-tint)" align="start" /></div>
+      <aside style={{ background: "var(--purple)", padding: "var(--space-5) var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-6)", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}><img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={30} height={30} style={{ display: "block", flex: "0 0 auto" }} /><Wordmark size={19} color="var(--green-tint)" align="start" /></div>
+          {/* Up here so it never drops below a short laptop screen. */}
+          <a href="../store/index.html" target="_blank" style={{ display: "inline-block", marginTop: "var(--space-3)", color: "var(--white)", borderBottom: "none", fontSize: "var(--text-fine-size)" }}>View store ↗</a>
+        </div>
         <nav style={{ display: "grid", gap: 2 }}>
           {NAV_GROUPS.map((g, gi) => [navHead(g.h, gi === 0)].concat(g.items.map((n) => {
             const on = page === n;
@@ -53,7 +57,6 @@ function Shell({ page, setPage, onSignOut, children }) {
         </nav>
         <div style={{ marginTop: "auto", display: "grid", gap: "var(--space-3)", fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)", borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-4)" }}>
           <span>nour@strands.eg</span>
-          <a href="../store/index.html" target="_blank" style={{ color: "var(--white)", borderBottom: "none" }}>View store ↗</a>
           <button type="button" onClick={onSignOut} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: 0, textAlign: "start", color: "var(--green-on-anchor)", cursor: "pointer", fontSize: "var(--text-fine-size)" }}>Sign out</button>
         </div>
       </aside>
