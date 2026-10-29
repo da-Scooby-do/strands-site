@@ -9,7 +9,7 @@
   var S = [
     { section: "Statement — “Three ways to use it”", fields: [
       { key: "statement.eyebrow", label: "Eyebrow", en: "Three ways to use it", ar: "ثلاث طرق للاستخدام" },
-      { key: "statement.heading", label: "Heading", multiline: true, en: "One jar covers the whole week, however you wash.", ar: "علبة واحدة تكفي الأسبوع كله، مهما كانت طريقة غسيلك." },
+      { key: "statement.heading", label: "Heading", multiline: true, en: "One jar covers the whole week, however you wash.", ar: "عبوة وحده تكفي، بغض النظر عن طريقة غسلك" },
       { key: "statement.c1.title", label: "Card 1 — title", en: "Pre-wash", ar: "قبل الغسيل" },
       { key: "statement.c1.body", label: "Card 1 — text", multiline: true, en: "Apply to damp hair, leave for up to 2 hours, then shampoo.", ar: "حطّيه على شعر مبلول، سيبيه لحد ساعتين، وبعدين اغسليه بالشامبو." },
       { key: "statement.c2.title", label: "Card 2 — title", en: "As a conditioner", ar: "بدل البلسم" },
