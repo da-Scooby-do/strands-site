@@ -19,8 +19,6 @@ window.StrandsMarketSelect=MarketSelect;
 /* First visit: the shopper must pick their country before shopping, so nobody in
    Sudan or Saudi Arabia orders from the Egypt shop (and its EGP prices) by accident.
    Countries that aren't open yet show "Coming soon" and can't be picked. */
-// Not live yet: the picker shows on test links only, until it's switched on for strandsbynour.com.
-const COUNTRY_GATE_ON=!/(^|\.)strandsbynour\.com$/.test(location.hostname);
 const CONFIRM_KEY="strands-market-confirmed";
 const GATE_COUNTRIES=[{code:"EG",en:"Egypt",ar:"مصر"},{code:"SA",en:"Saudi Arabia",ar:"السعودية"},{code:"SD",en:"Sudan",ar:"السودان"}];
 const SHOP_WHATSAPP="201023789109";
@@ -117,7 +115,7 @@ function Page(){
   const market=openMarkets.find(m=>m.code===mktCode)||EG_MARKET;
   // Ask until the shopper has picked an open country themselves (or when they tap the flag).
   const countriesReady=mLoaded>=2&&dataStatus!=="loading";
-  const needGate=COUNTRY_GATE_ON&&countriesReady&&(gateOpen||confirmed!==mktCode||!openMarkets.some(m=>m.code===mktCode));
+  const needGate=countriesReady&&(gateOpen||confirmed!==mktCode||!openMarkets.some(m=>m.code===mktCode));
   window.setStrandsCurrency&&window.setStrandsCurrency(market.currency);
   // Outside Egypt a variant is sold only if it has a price there, and uses that
   // country's price and stock (price_egp below holds the price in the market's currency).
@@ -148,7 +146,7 @@ function Page(){
     </div>}
     <window.StrandsCheckout open={coOpen} onClose={()=>setCoOpen(false)} cart={cart} variants={mVariants} ship={ship} market={market} markets={openMarkets} onMarket={setMktCode} onSetQty={setQty} onRemove={removeItem} onClear={clearCart} maxQty={maxFor}/>
     {needGate && <CountryGate open={openMarkets} current={confirmed&&openMarkets.some(m=>m.code===confirmed)?confirmed:null} onPick={pickCountry} onClose={gateOpen&&confirmed===mktCode?()=>setGateOpen(false):null}/>}
-    <window.StrandsHeader onBuy={add} onCart={()=>setCoOpen(true)} cart={count} market={market} onCountry={COUNTRY_GATE_ON?()=>setGateOpen(true):null}/>
+    <window.StrandsHeader onBuy={add} onCart={()=>setCoOpen(true)} cart={count} market={market} onCountry={()=>setGateOpen(true)}/>
     <window.StrandsHero onAdd={add} product={product} variants={mVariants} market={market} markets={openMarkets} onMarket={setMktCode} status={dataStatus} sizes={sizes} selected={sel} onSelect={setSizeKey} soldOut={soldOut}/>
     <window.StrandsStatement/>
     <window.StrandsOverTime/>
