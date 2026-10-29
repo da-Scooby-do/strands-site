@@ -4,10 +4,11 @@
 //
 // Secrets (Supabase → Edge Functions → Secrets): FLEXTOCK_USERNAME, FLEXTOCK_PASSWORD, FLEXTOCK_API_KEY.
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { sendOrder, syncStatuses, cancelOrder, runCron, testLogin, FINAL } from "./core.ts";
+import { sendOrder, syncStatuses, cancelOrder, runCron, testLogin, listProducts, createProducts, FINAL } from "./core.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SITE = "https://strandsbynour.com";  // product photos sent to Flextock
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret", "Access-Control-Allow-Methods": "POST, OPTIONS" };
@@ -42,6 +43,19 @@ const db = {
       .not("status", "in", "(" + FINAL.join(",") + ")").order("created_at", { ascending: true }).limit(500);
     return data || [];
   },
+  // Single-jar sizes with what Flextock needs to register them.
+  async sizesForFlextock() {
+    const [{ data: v }, { data: p }] = await Promise.all([
+      admin.from("product_variants").select("id,key,size_ml,jars,label_en,price_egp").eq("jars", 1),
+      admin.from("products").select("name_en,subtitle_en,tagline_en,size_ml").order("created_at").limit(1).maybeSingle(),
+    ]);
+    return (v || []).map((x: any) => ({
+      ...x, size_ml: x.size_ml || (p && p.size_ml) || 300, name_en: (p && p.name_en) || "Velvet Touch Masque",
+      description: (p && (p.tagline_en || p.subtitle_en)) || "Hair masque",
+      image_url: SITE + "/assets/photography/" + ((x.size_ml || 300) >= 400 ? "jar-500ml.jpg" : "jar-in-hands.jpg"),
+    }));
+  },
+  async saveSku(id: string, sku_code: string) { await admin.from("product_variants").update({ sku_code }).eq("id", id); },
   async updateOrder(id: string, patch: unknown) { await admin.from("orders").update(patch).eq("id", id); },
   async addEvent(order_id: string, status: string, note_en: string, note_ar: string) {
     await admin.from("order_events").insert({ order_id, status, note_en, note_ar });
@@ -104,6 +118,8 @@ Deno.serve(async (req) => {
       return json(await cancelOrder(deps, o));
     }
     if (action === "test") return json(await testLogin(deps));
+    if (action === "products") return json(await listProducts(deps));
+    if (action === "create_products") return json(await createProducts(deps, Array.isArray(body.items) ? body.items : []));
     return json({ ok: false, error: "unknown_action" }, 400);
   } catch (e) {
     return json({ ok: false, error: String((e && (e as Error).message) || e) }, 500);

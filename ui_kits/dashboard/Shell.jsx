@@ -1,5 +1,13 @@
 const { Wordmark } = window.StrandsDesignSystem_6d0a65;
-const NAV = ["Overview", "Orders", "Countries", "Product & bundles", "Site text", "Promo codes", "Delivery", "Flextock", "Reviews", "Gulf waitlist", "Emails"];
+// The menu, grouped so related pages sit together.
+const NAV_GROUPS = [
+  { h: "Sales", items: ["Overview", "Orders", "Promo codes"] },
+  { h: "Products", items: ["Product & bundles", "Countries"] },
+  { h: "Shipping", items: ["Delivery", "Flextock"] },
+  { h: "Content", items: ["Site text", "Reviews", "Emails", "Gulf waitlist"] },
+];
+const NAV = NAV_GROUPS.flatMap((g) => g.items);
+const navHead = (h, first) => <div key={"h-" + h} style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--green-on-anchor)", padding: (first ? "0" : "var(--space-3)") + " 12px 4px" }}>{h}</div>;
 function Shell({ page, setPage, onSignOut, children }) {
   const phone = window.useIsPhone();
   const [open, setOpen] = React.useState(false);
@@ -16,10 +24,10 @@ function Shell({ page, setPage, onSignOut, children }) {
       </header>
       {open && (
         <nav style={{ background: "var(--purple)", padding: "0 var(--space-4) var(--space-4)", display: "grid", gap: 2 }}>
-          {NAV.map((n) => (
+          {NAV_GROUPS.map((g, gi) => [navHead(g.h, gi === 0)].concat(g.items.map((n) => (
             <button key={n} type="button" onClick={() => pick(n)}
               style={{ font: "inherit", fontFamily: "var(--font-sans)", textAlign: "start", fontSize: "var(--text-body-size)", padding: "13px 12px", borderRadius: "var(--radius-control)", border: "none", cursor: "pointer", background: page === n ? "var(--purple-light)" : "transparent", color: page === n ? "var(--white)" : "var(--lilac)" }}>{n}</button>
-          ))}
+          ))))}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-4)", paddingTop: "var(--space-4)", marginTop: "var(--space-2)", borderTop: "1px solid var(--border-hairline-anchor)", fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)" }}>
             <span>nour@strands.eg</span>
             <a href="../store/index.html" target="_blank" style={{ color: "var(--white)", borderBottom: "none" }}>View store ↗</a>
@@ -35,13 +43,13 @@ function Shell({ page, setPage, onSignOut, children }) {
       <aside style={{ background: "var(--purple)", padding: "var(--space-5) var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-6)", position: "sticky", top: 0, height: "100vh" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}><img src="../../assets/brand/emblem.svg" alt="" aria-hidden="true" width={30} height={30} style={{ display: "block", flex: "0 0 auto" }} /><Wordmark size={19} color="var(--green-tint)" align="start" /></div>
         <nav style={{ display: "grid", gap: 2 }}>
-          {NAV.map((n) => {
+          {NAV_GROUPS.map((g, gi) => [navHead(g.h, gi === 0)].concat(g.items.map((n) => {
             const on = page === n;
             return (
               <button key={n} type="button" onClick={() => setPage(n)}
                 style={{ font: "inherit", fontFamily: "var(--font-sans)", textAlign: "start", fontSize: "var(--text-small)", padding: "9px 12px", borderRadius: "var(--radius-control)", border: "none", cursor: "pointer", background: on ? "var(--purple-light)" : "transparent", color: on ? "var(--white)" : "var(--lilac)" }}>{n}</button>
             );
-          })}
+          })))}
         </nav>
         <div style={{ marginTop: "auto", display: "grid", gap: "var(--space-3)", fontSize: "var(--text-fine-size)", color: "var(--green-on-anchor)", borderTop: "1px solid var(--border-hairline-anchor)", paddingTop: "var(--space-4)" }}>
           <span>nour@strands.eg</span>

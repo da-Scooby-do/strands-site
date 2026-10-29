@@ -7,7 +7,7 @@ const BULK_ACTIONS = [
 ];
 const BULK_DONE_LABEL = { confirmed: "Confirmed", with_courier: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned" };
 // Flextock state as a small label in the orders list.
-const FX_CHIP = { sent: ["Flextock ✓", "#E9F2E4", "#3C5A2C"], failed: ["Flextock ✗", "#F6E5E5", "#8A2B2B"], waiting_payment: ["Flextock: unpaid", "#FBEFD8", "#7A5200"], cancelled: ["Flextock cancelled", "var(--purple-tint)", "var(--ink-2)"] };
+const FX_CHIP = { sent: ["Flextock ✓", "#E9F2E4", "#3C5A2C"], failed: ["Flextock ✗", "#F6E5E5", "#8A2B2B"], cancelled: ["Flextock cancelled", "var(--purple-tint)", "var(--ink-2)"] };
 function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg }) {
   const [fxBusy, setFxBusy] = React.useState(false);
   const [fxMsg, setFxMsg] = React.useState(null);
@@ -102,7 +102,6 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg
           {(r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--green)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span>}
           {r.fx && FX_CHIP[r.fx.state] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: FX_CHIP[r.fx.state][1], color: FX_CHIP[r.fx.state][2], whiteSpace: "nowrap" }}>{FX_CHIP[r.fx.state][0]}</span>}
           {(r.pay === "instapay" || r.pay === "bank") && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "#FBEFD8", color: "#7A5200", whiteSpace: "nowrap" }}>{r.pay === "bank" ? "Bank" : "InstaPay"}</span>}
-          {r.fx && FX_CHIP[r.fx.state] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: FX_CHIP[r.fx.state][1], color: FX_CHIP[r.fx.state][2], whiteSpace: "nowrap" }}>{FX_CHIP[r.fx.state][0]}</span>}
           {(r.pay === "instapay" || r.pay === "bank") && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: r.paid ? "#E9F2E4" : "#F6E5E5", color: r.paid ? "#3C5A2C" : "#8A2B2B", whiteSpace: "nowrap" }}>{r.paid ? "Paid" : "Unpaid"}</span>}
         </span> },
         { key: "items", label: "Items", render: (r) => <span style={{ whiteSpace: "nowrap", fontFamily: "var(--font-numeric)" }}>{window.itemsSummary(r.items) || "—"}</span> },

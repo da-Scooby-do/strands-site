@@ -1,5 +1,5 @@
 const { PageHeader, StatBox, DataTable, StatusPill, Button } = window.StrandsDesignSystem_6d0a65;
-function Overview({ orders, onOpen, goOrders, market }) {
+function Overview({ orders, onOpen, market }) {
   const phone = window.useIsPhone();
   const [stock, setStock] = React.useState(null);
   const [sizeStock, setSizeStock] = React.useState([]); // sizes that keep their own stock, e.g. 500 ml
@@ -28,7 +28,7 @@ function Overview({ orders, onOpen, goOrders, market }) {
   const outsideEG = code && code !== "EG";
   return (
     <div>
-      <PageHeader label={"Overview" + (market ? " · " + market.name_en : " · All countries")} title="Good to see you, Nour." action={<Button size="sm" onClick={goOrders}>Open orders</Button>} />
+      <PageHeader label={"Overview" + (market ? " · " + market.name_en : " · All countries")} title="Good to see you, Nour." />
       <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr 1fr" : "repeat(4,1fr)", gap: "var(--space-3)", marginBottom: "var(--space-6)" }}>
         <StatBox tone="green" value={toAction} caption="orders to action" />
         <StatBox value={last30} caption="orders, last 30 days" />
