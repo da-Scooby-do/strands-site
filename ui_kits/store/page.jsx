@@ -60,7 +60,7 @@ function CountryGate({ open, current, onPick, onClose }){
           {onClose && <button type="button" onClick={onClose} aria-label={T("Close","إغلاق")} style={{width:36,height:36,background:"none",border:"none",cursor:"pointer",fontSize:22,color:"var(--ink-2)"}}>×</button>}
         </div>
       </div>
-      <h2 style={{fontSize:26,lineHeight:1.2,margin:0}}>{T("Where should we deliver?","نوصّلك فين؟")}</h2>
+      <h2 style={{fontSize:26,lineHeight:1.2,margin:0}}>{T("Where should we deliver?","نوصّلك وين؟")}</h2>
       <p style={{margin:0,color:"var(--ink-2)",fontSize:"var(--text-small)"}}>{T("Choose your country to see prices in your currency and what we deliver there.","اختاري بلدك عشان تشوفي الأسعار بعملتك واللي بنوصّله عندك.")}</p>
       <div style={{display:"grid",gap:"var(--space-3)"}}>{GATE_COUNTRIES.map(card)}</div>
     </div>
