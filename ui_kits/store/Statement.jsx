@@ -8,7 +8,7 @@ function Statement() {
         <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 var(--gutter)", display: "grid", gap: phone ? "var(--space-6)" : "var(--space-7)" }}>
           <div style={{ display: "grid", gap: "var(--space-4)" }}>
             <Eyebrow tone="lilac">{window.copy("statement.eyebrow", "Three ways to use it", "ثلاث طرق للاستخدام")}</Eyebrow>
-            <h2 style={{ color: "var(--white)", fontSize: phone ? "var(--display-3)" : "var(--display-1)", maxWidth: "24ch" }}>{window.copy("statement.heading", "One jar covers the whole week, however you wash.", "عبوة وحده تكفي، بغض النظر عن طريقة غسلك")}</h2>
+            <h2 style={{ color: "var(--white)", fontSize: phone ? "var(--display-3)" : "var(--display-1)", maxWidth: "24ch" }}>{window.copy("statement.heading", "One jar is enough, no matter how you wash", "عبوة واحدة تكفي، بغض النظر عن طريقة غسلك")}</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "repeat(3,1fr)"), gap: phone ? "var(--space-5)" : "var(--space-7)" }}>
             <FeatureColumn icon="droplet" title={window.copy("statement.c1.title", "Pre-wash", "قبل الغسيل")}>{window.copy("statement.c1.body", "Apply to damp hair, leave for up to 2 hours, then shampoo.", "حطّيه على شعر مبلول، سيبيه لحد ساعتين، وبعدين اغسليه بالشامبو.")}</FeatureColumn>
