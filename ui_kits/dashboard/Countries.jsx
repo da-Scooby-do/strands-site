@@ -1,5 +1,6 @@
 /* Countries — Saudi Arabia, Sudan (and any later market). Each has its own prices
-   and stock per size, delivery fee and payment options, in its own currency.
+   and stock per size, delivery choices (or one fee), payment options and the
+   WhatsApp number customers message to pay, in its own currency.
    A country appears on the shop only when "Open on the website" is on and at
    least one size has a price. Egypt stays on Product & bundles + Delivery. */
 const { PageHeader, Button, Card, Input, Textarea, Checkbox, Switch, InlineAlert } = window.StrandsDesignSystem_6d0a65;
@@ -10,6 +11,8 @@ function MarketCard({ m, variants, rows, onChange, onRowChange, onSave, busy, ms
   const phone = window.useIsPhone();
   const cur = m.currency;
   const two = { display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr"), gap: "var(--space-4)" };
+  const opts = Array.isArray(m.delivery_options) ? m.delivery_options : [];
+  const setOpt = (i, k, v) => onChange("delivery_options", opts.map((o, n) => (n === i ? { ...o, [k]: v } : o)));
   return (
     <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
@@ -35,8 +38,22 @@ function MarketCard({ m, variants, rows, onChange, onRowChange, onSave, busy, ms
         })}
       </div>
 
+      <div style={{ display: "grid", gap: "var(--space-3)" }}>
+        <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>Delivery choices the customer picks from at checkout, each with its own fee. With none, the one delivery fee below applies.</span>
+        {opts.map((o, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1.3fr 1.3fr 0.7fr auto"), gap: "var(--space-3)", alignItems: "end" }}>
+            <Input label={i === 0 ? "Choice (EN)" : ""} value={o.name_en || ""} onChange={(v) => setOpt(i, "name_en", v)} placeholder="Nearest RedBox locker" />
+            <Input label={i === 0 ? "Choice (AR)" : ""} value={o.name_ar || ""} onChange={(v) => setOpt(i, "name_ar", v)} placeholder="أقرب ريد بوكس لعنوانك" />
+            <Input label={i === 0 ? "Fee (" + cur + ")" : ""} value={o.fee == null ? "" : String(o.fee)} onChange={(v) => setOpt(i, "fee", v)} placeholder="0" />
+            <div style={{ height: "var(--input-h)", display: "grid", alignItems: "center" }}>
+              <Button size="sm" variant="text" onClick={() => onChange("delivery_options", opts.filter((_, n) => n !== i))}>Remove</Button>
+            </div>
+          </div>
+        ))}
+        <div><Button size="sm" variant="quiet" onClick={() => onChange("delivery_options", opts.concat([{ key: "", name_en: "", name_ar: "", fee: "" }]))}>Add a delivery choice</Button></div>
+      </div>
       <div style={two}>
-        <Input label={"Delivery fee (" + cur + ")"} value={m.shipping_fee == null ? "" : String(m.shipping_fee)} onChange={(v) => onChange("shipping_fee", v)} placeholder="0" />
+        {!opts.length && <Input label={"Delivery fee (" + cur + ")"} value={m.shipping_fee == null ? "" : String(m.shipping_fee)} onChange={(v) => onChange("shipping_fee", v)} placeholder="0" />}
         <Input label={"Free delivery over (" + cur + ")"} value={m.free_over == null ? "" : String(m.free_over)} onChange={(v) => onChange("free_over", v)} placeholder="never" />
       </div>
       <div style={two}>
@@ -48,9 +65,10 @@ function MarketCard({ m, variants, rows, onChange, onRowChange, onSave, busy, ms
         <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>How customers in {m.name_en} can pay</span>
         <div style={{ display: "flex", gap: "var(--space-5)", flexWrap: "wrap" }}>
           <Checkbox checked={!!m.pay_cod} onChange={(v) => onChange("pay_cod", v)} label="Cash on delivery" />
-          <Checkbox checked={!!m.pay_bank} onChange={(v) => onChange("pay_bank", v)} label="Bank transfer (screenshot on WhatsApp)" />
+          <Checkbox checked={!!m.pay_bank} onChange={(v) => onChange("pay_bank", v)} label="Pay first by transfer" />
         </div>
-        {m.pay_bank && <Textarea label="Bank details shown to the customer after ordering" rows={4} value={m.bank_details || ""} onChange={(v) => onChange("bank_details", v)} />}
+        {m.pay_bank && <Input label="WhatsApp number customers message to pay (with country code)" value={m.whatsapp || ""} onChange={(v) => onChange("whatsapp", v)} placeholder="966 56 232 9121" />}
+        {m.pay_bank && <Textarea label="Bank details shown after ordering (leave blank if customers get them on WhatsApp)" rows={4} value={m.bank_details || ""} onChange={(v) => onChange("bank_details", v)} />}
       </div>
 
       {msg && <InlineAlert tone={msg.ok ? "ok" : "error"}>{msg.msg}</InlineAlert>}
@@ -97,7 +115,22 @@ function Countries({ onSaved }) {
     if (!blank(m.shipping_fee) && !cNum(m.shipping_fee)) return fail("the delivery fee must be a whole number.");
     if (!blank(m.free_over) && !cNum(m.free_over)) return fail("“free delivery over” must be a whole number, or blank for never.");
     if (!m.pay_cod && !m.pay_bank) return fail("choose at least one way to pay.");
-    if (m.pay_bank && blank(m.bank_details)) return fail("add the bank details customers should transfer to.");
+    const wa = String(m.whatsapp || "").replace(/\D/g, "").replace(/^00/, "");
+    if (!blank(m.whatsapp) && wa.length < 10) return fail("the WhatsApp number looks too short — include the country code, e.g. 966 56 232 9121.");
+    if (m.pay_bank && blank(m.bank_details) && !wa) return fail("add the bank details, or a WhatsApp number customers message to pay.");
+    const opts = (Array.isArray(m.delivery_options) ? m.delivery_options : []).filter((o) => !blank(o.name_en) || !blank(o.name_ar) || !blank(o.fee));
+    for (const o of opts) {
+      if (blank(o.name_en)) return fail("every delivery choice needs an English name.");
+      if (!cNum(o.fee)) return fail("every delivery fee must be a whole number.");
+    }
+    // Each choice keeps its key (orders record it); new ones get one from their name.
+    const used = new Set();
+    const delivery_options = opts.map((o) => {
+      let key = o.key || String(o.name_en).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "option";
+      while (used.has(key)) key += "_2";
+      used.add(key);
+      return { key, name_en: o.name_en.trim(), name_ar: blank(o.name_ar) ? null : o.name_ar.trim(), fee: Number(o.fee) };
+    });
     if (m.enabled && !variants.some((v) => !blank((r[v.key] || {}).price))) return fail("set at least one price before opening " + m.name_en + " on the website.");
 
     setBusy(m.code);
@@ -107,11 +140,13 @@ function Countries({ onSaved }) {
         free_over: blank(m.free_over) ? null : Number(m.free_over),
         pay_cod: !!m.pay_cod, pay_bank: !!m.pay_bank, bank_details: blank(m.bank_details) ? null : m.bank_details,
         eta_en: blank(m.eta_en) ? null : m.eta_en, eta_ar: blank(m.eta_ar) ? null : m.eta_ar,
+        delivery_options, whatsapp: wa || null,
       }).eq("code", m.code);
       if (up.error) return fail(up.error.message + ". Are you signed in as the owner?");
       const list = variants.map((v) => { const x = r[v.key] || {}; return { market: m.code, variant_key: v.key, price: blank(x.price) ? null : Number(x.price), stock: blank(x.stock) ? 0 : Number(x.stock) }; });
       const vu = await window.sb.from("market_variants").upsert(list, { onConflict: "market,variant_key" });
       if (vu.error) return fail(vu.error.message);
+      await load();  // new delivery choices come back with their keys
       setMsg((s) => ({ ...s, [m.code]: { ok: true, msg: m.enabled ? "Saved. " + m.name_en + " is open on the website." : "Saved. " + m.name_en + " is hidden on the website until you switch it on." } }));
       if (onSaved) onSaved();
     } finally { setBusy(null); }

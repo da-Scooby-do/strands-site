@@ -51,12 +51,12 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg
     const xlText = (v) => v ? '="' + String(v).replace(/"/g, "") + '"' : "";
     // One numeric "jars" column per size (300, plus every size in these orders) so Excel can total what to pack.
     const sizes = Array.from(new Set([300].concat(rows.flatMap((o) => o.items.map((i) => i.size).filter(Boolean))))).sort((a, b) => a - b);
-    const headers = ["Order", "Country", "Currency", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Items"].concat(sizes.map((s) => s + " ml jars"), ["Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"]);
+    const headers = ["Order", "Country", "Currency", "Source", "Customer", "Phone", "WhatsApp", "Email", "Governorate", "Area", "Street", "Landmark", "Delivery", "Items"].concat(sizes.map((s) => s + " ml jars"), ["Subtotal", "Shipping", "Promo code", "Discount", "Total", "Status", "Placed", "Note"]);
     const data = rows.map((o) => {
       const sub = o.items.reduce((a, i) => a + i.p * i.q, 0);
       const items = o.items.map((i) => i.n + " x" + i.q).join(" | ");
       const by = window.jarsBySize(o.items);
-      return [o.id, o.country, o.currency, o.source, o.customer, xlText(o.phone), xlText(o.whatsapp), o.email, o.gov, o.area, o.street, o.landmark, items].concat(sizes.map((s) => by[s] || 0), [sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note]);
+      return [o.id, o.country, o.currency, o.source, o.customer, xlText(o.phone), xlText(o.whatsapp), o.email, o.gov, o.area, o.street, o.landmark, o.delivery ? window.deliveryName(o.country, o.delivery) : "", items].concat(sizes.map((s) => by[s] || 0), [sub, o.shipping, o.promo || "", o.discount || 0, sub - (o.discount || 0) + (o.shipping || 0), o.status, o.placed, o.note]);
     });
     window.downloadCSV("strands-orders-" + (market ? market.code : "all") + ".csv", headers, data);
   };
