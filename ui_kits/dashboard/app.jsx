@@ -37,7 +37,7 @@ function mapOrder(o){
   ));
   const emailResult=events.length?events[events.length-1].notify:null;
   return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,whatsapp:o.phone2||null,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,pay:o.payment_method||"cod",paid:!!o.paid_at,
-    source:o.source||"website",country:o.country||"EG",
+    source:o.source||"website",country:o.country||"EG",delivery:o.delivery_method||null,
     fx:{state:o.flextock_state||null,status:o.flextock_status||null,error:o.flextock_error||null,sentAt:o.flextock_sent_at?fmtDT(o.flextock_sent_at):null,syncedAt:o.flextock_synced_at?fmtDT(o.flextock_synced_at):null,courier:o.courier_name||null,tracking:o.tracking_number||null,trackingUrl:o.tracking_url||null},currency:o.currency||"EGP",items,shipping:o.shipping||0,discount:o.discount||0,promo:o.promo_code||null,total:o.total,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
 }
 
@@ -46,6 +46,9 @@ function mapOrder(o){
 const DEFAULT_MARKETS=[{code:"EG",name_en:"Egypt",currency:"EGP"},{code:"SA",name_en:"Saudi Arabia",currency:"SAR"},{code:"SD",name_en:"Sudan",currency:"SDG"}];
 const DASH_MKT_KEY="strands-dash-market";
 window.marketFlag=(c)=>((window.MARKET_INFO||{})[c]||{}).flag||"";
+// A delivery choice's name from its key ("redbox" -> "Nearest RedBox locker"), read from the loaded countries.
+window.DASH_MARKETS=DEFAULT_MARKETS;
+window.deliveryName=(country,key)=>{ const m=(window.DASH_MARKETS||[]).find(x=>x.code===country); const o=m&&(m.delivery_options||[]).find(x=>x.key===key); return o?o.name_en:String(key||""); };
 // "1,200 EGP · 300 SAR" — totals kept apart per currency, never added together.
 window.sumByCurrency=function(list,fn){ const by={}; (list||[]).forEach(o=>{ by[o.currency||"EGP"]=(by[o.currency||"EGP"]||0)+fn(o); }); const ks=Object.keys(by); return ks.length?ks.map(c=>window.fmtMoney(by[c],c)).join(" · "):window.fmtMoney(0,"EGP"); };
 function CountryBar({markets,value,onChange,orders}){
@@ -86,7 +89,7 @@ function App(){
   const [fxCfg,setFxCfg]=React.useState(null);
   const loadFx=()=>window.sb.from("settings").select("value").eq("key","flextock").maybeSingle().then(({data})=>{ setFxCfg((data&&data.value)||null); },()=>{});
   window.flextockCall=async(action,extra)=>{ try{ const {data,error}=await window.sb.functions.invoke("flextock",{body:{action,...(extra||{})}}); if(error){ let msg=error.message; try{ const b=await error.context.json(); msg=b.error||msg; }catch(e){} return {ok:false,error:msg}; } return data||{ok:false,error:"no reply"}; }catch(e){ return {ok:false,error:String(e&&e.message||e)}; } };
-  const loadMarkets=()=>window.sb.from("markets").select("*").order("sort").then(({data,error})=>{ if(!error&&data&&data.length) setMarkets(data); },()=>{});
+  const loadMarkets=()=>window.sb.from("markets").select("*").order("sort").then(({data,error})=>{ if(!error&&data&&data.length){ setMarkets(data); window.DASH_MARKETS=data; } },()=>{});
 
   React.useEffect(()=>{
     if(!window.SB_READY){ setReady(true); return; }

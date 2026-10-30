@@ -1825,6 +1825,7 @@ function Input({
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
+      gridTemplateColumns: "minmax(0, 1fr)",
       gap: 6,
       ...style
     }

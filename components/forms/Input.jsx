@@ -3,7 +3,8 @@ import React from "react";
 export function Input({ label, value, onChange, placeholder, type = "text", hint, id, style }) {
   const uid = id || React.useId();
   return (
-    <div style={{ display: "grid", gap: 6, ...style }}>
+    // minmax(0, 1fr): fill the space given, never the input's wider natural width (phones).
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 6, ...style }}>
       {label && <label htmlFor={uid} style={{ fontSize: "var(--text-fine-size)", letterSpacing: ".08em", textTransform: "uppercase", color: "var(--ink-2)" }}>{label}</label>}
       <input id={uid} type={type} value={value} placeholder={placeholder}
         onChange={(e) => onChange && onChange(e.target.value)}
