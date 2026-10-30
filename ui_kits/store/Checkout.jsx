@@ -2,8 +2,8 @@
    and mirrors to RTL for Arabic. Talks to Supabase: product_variants + settings
    (anon), check_promo (anon rpc), Supabase Auth, and place_order. */
 const { Button, Input, Select, InlineAlert, Icon } = window.StrandsDesignSystem_6d0a65;
-// "966562329121" -> "+966 56 232 9121" (other numbers: "+" and the digits).
-const fmtWa = (n) => /^966\d{9}$/.test(n) ? "+966 " + n.slice(3, 5) + " " + n.slice(5, 8) + " " + n.slice(8) : "+" + n;
+// "966562329121" -> "+966 56 232 9121", "249901951971" -> "+249 90 195 1971" (others: "+" and the digits).
+const fmtWa = (n) => /^(966|249)\d{9}$/.test(n) ? "+" + n.slice(0, 3) + " " + n.slice(3, 5) + " " + n.slice(5, 8) + " " + n.slice(8) : "+" + n;
 const INSTAPAY_URL = "https://ipn.eg/S/nourhatim/instapay/3CHDAq";
 const INSTAPAY_HANDLE = "nourhatim@instapay";
 const SHOP_WA = "201023789109";  // shop WhatsApp for InstaPay payment screenshots
@@ -447,7 +447,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             {deliveryOptions.length > 0 && (
               <section style={field}>
                 <strong style={{ fontSize: 15 }}>{T("Delivery", "التوصيل")}</strong>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(" + deliveryOptions.length + ", minmax(0,1fr))", gap: "var(--space-3)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(" + Math.min(2, deliveryOptions.length) + ", minmax(0,1fr))", gap: "var(--space-3)" }}>
                   {deliveryOptions.map((o) => <PayOption key={o.key} active={!!delivery && delivery.key === o.key} onClick={() => setDeliveryKey(o.key)} title={ar ? (o.name_ar || o.name_en) : o.name_en} sub={money(Number(o.fee) || 0)} />)}
                 </div>
                 {delivery && /redbox/i.test(delivery.key) && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("We’ll send it to the RedBox locker nearest the address above.", "هنبعته لأقرب ريد بوكس للعنوان اللي فوق.")}</p>}
