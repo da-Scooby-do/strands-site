@@ -54,7 +54,7 @@ const KITS = {
     mode: "babel",
     files: ["responsive.jsx", "data.jsx", "Shell.jsx", "Login.jsx", "Overview.jsx", "Orders.jsx",
       "NewOrder.jsx", "ImportOrders.jsx", "OrderDetail.jsx", "Product.jsx", "SiteText.jsx", "Promos.jsx",
-      "Delivery.jsx", "ReviewQuotes.jsx", "Waitlist.jsx", "Countries.jsx", "Flextock.jsx", "Emails.jsx"],
+      "Delivery.jsx", "ReviewQuotes.jsx", "Waitlist.jsx", "Countries.jsx", "Flextock.jsx", "Weslat.jsx", "Emails.jsx"],
     app: "app.jsx",
   },
 };

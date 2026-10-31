@@ -54,7 +54,39 @@ function FlextockCard({ order, fxCfg, onFlextock }) {
     </Card>
   );
 }
-function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, onSaveNote, onSetPaid, fxCfg, onFlextock }) {
+// Weslat's status codes, in words (Accurate API).
+const WX_STATUS = { PKR: "Shipping request", PKM: "Picking up", PKH: "Pickup rescheduled", PKD: "Picked up", RJCT: "Rejected", RITS: "In their warehouse", PRP: "Being prepared", PRPD: "Prepared", BMT: "Moving between branches", BMR: "At the delivering branch", STD: "Handing to courier", OTD: "Out for delivery", DTR: "Delivered", DEX: "Delivery failed", HTR: "Waiting to redeliver", RTS: "Returning", RCV: "Return in their warehouse", OTR: "Out for return", RTRN: "Returned" };
+// Weslat (delivery, Sudan): where this order stands there, and what can be done.
+function WeslatCard({ order, wxCfg, onWeslat }) {
+  const [busy, setBusy] = React.useState(false);
+  const [msg, setMsg] = React.useState(null);
+  const wx = order.wx || {};
+  if (!wxCfg || (!wxCfg.enabled && !wx.state) || order.country !== "SD") return null;
+  const finished = ["Delivered", "Cancelled", "Returned"].includes(order.status);
+  const send = async () => {
+    setBusy(true); setMsg(null);
+    const r = (await onWeslat("send")) || {};
+    setBusy(false);
+    setMsg(r.sent ? { ok: true, t: "Sent to Weslat." } : r.state === "waiting_payment" ? { ok: false, t: "Waiting for payment — press Mark as paid first." } : { ok: false, t: r.error || r.skipped || "Not sent." });
+  };
+  const LABEL = { sent: "Sent", failed: "Not sent — failed", waiting_payment: "Waiting for payment" };
+  const canSend = !finished && wx.state !== "sent";
+  return (
+    <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-3)" }}>
+      <h2 style={{ fontSize: 22 }}>Weslat.</h2>
+      <Row k="At Weslat" v={LABEL[wx.state] || "Not sent yet"} />
+      {wx.status && <Row k="Their status" v={WX_STATUS[wx.status] || wx.status} />}
+      {wx.code && <Row k="Shipment" v={wx.trackingUrl ? <a href={wx.trackingUrl} target="_blank" rel="noopener noreferrer">{wx.code}</a> : wx.code} />}
+      {wx.sentAt && <Row k="Sent" v={wx.sentAt} />}
+      {wx.syncedAt && <Row k="Last update" v={wx.syncedAt} />}
+      {wx.error && <InlineAlert tone="error">{wx.error}</InlineAlert>}
+      {order.status === "Cancelled" && wx.state === "sent" && <InlineAlert tone="error">This order is cancelled here but still active at Weslat — tell them on WhatsApp, or it may be delivered.</InlineAlert>}
+      {msg && <InlineAlert tone={msg.ok ? "ok" : "error"}>{msg.t}</InlineAlert>}
+      {canSend && <div><Button size="sm" variant="quiet" disabled={busy} onClick={send}>{busy ? "Sending…" : wx.state === "failed" ? "Try sending again" : "Send to Weslat"}</Button></div>}
+    </Card>
+  );
+}
+function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, onSaveNote, onSetPaid, fxCfg, onFlextock, wxCfg, onWeslat }) {
   const phone = window.useIsPhone();
   const { FLOW, NEXT_LABEL, HISTORY } = window.DASH;
   const STEP_LABEL = { Confirmed: "Mark confirmed", "With courier": "Mark out for delivery", Delivered: "Mark delivered" };
@@ -118,6 +150,7 @@ function OrderDetail({ order, onBack, onAdvance, onJump, onCancel, onReturned, o
         </div>
         <div style={{ display: "grid", gap: "var(--space-5)" }}>
           <FlextockCard order={order} fxCfg={fxCfg} onFlextock={onFlextock} />
+          <WeslatCard order={order} wxCfg={wxCfg} onWeslat={onWeslat} />
           <Card pad="var(--space-5)">
             <h2 style={{ fontSize: 22, marginBottom: "var(--space-3)" }}>Deliver to.</h2>
             <Row k="Name" v={order.customer} />

@@ -52,9 +52,10 @@ function Flextock({ onSaved }) {
     } finally { setBusy(null); }
   }
   // Switching on records the moment, so only orders placed from now on are sent.
+  // The switch only moves once that's saved (save shows why when it can't be).
   const toggle = (on) => {
     const next = { ...cfg, enabled: on, enabled_at: on ? (cfg.enabled ? cfg.enabled_at : new Date().toISOString()) : cfg.enabled_at };
-    setCfg(next); save(next);
+    save(next);
   };
 
   async function test() {

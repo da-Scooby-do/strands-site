@@ -3,7 +3,7 @@ const { Wordmark } = window.StrandsDesignSystem_6d0a65;
 const NAV_GROUPS = [
   { h: "Sales", items: ["Overview", "Orders", "Promo codes"] },
   { h: "Products", items: ["Product & bundles", "Countries"] },
-  { h: "Shipping", items: ["Delivery", "Flextock"] },
+  { h: "Shipping", items: ["Delivery", "Flextock", "Weslat"] },
   { h: "Content", items: ["Site text", "Reviews", "Emails", "Gulf waitlist"] },
 ];
 const NAV = NAV_GROUPS.flatMap((g) => g.items);
