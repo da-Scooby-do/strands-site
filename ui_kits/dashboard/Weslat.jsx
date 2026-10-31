@@ -1,6 +1,7 @@
 /* Weslat — the delivery company in Sudan (Weslat International, "Accurate" API).
    Switch it on, check the login, pick the shipping service and, for each Sudan
-   delivery choice (Countries → Sudan), Weslat's zone + subzone. Paid Sudan orders
+   delivery choice (Countries → Sudan), Weslat's city (its sub-area, which the API
+   insists on, is picked automatically — the address says the rest). Paid Sudan orders
    are then sent automatically; statuses come back by webhook and every 30 min. */
 const { PageHeader, Button, Card, Input, Select, Switch, InlineAlert } = window.StrandsDesignSystem_6d0a65;
 
@@ -14,10 +15,10 @@ function Weslat({ onSaved }) {
   const [conn, setConn] = React.useState(null);
   const [services, setServices] = React.useState(null);
   const [zones, setZones] = React.useState(null);      // [{id,name}] for the chosen service
-  const [subzones, setSubzones] = React.useState({});  // zoneId -> [{id,name}]
   const [lookMsg, setLookMsg] = React.useState(null);
   const [hook, setHook] = React.useState(null);
   const [copied, setCopied] = React.useState(false);
+  const [prices, setPrices] = React.useState(null);   // Weslat's price per choice, for 1 jar
 
   React.useEffect(() => { load(); }, []);
   async function load() {
@@ -42,8 +43,8 @@ function Weslat({ onSaved }) {
     if (!(kg > 0 && kg < 20)) return setMsg({ ok: false, t: "Nothing saved — the weight per jar must be a number of kilograms, e.g. 0.5." });
     if (c.enabled) {
       if (!c.service_id) return setMsg({ ok: false, t: "Nothing saved — choose the Weslat shipping service before switching on." });
-      const unmapped = choices.filter((o) => { const z = (c.zones || {})[o.key]; return !z || !z.zone_id || !z.subzone_id; });
-      if (unmapped.length) return setMsg({ ok: false, t: "Nothing saved — choose Weslat’s area for: " + unmapped.map((o) => o.name_en).join(", ") + "." });
+      const unmapped = choices.filter((o) => { const z = (c.zones || {})[o.key]; return !z || !z.zone_id; });
+      if (unmapped.length) return setMsg({ ok: false, t: "Nothing saved — choose the Weslat city for: " + unmapped.map((o) => o.name_en).join(", ") + "." });
     }
     setBusy("save"); setMsg(null);
     try {
@@ -81,17 +82,25 @@ function Weslat({ onSaved }) {
     const r = await window.weslatCall("zones", { service_id: cfg.service_id });
     setBusy(null);
     if (r && r.ok) setZones(r.zones || []);
-    else setLookMsg({ ok: false, t: (r && r.error) || "Couldn’t get the areas from Weslat." });
+    else setLookMsg({ ok: false, t: (r && r.error) || "Couldn’t get the cities from Weslat." });
   }
-  async function getSubzones(zoneId) {
-    if (!zoneId || subzones[zoneId]) return;
+  // Weslat requires a sub-area too: take the city's first one (the customer's address
+  // tells the courier where exactly). If it can't be read now, sending picks one then.
+  async function autoSubzone(key, zoneId) {
     const r = await window.weslatCall("zones", { service_id: cfg.service_id, zone_id: zoneId });
-    if (r && r.ok) setSubzones((s) => ({ ...s, [zoneId]: r.zones || [] }));
-    else setLookMsg({ ok: false, t: (r && r.error) || "Couldn’t get the sub-areas from Weslat." });
+    const first = r && r.ok && (r.zones || [])[0];
+    setCfg((c) => { const cur = (c.zones || {})[key] || {}; if (String(cur.zone_id) !== String(zoneId)) return c; return { ...c, zones: { ...(c.zones || {}), [key]: { ...cur, subzone_id: first ? first.id : null, subzone_name: first ? first.name : null } } }; });
   }
   const pickService = (id) => { const s = (services || []).find((x) => String(x.id) === String(id)); set("service_id", s ? s.id : null); set("service_name", s ? s.name : null); setZones(null); };
-  const pickZone = (key, id) => { const z = (zones || []).find((x) => String(x.id) === String(id)); setZone(key, { zone_id: z ? z.id : null, zone_name: z ? z.name : null, subzone_id: null, subzone_name: null }); if (z) getSubzones(z.id); };
-  const pickSubzone = (key, zoneId, id) => { const z = (subzones[zoneId] || []).find((x) => String(x.id) === String(id)); setZone(key, { subzone_id: z ? z.id : null, subzone_name: z ? z.name : null }); };
+  const pickZone = (key, id) => { const z = (zones || []).find((x) => String(x.id) === String(id)); setZone(key, { zone_id: z ? z.id : null, zone_name: z ? z.name : null, subzone_id: null, subzone_name: null }); if (z) autoSubzone(key, z.id); };
+  // What customers are charged: Weslat's own price for one jar, per city (saved ones show if Weslat can't answer).
+  async function checkPrices() {
+    setBusy("prices"); setLookMsg(null);
+    const r = await window.weslatCall("quote", { jars: 1 });
+    setBusy(null);
+    if (r && r.ok) setPrices(r.fees || {});
+    else setLookMsg({ ok: false, t: (r && r.error) || "Couldn’t get the prices from Weslat." });
+  }
   async function copyHook() { try { await navigator.clipboard.writeText(hook); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch (e) { window.prompt("Copy this address:", hook); } }
 
   if (!cfg) return <div style={{ color: "var(--ink-2)" }}>Loading Weslat…</div>;
@@ -134,11 +143,11 @@ function Weslat({ onSaved }) {
         </Card>
 
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-3)" }}>
-          <h2 style={{ fontSize: 22 }}>Service and areas.</h2>
-          <p style={p}>Weslat needs its own service and area for every shipment. Pick the service, then for each Sudan delivery choice (from Countries → Sudan) pick Weslat’s area and sub-area. You only do this once.</p>
+          <h2 style={{ fontSize: 22 }}>Service and cities.</h2>
+          <p style={p}>Pick the service, then the Weslat city for each Sudan delivery choice (from Countries → Sudan). The customer’s address goes with every shipment, so the courier knows exactly where. You only do this once.</p>
           <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "end" }}>
             <Button size="sm" variant="quiet" onClick={getServices} disabled={!!busy}>{busy === "services" ? "Loading…" : "Get services from Weslat"}</Button>
-            <Button size="sm" variant="quiet" onClick={getZones} disabled={!!busy || !cfg.service_id}>{busy === "zones" ? "Loading…" : "Get areas from Weslat"}</Button>
+            <Button size="sm" variant="quiet" onClick={getZones} disabled={!!busy || !cfg.service_id}>{busy === "zones" ? "Loading…" : "Get cities from Weslat"}</Button>
           </div>
           {lookMsg && <InlineAlert tone={lookMsg.ok ? "ok" : "error"}>{lookMsg.t}</InlineAlert>}
           {services
@@ -147,19 +156,15 @@ function Weslat({ onSaved }) {
           {!choices.length && <InlineAlert tone="error">Sudan has no delivery choices yet — add them on Countries → Sudan first.</InlineAlert>}
           {choices.map((o) => {
             const z = (cfg.zones || {})[o.key] || {};
-            const subs = z.zone_id ? subzones[z.zone_id] : null;
             return (
-              <div key={o.key} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1.3fr 1.3fr"), gap: "var(--space-3)", alignItems: "end" }}>
+              <div key={o.key} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1.6fr"), gap: "var(--space-3)", alignItems: "end" }}>
                 <div style={{ height: "var(--input-h)", display: "grid", alignContent: "center", fontSize: "var(--text-small)" }}>
                   <span>{o.name_en}</span>
                   <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{window.fmtMoney ? window.fmtMoney(Number(o.fee) || 0, "SDG") : o.fee}</span>
                 </div>
                 {zones
-                  ? <Select label="Weslat area" value={z.zone_id ? String(z.zone_id) : ""} onChange={(v) => pickZone(o.key, v)} options={[choose].concat(zones.map((x) => ({ value: String(x.id), label: x.name })))} />
-                  : <Input label="Weslat area" value={z.zone_name || (z.zone_id ? "#" + z.zone_id : "")} onChange={() => {}} placeholder="press Get areas" />}
-                {subs
-                  ? <Select label="Sub-area" value={z.subzone_id ? String(z.subzone_id) : ""} onChange={(v) => pickSubzone(o.key, z.zone_id, v)} options={[choose].concat(subs.map((x) => ({ value: String(x.id), label: x.name })))} />
-                  : <Input label="Sub-area" value={z.subzone_name || (z.subzone_id ? "#" + z.subzone_id : "")} onChange={() => {}} placeholder={z.zone_id ? "loading…" : "choose the area first"} />}
+                  ? <Select label="Weslat city" value={z.zone_id ? String(z.zone_id) : ""} onChange={(v) => pickZone(o.key, v)} options={[choose].concat(zones.map((x) => ({ value: String(x.id), label: x.name })))} />
+                  : <Input label="Weslat city" value={z.zone_name || (z.zone_id ? "#" + z.zone_id : "")} onChange={() => {}} placeholder="press Get cities" />}
               </div>
             );
           })}
@@ -167,6 +172,16 @@ function Weslat({ onSaved }) {
             <Input label="Weight per jar (kg)" value={cfg.jar_kg == null ? "" : String(cfg.jar_kg)} onChange={(v) => set("jar_kg", v)} placeholder="0.5" />
           </div>
           <p style={{ ...p, fontSize: "var(--text-fine-size)" }}>Weslat prices by weight (first 2 kg, then per extra kg), so the shipment’s weight is jars × this.</p>
+          <div style={{ display: "grid", gap: "var(--space-2)" }}>
+            <p style={p}>Delivery prices at checkout come <strong>from Weslat</strong> for each city and the number of jars (save the cities first). The prices on Countries → Sudan are only used if Weslat can’t answer.</p>
+            <div><Button size="sm" variant="quiet" onClick={checkPrices} disabled={!!busy}>{busy === "prices" ? "Asking Weslat…" : "See Weslat’s prices (1 jar)"}</Button></div>
+            {prices && choices.map((o) => (
+              <div key={o.key} style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", fontSize: "var(--text-small)", borderTop: "1px solid var(--rule)", padding: "6px 0" }}>
+                <span>{o.name_en}</span>
+                <span style={{ fontFamily: "var(--font-numeric)" }}>{prices[o.key] != null ? window.fmtMoney(prices[o.key], "SDG") + " · from Weslat" : window.fmtMoney(Number(o.fee) || 0, "SDG") + " · saved price (Weslat didn’t price it)"}</span>
+              </div>
+            ))}
+          </div>
         </Card>
 
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-3)" }}>

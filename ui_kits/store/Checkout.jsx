@@ -130,6 +130,20 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   const deliveryOptions = (!isEG && Array.isArray(mkt.delivery_options)) ? mkt.delivery_options : [];
   const [deliveryKey, setDeliveryKey] = React.useState("");
   const delivery = deliveryOptions.find((o) => o.key === deliveryKey) || deliveryOptions[0] || null;
+  // Sudan: Weslat's own price for this many jars, asked through our server (the order is
+  // charged the same saved price). Until it answers, or if it can't, the saved fee shows.
+  const jarsInCart = (cart || []).reduce((a, c) => { const v = (variants || []).find((x) => x.key === c.key) || {}; return a + c.qty * Math.max(1, Number(v.jars) || 1); }, 0);
+  const [liveFees, setLiveFees] = React.useState({});
+  React.useEffect(() => {
+    setLiveFees({});
+    if (!open || mkt.code !== "SD" || !deliveryOptions.length || !jarsInCart || !window.SB_READY) return;
+    let live = true;
+    window.sb.functions.invoke("weslat", { body: { action: "quote", jars: jarsInCart } })
+      .then(({ data }) => { if (live && data && data.fees) setLiveFees(data.fees); }, () => {});
+    return () => { live = false; };
+    /* eslint-disable-next-line */
+  }, [open, mkt.code, jarsInCart]);
+  const feeOf = (o) => (o && liveFees[o.key] != null ? Number(liveFees[o.key]) : Number(o && o.fee) || 0);
   // The number customers in this country message to pay (Egypt: the shop's own).
   const waNumber = String(mkt.whatsapp || SHOP_WA).replace(/\D/g, "");
   // Paying is arranged on WhatsApp when the country has its own number and no bank details to show.
@@ -162,7 +176,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   const count = lines.reduce((a, l) => a + l.qty, 0);
   const zonePrice = (gov) => { if (!gov) return null; const z = zones.find((z) => (z.governorates || []).includes(gov)); return z ? z.price_egp : (shipCfg.flat_egp || 80); };
   // Egypt: by governorate zone (unknown until one is chosen). Elsewhere: the country's flat fee.
-  let shipping = isEG ? zonePrice(form.governorate) : delivery ? (Number(delivery.fee) || 0) : (mkt.shipping_fee || 0);
+  let shipping = isEG ? zonePrice(form.governorate) : delivery ? feeOf(delivery) : (mkt.shipping_fee || 0);
   if (isEG && promo && promo.free_shipping) shipping = 0;
   else if (isEG && shipping != null && shipCfg.free_over_egp && subtotal >= shipCfg.free_over_egp) shipping = 0;
   else if (!isEG && mkt.free_over != null && subtotal >= mkt.free_over) shipping = 0;
@@ -448,7 +462,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
               <section style={field}>
                 <strong style={{ fontSize: 15 }}>{T("Delivery", "التوصيل")}</strong>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(" + Math.min(2, deliveryOptions.length) + ", minmax(0,1fr))", gap: "var(--space-3)" }}>
-                  {deliveryOptions.map((o) => <PayOption key={o.key} active={!!delivery && delivery.key === o.key} onClick={() => setDeliveryKey(o.key)} title={ar ? (o.name_ar || o.name_en) : o.name_en} sub={money(Number(o.fee) || 0)} />)}
+                  {deliveryOptions.map((o) => <PayOption key={o.key} active={!!delivery && delivery.key === o.key} onClick={() => setDeliveryKey(o.key)} title={ar ? (o.name_ar || o.name_en) : o.name_en} sub={money(feeOf(o))} />)}
                 </div>
                 {delivery && /redbox/i.test(delivery.key) && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("We’ll send it to the RedBox locker nearest the address above.", "هنبعته لأقرب ريد بوكس للعنوان اللي فوق.")}</p>}
               </section>
