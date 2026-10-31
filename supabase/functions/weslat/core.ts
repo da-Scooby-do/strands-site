@@ -106,10 +106,14 @@ export function shouldMove(cur: string, next: string | null) {
 const SHIPMENT_FIELDS = "id code refNumber trackingUrl status { code name }";
 const short = (x: any) => (typeof x === "string" ? x : JSON.stringify(x)).slice(0, 300);
 
+// Either an API key from Weslat (used as the token as it is), or a username + password to log in with.
+const apiKey = (deps: any) => String(deps.env.WESLAT_API_KEY || "").trim().replace(/^Bearer\s+/i, "");
+const canLogIn = (deps: any) => !!(deps.env.WESLAT_USERNAME && deps.env.WESLAT_PASSWORD);
+
 function apiUrl(deps: any) {
   const u = String(deps.env.WESLAT_API_URL || "").trim();
-  if (!u || !deps.env.WESLAT_USERNAME || !deps.env.WESLAT_PASSWORD) {
-    throw new Error("Weslat login isn't set up — add WESLAT_API_URL, WESLAT_USERNAME and WESLAT_PASSWORD in Supabase → Edge Functions → Secrets.");
+  if (!u || !(apiKey(deps) || canLogIn(deps))) {
+    throw new Error("Weslat login isn't set up — add WESLAT_API_URL and WESLAT_API_KEY (or WESLAT_USERNAME and WESLAT_PASSWORD) in Supabase → Edge Functions → Secrets.");
   }
   return u;
 }
@@ -137,10 +141,12 @@ async function post(deps: any, token: string | null, query: string, variables: a
   return { status: res.status, body };
 }
 
-// One session per run: log in on first use, and once more if the token is refused.
+// One session per run. With an API key it is the token; otherwise log in on first use,
+// and once more if the token is refused.
 export function session(deps: any) {
-  let token: string | null = null;
+  let token: string | null = apiKey(deps) || null;
   const login = async () => {
+    if (!canLogIn(deps)) throw new Error("Weslat refused the API key (Unauthenticated) — check WESLAT_API_KEY with Weslat.");
     const r = await post(deps, null, "mutation Login($input: LoginInput!) { login(input: $input) { token } }",
       { input: { username: deps.env.WESLAT_USERNAME, password: deps.env.WESLAT_PASSWORD, rememberMe: true } });
     const t = r.body && r.body.data && r.body.data.login && r.body.data.login.token;
@@ -148,6 +154,7 @@ export function session(deps: any) {
     token = t;
   };
   return async function gql(query: string, variables: any = {}) {
+    apiUrl(deps);  // fails clearly when the secrets aren't set
     if (!token) await login();
     let r = await post(deps, token, query, variables);
     const unauth = (b: any) => b && Array.isArray(b.errors) && b.errors.some((e: any) => /unauthenticated/i.test(String(e && e.message)));

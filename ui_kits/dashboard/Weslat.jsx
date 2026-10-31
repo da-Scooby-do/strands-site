@@ -126,7 +126,8 @@ function Weslat({ onSaved }) {
           <h2 style={{ fontSize: 22 }}>Connection.</h2>
           <p style={p}>
             Your Weslat login is kept in Supabase, never on this page. In Supabase → <strong>Edge Functions → Secrets</strong>, add
-            <code> WESLAT_API_URL</code> (the API address Weslat gives you, ending in <code>/graphql</code>), <code>WESLAT_USERNAME</code> and <code>WESLAT_PASSWORD</code>, then press Test.
+            <code> WESLAT_API_URL</code> (the endpoint Weslat gives you) and <code>WESLAT_API_KEY</code> (their API key), then press Test.
+            If Weslat gave you a username and password instead of a key, add <code>WESLAT_USERNAME</code> and <code>WESLAT_PASSWORD</code>.
           </p>
           {conn && <InlineAlert tone={conn.ok ? "ok" : "error"}>{conn.t}</InlineAlert>}
           <div><Button size="sm" variant="quiet" onClick={test} disabled={!!busy}>{busy === "test" ? "Testing…" : "Test connection"}</Button></div>

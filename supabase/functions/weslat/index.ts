@@ -3,7 +3,8 @@
 // webhook (key in the address) call it without a user token; every other call is
 // checked below.
 //
-// Secrets (Supabase → Edge Functions → Secrets): WESLAT_API_URL, WESLAT_USERNAME, WESLAT_PASSWORD.
+// Secrets (Supabase → Edge Functions → Secrets): WESLAT_API_URL and WESLAT_API_KEY
+// (or WESLAT_USERNAME + WESLAT_PASSWORD to log in with).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { sendOrder, syncStatuses, handleWebhook, runCron, testLogin, listServices, listZones, FINAL } from "./core.ts";
 
