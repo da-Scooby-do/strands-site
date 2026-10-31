@@ -38,7 +38,8 @@ function mapOrder(o){
   const emailResult=events.length?events[events.length-1].notify:null;
   return {id:o.order_number,uuid:o.id,customer:o.full_name,phone:o.phone,whatsapp:o.phone2||null,email:o.email,street:o.street,area:o.area,gov:o.governorate,landmark:o.landmark,city:o.governorate,pay:o.payment_method||"cod",paid:!!o.paid_at,
     source:o.source||"website",country:o.country||"EG",delivery:o.delivery_method||null,
-    fx:{state:o.flextock_state||null,status:o.flextock_status||null,error:o.flextock_error||null,sentAt:o.flextock_sent_at?fmtDT(o.flextock_sent_at):null,syncedAt:o.flextock_synced_at?fmtDT(o.flextock_synced_at):null,courier:o.courier_name||null,tracking:o.tracking_number||null,trackingUrl:o.tracking_url||null},currency:o.currency||"EGP",items,shipping:o.shipping||0,discount:o.discount||0,promo:o.promo_code||null,total:o.total,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
+    fx:{state:o.flextock_state||null,status:o.flextock_status||null,error:o.flextock_error||null,sentAt:o.flextock_sent_at?fmtDT(o.flextock_sent_at):null,syncedAt:o.flextock_synced_at?fmtDT(o.flextock_synced_at):null,courier:o.courier_name||null,tracking:o.tracking_number||null,trackingUrl:o.tracking_url||null},
+    wx:{state:o.weslat_state||null,status:o.weslat_status||null,error:o.weslat_error||null,code:o.weslat_code||null,sentAt:o.weslat_sent_at?fmtDT(o.weslat_sent_at):null,syncedAt:o.weslat_synced_at?fmtDT(o.weslat_synced_at):null,trackingUrl:o.tracking_url||null},currency:o.currency||"EGP",items,shipping:o.shipping||0,discount:o.discount||0,promo:o.promo_code||null,total:o.total,status:ST_LABEL[o.status]||o.status,placed:fmtDate(o.created_at),note:o.admin_note||"",events,emailResult};
 }
 
 // Countries the shop sells in. Read from public.markets; these defaults are used
@@ -89,6 +90,10 @@ function App(){
   const [fxCfg,setFxCfg]=React.useState(null);
   const loadFx=()=>window.sb.from("settings").select("value").eq("key","flextock").maybeSingle().then(({data})=>{ setFxCfg((data&&data.value)||null); },()=>{});
   window.flextockCall=async(action,extra)=>{ try{ const {data,error}=await window.sb.functions.invoke("flextock",{body:{action,...(extra||{})}}); if(error){ let msg=error.message; try{ const b=await error.context.json(); msg=b.error||msg; }catch(e){} return {ok:false,error:msg}; } return data||{ok:false,error:"no reply"}; }catch(e){ return {ok:false,error:String(e&&e.message||e)}; } };
+  // Weslat (delivery, Sudan). Same reply shape as Flextock's function.
+  const [wxCfg,setWxCfg]=React.useState(null);
+  const loadWx=()=>window.sb.from("settings").select("value").eq("key","weslat").maybeSingle().then(({data})=>{ setWxCfg((data&&data.value)||null); },()=>{});
+  window.weslatCall=async(action,extra)=>{ try{ const {data,error}=await window.sb.functions.invoke("weslat",{body:{action,...(extra||{})}}); if(error){ let msg=error.message; try{ const b=await error.context.json(); msg=b.error||msg; }catch(e){} return {ok:false,error:msg}; } return data||{ok:false,error:"no reply"}; }catch(e){ return {ok:false,error:String(e&&e.message||e)}; } };
   const loadMarkets=()=>window.sb.from("markets").select("*").order("sort").then(({data,error})=>{ if(!error&&data&&data.length){ setMarkets(data); window.DASH_MARKETS=data; } },()=>{});
 
   React.useEffect(()=>{
@@ -104,7 +109,7 @@ function App(){
       const r=await window.sb.rpc("is_admin");
       const ok=!r.error && r.data===true;
       setAdmin(ok);
-      if(ok){ loadOrders(); loadMarkets(); loadFx(); }
+      if(ok){ loadOrders(); loadMarkets(); loadFx(); loadWx(); }
     })();
   },[session]);
 
@@ -153,7 +158,10 @@ function App(){
   async function setPaid(o,val){ if(!o) return; await window.sb.from("orders").update({paid_at: val ? new Date().toISOString() : null}).eq("id",o.uuid);
     // A paid InstaPay order is now ready for Flextock (it waits until paid).
     if(val && fxCfg && fxCfg.enabled && o.fx.state==="waiting_payment") await window.flextockCall("send",{order_id:o.uuid});
+    // A paid Sudan order goes to Weslat (Sudan orders are paid first, on WhatsApp).
+    if(val && wxCfg && wxCfg.enabled && o.country==="SD" && (!o.wx.state||o.wx.state==="waiting_payment")) await window.weslatCall("send",{order_id:o.uuid});
     await reloadOrder(o.uuid); }
+  async function weslat(o,action){ const r=await window.weslatCall(action,{order_id:o.uuid,manual:true}); await reloadOrder(o.uuid); return r; }
   async function flextock(o,action){ const r=await window.flextockCall(action,{order_id:o.uuid,manual:true}); await reloadOrder(o.uuid); return r; }
   // Bulk-apply a status to selected orders: process one at a time (throttled) so we
   // stay under the email provider's rate limit, emailing the customer for each.
@@ -190,10 +198,11 @@ function App(){
   const mktObj=markets.find(m=>m.code===mkt)||null;
   const bar=<CountryBar markets={markets} value={mkt} onChange={(c)=>{setMkt(c);setOpenId(null);}} orders={orders}/>;
   let body;
-  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onReturned={()=>setStatus(order,"returned")} onSaveNote={saveNote} onSetPaid={(val)=>setPaid(order,val)} fxCfg={fxCfg} onFlextock={(a)=>flextock(order,a)}/>;
+  if(openId&&order) body=<window.DashOrderDetail order={order} onBack={()=>setOpenId(null)} onAdvance={advance} onJump={(label)=>jumpTo(order, ST_KEY[label])} onCancel={cancel} onReturned={()=>setStatus(order,"returned")} onSaveNote={saveNote} onSetPaid={(val)=>setPaid(order,val)} fxCfg={fxCfg} onFlextock={(a)=>flextock(order,a)} wxCfg={wxCfg} onWeslat={(a)=>weslat(order,a)}/>;
   else if(page==="Overview") body=<>{bar}<window.DashOverview orders={shown} market={mktObj} onOpen={o=>{setPage("Orders");setOpenId(o.uuid);}}/></>;
-  else if(page==="Orders") body=<>{bar}<window.DashOrders orders={shown} market={mktObj} markets={markets} fxCfg={fxCfg} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders} onBulkAction={bulkSetStatus}/></>;
+  else if(page==="Orders") body=<>{bar}<window.DashOrders orders={shown} market={mktObj} markets={markets} fxCfg={fxCfg} wxCfg={wxCfg} onOpen={o=>setOpenId(o.uuid)} onReload={loadOrders} onBulkAction={bulkSetStatus}/></>;
   else if(page==="Flextock") body=<window.DashFlextock onSaved={loadFx}/>;
+  else if(page==="Weslat") body=<window.DashWeslat onSaved={loadWx}/>;
   else if(page==="Countries") body=<window.DashCountries onSaved={loadMarkets}/>;
   else if(page==="Product & bundles") body=<window.DashProduct/>;
   else if(page==="Site text") body=<window.DashSiteText/>;
@@ -204,5 +213,5 @@ function App(){
   else body=<window.DashEmails/>;
   return <window.DashShell page={page} setPage={go} onSignOut={()=>{window.sb.auth.signOut();setPage("Overview");setOpenId(null);}}>{body}</window.DashShell>;
 }
-const mount=()=>{ if(!window.DashEmails||!window.DASH||!window.DashProduct||!window.DashSiteText||!window.DashCountries||!window.DashFlextock){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
+const mount=()=>{ if(!window.DashEmails||!window.DASH||!window.DashProduct||!window.DashSiteText||!window.DashCountries||!window.DashFlextock||!window.DashWeslat){return setTimeout(mount,60);} ReactDOM.createRoot(document.getElementById('root')).render(<App/>); };
 mount();

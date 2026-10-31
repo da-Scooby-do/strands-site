@@ -8,7 +8,8 @@ const BULK_ACTIONS = [
 const BULK_DONE_LABEL = { confirmed: "Confirmed", with_courier: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned" };
 // Flextock state as a small label in the orders list.
 const FX_CHIP = { sent: ["Flextock ✓", "#E9F2E4", "#3C5A2C"], failed: ["Flextock ✗", "#F6E5E5", "#8A2B2B"], cancelled: ["Flextock cancelled", "var(--purple-tint)", "var(--ink-2)"] };
-function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg }) {
+const WX_CHIP = { sent: ["Weslat ✓", "#E9F2E4", "#3C5A2C"], failed: ["Weslat ✗", "#F6E5E5", "#8A2B2B"] };
+function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg, wxCfg }) {
   const [fxBusy, setFxBusy] = React.useState(false);
   const [fxMsg, setFxMsg] = React.useState(null);
   const syncFx = async () => {
@@ -16,6 +17,13 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg
     const r = await window.flextockCall("sync");
     setFxBusy(false);
     setFxMsg(r && r.ok ? { ok: true, t: "Checked " + (r.checked || 0) + " order(s) at Flextock · " + (r.moved || 0) + " updated." } : { ok: false, t: (r && r.error) || "Sync failed." });
+    if (onReload) onReload();
+  };
+  const syncWx = async () => {
+    setFxBusy(true); setFxMsg(null);
+    const r = await window.weslatCall("sync");
+    setFxBusy(false);
+    setFxMsg(r && r.ok ? { ok: true, t: "Checked " + (r.checked || 0) + " order(s) at Weslat · " + (r.moved || 0) + " updated." } : { ok: false, t: (r && r.error) || "Sync failed." });
     if (onReload) onReload();
   };
   const [filter, setFilter] = React.useState("To action");
@@ -64,7 +72,7 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg
     <div>
       <window.DashNewOrder open={newOpen} country={market ? market.code : "EG"} markets={markets} onClose={() => setNewOpen(false)} onCreated={() => { if (onReload) onReload(); }} />
       <window.DashImportOrders open={importOpen} country={market ? market.code : "EG"} onClose={() => setImportOpen(false)} onDone={() => { if (onReload) onReload(); }} />
-      <PageHeader label="Orders" title="What needs packing." action={<span style={{ display: "inline-flex", gap: "var(--space-2)", flexWrap: "wrap" }}><Button size="sm" onClick={() => setNewOpen(true)}>New order</Button><Button size="sm" variant="quiet" onClick={() => setImportOpen(true)}>Import CSV</Button><Button size="sm" variant="quiet" onClick={exportCSV}>Export CSV</Button>{fxCfg && fxCfg.enabled && <Button size="sm" variant="quiet" disabled={fxBusy} onClick={syncFx}>{fxBusy ? "Syncing…" : "Sync Flextock"}</Button>}</span>} />
+      <PageHeader label="Orders" title="What needs packing." action={<span style={{ display: "inline-flex", gap: "var(--space-2)", flexWrap: "wrap" }}><Button size="sm" onClick={() => setNewOpen(true)}>New order</Button><Button size="sm" variant="quiet" onClick={() => setImportOpen(true)}>Import CSV</Button><Button size="sm" variant="quiet" onClick={exportCSV}>Export CSV</Button>{fxCfg && fxCfg.enabled && <Button size="sm" variant="quiet" disabled={fxBusy} onClick={syncFx}>{fxBusy ? "Syncing…" : "Sync Flextock"}</Button>}{wxCfg && wxCfg.enabled && (!market || market.code === "SD") && <Button size="sm" variant="quiet" disabled={fxBusy} onClick={syncWx}>{fxBusy ? "Syncing…" : "Sync Weslat"}</Button>}</span>} />
       {fxMsg && <div style={{ marginBottom: "var(--space-4)" }}><InlineAlert tone={fxMsg.ok ? "ok" : "error"}>{fxMsg.t}</InlineAlert></div>}
       <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginBottom: "var(--space-4)" }}>
         {FILTERS.map((f) => (
@@ -101,6 +109,7 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg
           {!market && <span title={r.country} style={{ fontSize: 14 }}>{window.marketFlag(r.country)}</span>}
           {(r.source && r.source !== "website") ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "var(--purple-tint)", color: "var(--green)", textTransform: "capitalize", whiteSpace: "nowrap" }}>{r.source}</span> : <span style={{ fontSize: 11, color: "var(--ink-2)" }}>Site</span>}
           {r.fx && FX_CHIP[r.fx.state] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: FX_CHIP[r.fx.state][1], color: FX_CHIP[r.fx.state][2], whiteSpace: "nowrap" }}>{FX_CHIP[r.fx.state][0]}</span>}
+          {r.wx && WX_CHIP[r.wx.state] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: WX_CHIP[r.wx.state][1], color: WX_CHIP[r.wx.state][2], whiteSpace: "nowrap" }}>{WX_CHIP[r.wx.state][0]}</span>}
           {(r.pay === "instapay" || r.pay === "bank") && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: "#FBEFD8", color: "#7A5200", whiteSpace: "nowrap" }}>{r.pay === "bank" ? "Bank" : "InstaPay"}</span>}
           {(r.pay === "instapay" || r.pay === "bank") && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: r.paid ? "#E9F2E4" : "#F6E5E5", color: r.paid ? "#3C5A2C" : "#8A2B2B", whiteSpace: "nowrap" }}>{r.paid ? "Paid" : "Unpaid"}</span>}
         </span> },
