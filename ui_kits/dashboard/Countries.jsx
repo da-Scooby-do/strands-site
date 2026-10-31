@@ -71,7 +71,7 @@ function MarketCard({ m, variants, rows, onChange, onRowChange, onSave, busy, ms
           <Checkbox checked={!!m.pay_bank} onChange={(v) => onChange("pay_bank", v)} label="Pay first by transfer" />
         </div>
         {m.pay_bank && <Input label="WhatsApp number customers message to pay (with country code)" value={m.whatsapp || ""} onChange={(v) => onChange("whatsapp", v)} placeholder="966 56 232 9121" />}
-        {m.pay_bank && <Textarea label="Bank details shown after ordering (leave blank if customers get them on WhatsApp)" rows={4} value={m.bank_details || ""} onChange={(v) => onChange("bank_details", v)} />}
+        {m.pay_bank && <Textarea label="Account customers transfer to — shown at checkout and written into the WhatsApp message (e.g. Bankak 3070076). Leave blank if you send it on WhatsApp yourself." rows={4} value={m.bank_details || ""} onChange={(v) => onChange("bank_details", v)} />}
       </div>
 
       {msg && <InlineAlert tone={msg.ok ? "ok" : "error"}>{msg.msg}</InlineAlert>}
