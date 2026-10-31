@@ -9,6 +9,13 @@ export function Icon({ name, size = 20, stroke = 1.5, color = "currentColor", st
   React.useEffect(() => {
     const draw = () => {
       if (!window.lucide || !ref.current) return;
+      // lucide swaps the placeholder for an <svg>, so React must not own what's
+      // inside the span: write a fresh placeholder each time, or a changed name
+      // (✓ → alert, eye → eye-off) would leave the old picture on screen.
+      ref.current.innerHTML = "";
+      const i = document.createElement("i");
+      i.setAttribute("data-lucide", name);
+      ref.current.appendChild(i);
       // lucide's `root` option does not scope the conversion, so its attrs leak
       // across the page. Convert, then stamp this instance's own svg.
       window.lucide.createIcons({ nameAttr: "data-lucide", root: ref.current });
@@ -26,8 +33,6 @@ export function Icon({ name, size = 20, stroke = 1.5, color = "currentColor", st
     if (!window.lucide) { const t = setInterval(() => { if (window.lucide) { draw(); clearInterval(t); } }, 120); return () => clearInterval(t); }
   }, [name, size, stroke]);
   return (
-    <span ref={ref} style={{ display: "inline-flex", width: size, height: size, color, flex: "none", ...style }}>
-      <i data-lucide={name} style={{ width: size, height: size }}></i>
-    </span>
+    <span ref={ref} aria-hidden="true" style={{ display: "inline-flex", width: size, height: size, color, flex: "none", ...style }} />
   );
 }
