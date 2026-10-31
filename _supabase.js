@@ -57,9 +57,18 @@
     return { email: String((e && e.value) || email || "").trim(), password: String((p && p.value) || password || "") };
   };
   // Check before sending; returns a message or "" when fine.
+  // An address the email service accepts: name@domain.tld, no leading/trailing or double
+  // dots, a letters-only ending (".com", not "@gmail" or "@2000").
+  window.emailOk = function (e) {
+    var m = /^([^\s@]+)@([^\s@]+)$/.exec(String(e || ""));
+    if (!m) return false;
+    var local = m[1], domain = m[2];
+    if (/^\.|\.$|\.\./.test(local)) return false;
+    return /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/.test(domain) && !/(^|\.)-|-(\.|$)/.test(domain);
+  };
   window.authCheck = function (v, ar) {
     if (!v.email) return ar ? "اكتبي بريدك الإلكتروني." : "Enter your email.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) return ar ? "البريد الإلكتروني ده مش صحيح." : "That email doesn’t look right.";
+    if (!window.emailOk(v.email)) return ar ? "البريد الإلكتروني ده مش صحيح." : "That email doesn’t look right.";
     if (!v.password) return ar ? "اكتبي كلمة السر." : "Enter a password.";
     return "";
   };

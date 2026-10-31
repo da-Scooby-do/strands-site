@@ -40,6 +40,7 @@ function NewOrder({ open, onClose, onCreated, country, markets }) {
     if (busy) return; setErr("");
     if (!f.full_name.trim()) return setErr("Enter the customer’s name.");
     if (!f.phone.trim()) return setErr("Enter the customer’s phone.");
+    if (f.email.trim() && window.emailOk && !window.emailOk(f.email.trim())) return setErr("That email doesn’t look right — fix it or leave it blank (no emails go to a wrong address).");
     if (!items.some((it) => it.variant_key && Number(it.qty) > 0)) return setErr(offered.length ? "Add at least one item." : "No prices set for " + mInfo.name_en + " yet — add them on the Countries page.");
     setBusy(true);
     try {
