@@ -6,6 +6,8 @@
 //   cron     — every 30 min: send what's due, then read statuses + tracking back
 //   webhook  — Weslat's call on a status change (re-read from the API, never trusted as sent)
 //   sync     — the dashboard's "Sync Weslat" (the read-back half of cron)
+//   quote    — Weslat's own delivery price per Sudan delivery choice, for a number of jars
+//   cities   — Sudan's delivery choices = the cities Weslat delivers to (with "auto_cities" on)
 //   test / services / zones — check the login, and the lookups for Dashboard → Weslat
 
 export const FINAL = ["delivered", "cancelled", "returned"];
@@ -31,12 +33,21 @@ export function jarsIn(o: any) {
   return Math.max(1, n);
 }
 
+// Weslat's city for one of our delivery choices: the one picked on the dashboard, or for
+// a choice taken from Weslat's own list ("wz_<zoneId>"), that zone.
+export function zoneFor(cfg: any, key: string) {
+  const z = ((cfg && cfg.zones) || {})[key || ""];
+  if (z && z.zone_id) return z;
+  const m = String(key || "").match(/^wz_(\d+)$/);
+  return m ? { zone_id: Number(m[1]) } : null;
+}
+
 // Our order -> Weslat's saveShipment input. Returns { input } or { error }.
 export function buildShipment(o: any, cfg: any) {
   if (!cfg || !cfg.service_id) return { error: "Choose the Weslat shipping service on Dashboard → Weslat." };
-  const z = ((cfg.zones || {})[o.delivery_method || ""]) || null;
-  if (!z || !z.zone_id || !z.subzone_id) {
-    return { error: "No Weslat area for the delivery choice “" + (o.delivery_method || "none") + "” — set it on Dashboard → Weslat." };
+  const z = zoneFor(cfg, o.delivery_method);
+  if (!z) {
+    return { error: "No Weslat city for the delivery choice “" + (o.delivery_method || "none") + "” — set it on Dashboard → Weslat." };
   }
   const jars = jarsIn(o);
   const cod = o.payment_method === "cod";
@@ -47,7 +58,7 @@ export function buildShipment(o: any, cfg: any) {
     recipientName: o.full_name || "",
     recipientMobile: localPhone(o.phone),
     recipientZoneId: Number(z.zone_id),
-    recipientSubzoneId: Number(z.subzone_id),
+    recipientSubzoneId: z.subzone_id ? Number(z.subzone_id) : null,  // filled in by sendOrder when not saved
     recipientAddress: address,
     description: "Strands hair masque × " + jars,
     piecesCount: 1,
@@ -129,10 +140,10 @@ function errorText(body: any, status: number) {
   }).join(" · ");
 }
 
-async function post(deps: any, token: string | null, query: string, variables: any) {
+async function post(deps: any, token: string | null, query: string, variables: any, lang = "en") {
   const res = await deps.fetch(apiUrl(deps), {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Content-Language": "en", ...(token ? { Authorization: "Bearer " + token } : {}) },
+    headers: { "Content-Type": "application/json", "Content-Language": lang, ...(token ? { Authorization: "Bearer " + token } : {}) },
     body: JSON.stringify({ query, variables }),
   });
   const text = await res.text();
@@ -153,12 +164,13 @@ export function session(deps: any) {
     if (!t) throw new Error("Weslat login failed — " + errorText(r.body, r.status));
     token = t;
   };
-  return async function gql(query: string, variables: any = {}) {
+  // lang: the language of names Weslat returns (zones, statuses).
+  return async function gql(query: string, variables: any = {}, lang = "en") {
     apiUrl(deps);  // fails clearly when the secrets aren't set
     if (!token) await login();
-    let r = await post(deps, token, query, variables);
+    let r = await post(deps, token, query, variables, lang);
     const unauth = (b: any) => b && Array.isArray(b.errors) && b.errors.some((e: any) => /unauthenticated/i.test(String(e && e.message)));
-    if (r.status === 401 || unauth(r.body)) { await login(); r = await post(deps, token, query, variables); }
+    if (r.status === 401 || unauth(r.body)) { await login(); r = await post(deps, token, query, variables, lang); }
     if (r.status >= 400 || !r.body || typeof r.body !== "object" || (Array.isArray(r.body.errors) && r.body.errors.length)) {
       throw new Error(errorText(r.body, r.status));
     }
@@ -167,6 +179,13 @@ export function session(deps: any) {
 }
 
 // ---------- the actions ----------
+
+// Weslat insists on a sub-area; the address says where exactly, so the city's first one does.
+async function firstSubzone(gql: any, zoneId: number) {
+  const subs = await gql("query Subzones($zoneId: Int!) { listZonesDropdown(input: { active: true, parentId: $zoneId }) { id name } }", { zoneId });
+  const first = subs && subs.listZonesDropdown && subs.listZonesDropdown[0];
+  return first ? Number(first.id) : zoneId;
+}
 
 // Send one order. Records what happened on the order and returns it.
 export async function sendOrder(deps: any, o: any, cfg: any, manual: boolean, gql?: any) {
@@ -188,6 +207,7 @@ export async function sendOrder(deps: any, o: any, cfg: any, manual: boolean, gq
       { input: { refNumber: [o.order_number] } });
     let s = found && found.listShipments && found.listShipments.data && found.listShipments.data[0];
     if (!s) {
+      if (!built.input.recipientSubzoneId) built.input.recipientSubzoneId = await firstSubzone(gql, built.input.recipientZoneId);
       const made = await gql("mutation CreateShipment($input: ShipmentInput!) { saveShipment(input: $input) { " + SHIPMENT_FIELDS + " } }", { input: built.input });
       s = made && made.saveShipment;
       if (!s) throw new Error("Weslat returned no shipment.");
@@ -260,7 +280,9 @@ export async function handleWebhook(deps: any, body: any) {
 // The 30-minute job: send what's due, then read back.
 export async function runCron(deps: any) {
   const cfg = await deps.db.settings();
-  if (!cfg.enabled) return { skipped: "Weslat is switched off" };
+  let cities: any;
+  if (cfg.auto_cities && cfg.service_id) { try { cities = await syncCities(deps); } catch (e) { cities = { ok: false, error: String((e as Error).message || e) }; } }
+  if (!cfg.enabled) return { skipped: "Weslat is switched off", cities };
   const gql = session(deps);
   const due = await deps.db.ordersToSend(cfg);  // SD, not sent, not final, placed after enabled_at
   const sent: string[] = [], failed: string[] = [];
@@ -269,8 +291,82 @@ export async function runCron(deps: any) {
     if (r.sent) sent.push(o.order_number); else if (r.state === "failed") failed.push(o.order_number);
   }
   const sync = await syncStatuses(deps, gql);
-  await deps.db.saveSettings({ ...cfg, last_sync: new Date().toISOString() });
-  return { sent, failed, ...sync };
+  await deps.db.saveSettings({ ...(await deps.db.settings()), last_sync: new Date().toISOString() });
+  return { sent, failed, ...sync, cities };
+}
+
+// ---------- delivery prices ----------
+
+export const QUOTE_HOURS = 6;  // a price is asked again after this long (the order accepts it for 24 h)
+
+// What Weslat charges, from calculateShipmentFees: everything but the goods' own amount.
+export function feeFrom(f: any) {
+  if (!f) return null;
+  const total = Number(f.total) - Number(f.amount || 0);
+  const parts = ["delivery", "weight", "collection", "post", "tax"].reduce((a, k) => a + (Number(f[k]) || 0), 0);
+  const fee = total > 0 ? total : parts;
+  return fee > 0 ? Math.round(fee) : null;
+}
+
+// Weslat's price for every Sudan delivery choice that has a Weslat city, for `jars` jars.
+// Fresh saved prices are reused; the rest are asked for, saved, and returned.
+// Returns { fees: { key: fee } } — a choice Weslat couldn't price is left out (its saved fee applies).
+export async function quoteFees(deps: any, jarsIn: number) {
+  const jars = Math.min(20, Math.max(1, Math.floor(Number(jarsIn) || 1)));
+  const cfg = await deps.db.settings();
+  const options = (await deps.db.deliveryOptions("SD")) || [];
+  const fees: Record<string, number> = {};
+  if (!cfg.service_id) return { ok: true, jars, fees };
+  const fresh = await deps.db.quotes("SD", jars, QUOTE_HOURS);  // { key: fee }
+  const todo = options.filter((o: any) => zoneFor(cfg, o.key) && !(o.key in fresh));
+  for (const k of Object.keys(fresh)) fees[k] = fresh[k];
+  if (!todo.length) return { ok: true, jars, fees };
+  await priceChoices(deps, cfg, todo, jars, fees, session(deps));
+  return { ok: true, jars, fees };
+}
+
+// Ask Weslat the price of each choice for `jars` jars; save and add the ones it prices to `fees`.
+async function priceChoices(deps: any, cfg: any, choices: any[], jars: number, fees: Record<string, number>, gql: any) {
+  const weight = Math.max(0.5, Math.round(jars * (Number(cfg.jar_kg) || 0.5) * 10) / 10);
+  for (let i = 0; i < choices.length; i += 8) await Promise.all(choices.slice(i, i + 8).map(async (o: any) => {  // 8 at a time
+    try {
+      const z = zoneFor(cfg, o.key)!;
+      const sub = z.subzone_id ? Number(z.subzone_id) : await firstSubzone(gql, Number(z.zone_id));
+      const d = await gql("query Fees($input: CalculateShipmentFeesInput!) { calculateShipmentFees(input: $input) { amount delivery weight collection post tax total } }",
+        { input: { serviceId: Number(cfg.service_id), weight, recipientZoneId: Number(z.zone_id), recipientSubzoneId: sub, price: 0, priceTypeCode: "EXCLD", paymentTypeCode: "PAID" } });
+      const fee = feeFrom(d && d.calculateShipmentFees);
+      if (fee) { fees[o.key] = fee; await deps.db.saveQuote("SD", o.key, jars, fee); }
+    } catch (_e) { /* this choice keeps its saved fee */ }
+  }));
+}
+
+// Sudan's delivery choices = the cities Weslat delivers to, each at Weslat's price for one
+// jar (that price is also the fallback when Weslat can't answer later). A city Weslat adds
+// appears at checkout; one it drops disappears. Cities it can't price are left out. If
+// Weslat can't be read, or prices nothing, the current choices stay as they are.
+export async function syncCities(deps: any) {
+  const cfg = await deps.db.settings();
+  if (!cfg.service_id) return { ok: false, error: "Choose the Weslat shipping service first." };
+  const gql = session(deps);
+  const q = "query Zones($serviceId: Int!) { listZonesDropdown(input: { active: true, service: { serviceId: $serviceId } }) { id name } }";
+  const vars = { serviceId: Number(cfg.service_id) };
+  const [en, arr] = await Promise.all([gql(q, vars, "en"), gql(q, vars, "ar").catch(() => null)]);
+  const zones = (en && en.listZonesDropdown) || [];
+  const arName: Record<string, string> = {};
+  for (const z of (arr && arr.listZonesDropdown) || []) arName[String(z.id)] = z.name;
+  const choices = zones.map((z: any) => ({ key: "wz_" + z.id, name_en: z.name, name_ar: arName[String(z.id)] || z.name, zone_id: Number(z.id) }));
+  const fees: Record<string, number> = {};
+  const fresh = await deps.db.quotes("SD", 1, QUOTE_HOURS);
+  for (const c of choices) if (c.key in fresh) fees[c.key] = fresh[c.key];
+  await priceChoices(deps, cfg, choices.filter((c: any) => !(c.key in fees)), 1, fees, gql);
+  const priced = choices.filter((c: any) => fees[c.key]).map((c: any) => ({ ...c, fee: fees[c.key] }));
+  const before = (await deps.db.deliveryOptions("SD")) || [];
+  if (!priced.length) return { ok: false, error: "Weslat returned " + zones.length + " cities but no prices — the current list is kept.", cities: before.length };
+  await deps.db.saveDeliveryOptions("SD", priced);
+  const had = new Set(before.map((o: any) => o.key)), has = new Set(priced.map((o: any) => o.key));
+  return { ok: true, cities: priced.length, unpriced: zones.length - priced.length,
+    added: priced.filter((o: any) => !had.has(o.key)).map((o: any) => o.name_en),
+    removed: before.filter((o: any) => !has.has(o.key)).map((o: any) => o.name_en) };
 }
 
 // ---------- lookups for the dashboard ----------

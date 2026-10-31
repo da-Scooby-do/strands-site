@@ -40,6 +40,9 @@ function MarketCard({ m, variants, rows, onChange, onRowChange, onSave, busy, ms
 
       <div style={{ display: "grid", gap: "var(--space-3)" }}>
         <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>Delivery choices the customer picks from at checkout, each with its own fee. With none, the one delivery fee below applies.</span>
+        {m.code === "SD" && (opts.some((o) => /^wz_\d+$/.test(o.key))
+          ? <InlineAlert tone="ok">Sudan’s cities and prices come from Weslat (Dashboard → Weslat) and refresh by themselves — changes made here are replaced on the next refresh.</InlineAlert>
+          : <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>Sudan: customers see <strong>Weslat’s own price</strong> (Dashboard → Weslat). These fees are only used when Weslat can’t give one.</span>)}
         {opts.map((o, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1.3fr 1.3fr 0.7fr auto"), gap: "var(--space-3)", alignItems: "end" }}>
             <Input label={i === 0 ? "Choice (EN)" : ""} value={o.name_en || ""} onChange={(v) => setOpt(i, "name_en", v)} placeholder="Nearest RedBox locker" />
