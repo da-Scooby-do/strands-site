@@ -6,7 +6,7 @@
 // Secrets (Supabase → Edge Functions → Secrets): WESLAT_API_URL and WESLAT_API_KEY
 // (or WESLAT_USERNAME + WESLAT_PASSWORD to log in with).
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { sendOrder, syncStatuses, handleWebhook, runCron, testLogin, listServices, listZones, quoteFees, FINAL } from "./core.ts";
+import { sendOrder, syncStatuses, handleWebhook, runCron, testLogin, listServices, listZones, quoteFees, syncCities, FINAL } from "./core.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -53,6 +53,9 @@ const db = {
     const { data } = await admin.from("delivery_quotes").select("option_key,fee").eq("market", market).eq("jars", jars)
       .gte("quoted_at", new Date(Date.now() - hours * 3600 * 1000).toISOString());
     return Object.fromEntries((data || []).map((q: any) => [q.option_key, q.fee]));
+  },
+  async saveDeliveryOptions(market: string, options: unknown) {
+    await admin.from("markets").update({ delivery_options: options }).eq("code", market);
   },
   async saveQuote(market: string, option_key: string, jars: number, fee: number) {
     await admin.from("delivery_quotes").upsert({ market, option_key, jars, fee, quoted_at: new Date().toISOString() }, { onConflict: "market,option_key,jars" });
@@ -115,6 +118,7 @@ Deno.serve(async (req) => {
       await db.saveSettings({ ...cfg, last_sync: new Date().toISOString() });
       return json({ ok: true, ...r });
     }
+    if (action === "cities") return json(await syncCities(deps));
     if (action === "test") return json(await testLogin(deps));
     if (action === "services") return json(await listServices(deps));
     if (action === "zones") return json(await listZones(deps, Number(body.service_id), body.zone_id ? Number(body.zone_id) : undefined));

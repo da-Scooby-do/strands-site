@@ -18,7 +18,8 @@ function Weslat({ onSaved }) {
   const [lookMsg, setLookMsg] = React.useState(null);
   const [hook, setHook] = React.useState(null);
   const [copied, setCopied] = React.useState(false);
-  const [prices, setPrices] = React.useState(null);   // Weslat's price per choice, for 1 jar
+  const [prices, setPrices] = React.useState(null);
+  const [cityMsg, setCityMsg] = React.useState(null);   // Weslat's price per choice, for 1 jar
 
   React.useEffect(() => { load(); }, []);
   async function load() {
@@ -43,7 +44,8 @@ function Weslat({ onSaved }) {
     if (!(kg > 0 && kg < 20)) return setMsg({ ok: false, t: "Nothing saved — the weight per jar must be a number of kilograms, e.g. 0.5." });
     if (c.enabled) {
       if (!c.service_id) return setMsg({ ok: false, t: "Nothing saved — choose the Weslat shipping service before switching on." });
-      const unmapped = choices.filter((o) => { const z = (c.zones || {})[o.key]; return !z || !z.zone_id; });
+      // Cities taken from Weslat ("wz_…") carry their own; others need one picked here.
+      const unmapped = c.auto_cities ? [] : choices.filter((o) => { const z = (c.zones || {})[o.key]; return !/^wz_\d+$/.test(o.key) && (!z || !z.zone_id); });
       if (unmapped.length) return setMsg({ ok: false, t: "Nothing saved — choose the Weslat city for: " + unmapped.map((o) => o.name_en).join(", ") + "." });
     }
     setBusy("save"); setMsg(null);
@@ -54,8 +56,25 @@ function Weslat({ onSaved }) {
       setCfg(value);
       setMsg({ ok: true, t: value.enabled ? "Saved. Paid Sudan orders go to Weslat automatically." : "Saved. Weslat is off — nothing is sent." });
       if (onSaved) onSaved();
+      return true;
     } finally { setBusy(null); }
   }
+  // Sudan's delivery choices = Weslat's cities (refreshed every 30 minutes, or now).
+  async function updateCities() {
+    setBusy("cities"); setCityMsg(null);
+    const r = await window.weslatCall("cities");
+    setBusy(null);
+    if (r && r.ok) {
+      const bits = [r.cities + " cities from Weslat at checkout."];
+      if (r.added && r.added.length) bits.push("New: " + r.added.join(", ") + ".");
+      if (r.removed && r.removed.length) bits.push("Gone: " + r.removed.join(", ") + ".");
+      if (r.unpriced) bits.push(r.unpriced + " more Weslat didn’t price, so they’re not shown.");
+      setCityMsg({ ok: true, t: bits.join(" ") });
+      const m = await window.sb.from("markets").select("delivery_options").eq("code", "SD").maybeSingle();
+      setChoices((m.data && m.data.delivery_options) || []);
+    } else setCityMsg({ ok: false, t: (r && r.error) || "Couldn’t get the cities from Weslat." });
+  }
+  const toggleAuto = async (on) => { if (await save({ ...cfg, auto_cities: on }) && on) updateCities(); };
   // Switching on records the moment, so only orders placed from now on are sent.
   // The switch only moves once that's saved (save shows why when it can't be).
   const toggle = (on) => {
@@ -144,17 +163,28 @@ function Weslat({ onSaved }) {
 
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-3)" }}>
           <h2 style={{ fontSize: 22 }}>Service and cities.</h2>
-          <p style={p}>Pick the service, then the Weslat city for each Sudan delivery choice (from Countries → Sudan). The customer’s address goes with every shipment, so the courier knows exactly where. You only do this once.</p>
+          <p style={p}>Pick the service. Then either take Sudan’s cities straight from Weslat (recommended), or pick the Weslat city for each delivery choice you made on Countries → Sudan. The customer’s address goes with every shipment, so the courier knows exactly where.</p>
           <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "end" }}>
             <Button size="sm" variant="quiet" onClick={getServices} disabled={!!busy}>{busy === "services" ? "Loading…" : "Get services from Weslat"}</Button>
-            <Button size="sm" variant="quiet" onClick={getZones} disabled={!!busy || !cfg.service_id}>{busy === "zones" ? "Loading…" : "Get cities from Weslat"}</Button>
+            {!cfg.auto_cities && <Button size="sm" variant="quiet" onClick={getZones} disabled={!!busy || !cfg.service_id}>{busy === "zones" ? "Loading…" : "Get cities from Weslat"}</Button>}
           </div>
           {lookMsg && <InlineAlert tone={lookMsg.ok ? "ok" : "error"}>{lookMsg.t}</InlineAlert>}
           {services
             ? <Select label="Shipping service" value={cfg.service_id ? String(cfg.service_id) : ""} onChange={pickService} options={[choose].concat(services.map((s) => ({ value: String(s.id), label: s.name })))} />
             : <div style={{ fontSize: "var(--text-small)" }}>Service: <strong>{cfg.service_name || (cfg.service_id ? "#" + cfg.service_id : "not chosen")}</strong></div>}
-          {!choices.length && <InlineAlert tone="error">Sudan has no delivery choices yet — add them on Countries → Sudan first.</InlineAlert>}
-          {choices.map((o) => {
+          <div style={{ display: "grid", gap: "var(--space-2)", background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)" }}>
+            <Switch checked={!!cfg.auto_cities} onChange={toggleAuto} label="Take Sudan’s cities and prices from Weslat" />
+            <p style={{ ...p, fontSize: "var(--text-fine-size)" }}>When on, the cities customers in Sudan choose from are Weslat’s own list, each at Weslat’s price. A city Weslat adds appears at checkout; one it stops serving disappears. The list refreshes every 30 minutes{cfg.service_id ? "" : " — choose the service first"}.</p>
+            {cfg.auto_cities && <div><Button size="sm" variant="quiet" onClick={updateCities} disabled={!!busy || !cfg.service_id}>{busy === "cities" ? "Asking Weslat…" : "Update cities now"}</Button></div>}
+            {cityMsg && <InlineAlert tone={cityMsg.ok ? "ok" : "error"}>{cityMsg.t}</InlineAlert>}
+            {cfg.auto_cities && choices.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr"), gap: "4px var(--space-5)" }}>
+                {choices.map((o) => <div key={o.key} style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", fontSize: "var(--text-small)", borderTop: "1px solid var(--rule)", padding: "6px 0" }}><span>{o.name_en}{o.name_ar && o.name_ar !== o.name_en ? " · " + o.name_ar : ""}</span><span style={{ fontFamily: "var(--font-numeric)", whiteSpace: "nowrap" }}>{window.fmtMoney(Number(o.fee) || 0, "SDG")}</span></div>)}
+              </div>
+            )}
+          </div>
+          {!cfg.auto_cities && !choices.length && <InlineAlert tone="error">Sudan has no delivery choices yet — add them on Countries → Sudan first.</InlineAlert>}
+          {!cfg.auto_cities && choices.map((o) => {
             const z = (cfg.zones || {})[o.key] || {};
             return (
               <div key={o.key} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1.6fr"), gap: "var(--space-3)", alignItems: "end" }}>
@@ -174,8 +204,8 @@ function Weslat({ onSaved }) {
           <p style={{ ...p, fontSize: "var(--text-fine-size)" }}>Weslat prices by weight (first 2 kg, then per extra kg), so the shipment’s weight is jars × this.</p>
           <div style={{ display: "grid", gap: "var(--space-2)" }}>
             <p style={p}>Delivery prices at checkout come <strong>from Weslat</strong> for each city and the number of jars (save the cities first). The prices on Countries → Sudan are only used if Weslat can’t answer.</p>
-            <div><Button size="sm" variant="quiet" onClick={checkPrices} disabled={!!busy}>{busy === "prices" ? "Asking Weslat…" : "See Weslat’s prices (1 jar)"}</Button></div>
-            {prices && choices.map((o) => (
+            {!cfg.auto_cities && <div><Button size="sm" variant="quiet" onClick={checkPrices} disabled={!!busy}>{busy === "prices" ? "Asking Weslat…" : "See Weslat’s prices (1 jar)"}</Button></div>}
+            {prices && !cfg.auto_cities && choices.map((o) => (
               <div key={o.key} style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", fontSize: "var(--text-small)", borderTop: "1px solid var(--rule)", padding: "6px 0" }}>
                 <span>{o.name_en}</span>
                 <span style={{ fontFamily: "var(--font-numeric)" }}>{prices[o.key] != null ? window.fmtMoney(prices[o.key], "SDG") + " · from Weslat" : window.fmtMoney(Number(o.fee) || 0, "SDG") + " · saved price (Weslat didn’t price it)"}</span>

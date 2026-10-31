@@ -461,9 +461,13 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             {deliveryOptions.length > 0 && (
               <section style={field}>
                 <strong style={{ fontSize: 15 }}>{T("Delivery", "التوصيل")}</strong>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(" + Math.min(2, deliveryOptions.length) + ", minmax(0,1fr))", gap: "var(--space-3)" }}>
-                  {deliveryOptions.map((o) => <PayOption key={o.key} active={!!delivery && delivery.key === o.key} onClick={() => setDeliveryKey(o.key)} title={ar ? (o.name_ar || o.name_en) : o.name_en} sub={money(feeOf(o))} />)}
-                </div>
+                {deliveryOptions.length > 6
+                  // A long list (e.g. every city Weslat serves) reads better as a dropdown.
+                  ? <Select label={T("City", "المدينة")} value={delivery ? delivery.key : ""} onChange={setDeliveryKey}
+                      options={deliveryOptions.map((o) => ({ value: o.key, label: (ar ? (o.name_ar || o.name_en) : o.name_en) + " — " + money(feeOf(o)) }))} />
+                  : <div style={{ display: "grid", gridTemplateColumns: "repeat(" + Math.min(2, deliveryOptions.length) + ", minmax(0,1fr))", gap: "var(--space-3)" }}>
+                      {deliveryOptions.map((o) => <PayOption key={o.key} active={!!delivery && delivery.key === o.key} onClick={() => setDeliveryKey(o.key)} title={ar ? (o.name_ar || o.name_en) : o.name_en} sub={money(feeOf(o))} />)}
+                    </div>}
                 {delivery && /redbox/i.test(delivery.key) && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("We’ll send it to the RedBox locker nearest the address above.", "هنبعته لأقرب ريد بوكس للعنوان اللي فوق.")}</p>}
               </section>
             )}
