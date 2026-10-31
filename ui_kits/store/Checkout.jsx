@@ -149,8 +149,11 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   const feeOf = (o) => (o && liveFees[o.key] != null ? Number(liveFees[o.key]) : Number(o && o.fee) || 0);
   // The number customers in this country message to pay (Egypt: the shop's own).
   const waNumber = String(mkt.whatsapp || SHOP_WA).replace(/\D/g, "");
-  // Paying is arranged on WhatsApp when the country has its own number and no bank details to show.
-  const payOnWa = !isEG && !!mkt.whatsapp && !mkt.bank_details;
+  // Paying is arranged on WhatsApp when the country has its own number. The account to
+  // transfer to (e.g. Sudan's Bankak), when saved, is shown at checkout and written into
+  // the WhatsApp message, so the customer has it right where she sends the screenshot.
+  const payOnWa = !isEG && !!mkt.whatsapp;
+  const payTo = mkt.bank_details ? String(mkt.bank_details).trim().replace(/\s*\n+\s*/g, " · ") : "";
   const shipCfg = ship || { flat_egp: 80, free_over_egp: 2000 };
   const [zones, setZones] = React.useState([]);
 
@@ -270,7 +273,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   // "Hi Strands! My order STR-1 — total 80 SAR, delivery: Nearest RedBox locker. I'd like to send the money…"
   const payOnWaText = (r) => T("Hi Strands! My order ", "أهلاً ستراندز! طلبي ") + r.order_number + T(" — total ", " — الإجمالي ") + money(r.total) +
     (delivery ? T(", delivery: ", "، التوصيل: ") + (ar ? (delivery.name_ar || delivery.name_en) : delivery.name_en) : "") +
-    T(". I’d like to send the money to confirm my order.", ". عايزة أحوّل المبلغ عشان أأكد طلبي.");
+    (payTo
+      ? T(". I’m transferring the total to ", ". هحوّل الإجمالي على ") + payTo + T(" and I’ll send the screenshot here to confirm my order.", " وهبعت صورة التحويل هنا عشان أأكد طلبي.")
+      : T(". I’d like to send the money to confirm my order.", ". عايزة أحوّل المبلغ عشان أأكد طلبي."));
 
   async function placeOrder() {
     if (busy) return; setErr("");
@@ -366,7 +371,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             <div style={{ display: "grid", placeItems: "center", gap: "var(--space-3)", textAlign: "center", padding: "var(--space-4) 0" }}>
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--green)", color: "var(--white)", display: "grid", placeItems: "center" }}><Icon name="check" size={28} /></div>
               <h2 style={{ fontSize: 24 }}>{window.copy("co.done.title", "Thank you.", "شكرًا ليكي.")}</h2>
-              {pay === "bank" && payOnWa
+              {pay === "bank" && payOnWa && payTo
+                ? <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is placed. Transfer", "اتسجّل. حوّلي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("to the account below, then send the screenshot on WhatsApp to", "للحساب اللي تحت، وابعتي صورة التحويل على واتساب لـ")} <strong style={{ color: "var(--ink)", direction: "ltr", unicodeBidi: "isolate" }}>{fmtWa(waNumber)}</strong> {T("— we confirm your order once it arrives.", "— وبنأكد طلبك أول ما يوصل.")}</p>
+                : pay === "bank" && payOnWa
                 ? <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is placed. Message us on WhatsApp at", "اتسجّل. كلّمينا على واتساب على")} <strong style={{ color: "var(--ink)", direction: "ltr", unicodeBidi: "isolate" }}>{fmtWa(waNumber)}</strong> {T("to send the", "عشان تحوّلي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("— we confirm your order once it arrives.", "— وبنأكد طلبك أول ما يوصل.")}</p>
                 : pay === "bank"
                 ? <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is placed. Transfer", "اتسجّل. حوّلي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("to the account below, then send the screenshot on WhatsApp.", "للحساب اللي تحت، وابعتي صورة التحويل على واتساب.")}</p>
@@ -375,7 +382,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                 : <p style={{ color: "var(--ink-2)" }}>{T("Your order", "طلبك")} <strong style={{ color: "var(--ink)" }}>{done.order_number}</strong> {T("is in. We’ll message you as it moves. Pay", "وصلنا. هنبعتلك مع كل خطوة. ادفعي")} <strong style={{ color: "var(--ink)" }}>{money(done.total)}</strong> {T("on delivery.", "عند الاستلام.")}</p>}
             </div>
             {pay === "bank" && mkt.bank_details && <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "var(--font-sans)", fontSize: "var(--text-small)", background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", color: "var(--ink)" }}>{mkt.bank_details}</pre>}
-            {pay === "bank" && payOnWa && <Button fullWidth onClick={() => window.open("https://wa.me/" + waNumber + "?text=" + encodeURIComponent(payOnWaText(done)), "_blank", "noopener")}>{T("Message us on WhatsApp to pay", "كلّمينا على واتساب للدفع")}</Button>}
+            {pay === "bank" && payOnWa && <Button fullWidth onClick={() => window.open("https://wa.me/" + waNumber + "?text=" + encodeURIComponent(payOnWaText(done)), "_blank", "noopener")}>{payTo ? T("Send the screenshot on WhatsApp", "ابعتي صورة التحويل على واتساب") : T("Message us on WhatsApp to pay", "كلّمينا على واتساب للدفع")}</Button>}
             {pay === "bank" && !payOnWa && <Button fullWidth onClick={() => window.open("https://wa.me/" + waNumber + "?text=" + encodeURIComponent(T("Hi Strands! My order ", "أهلاً ستراندز! طلبي ") + done.order_number + T(" — total ", " — الإجمالي ") + money(done.total) + T(". Paying by bank transfer — I’ll send the screenshot here.", ". بدفع بتحويل بنكي — وهبعت صورة التحويل هنا.")), "_blank", "noopener")}>{T("Send the screenshot on WhatsApp", "ابعتي صورة التحويل على واتساب")}</Button>}
             {pay === "instapay" && <Button fullWidth onClick={() => window.open("https://wa.me/" + SHOP_WA + "?text=" + encodeURIComponent(T("Hi Strands! My order ", "أهلاً ستراندز! طلبي ") + done.order_number + T(" — total ", " — الإجمالي ") + money(done.total) + T(". Paying by InstaPay — I’ll send the screenshot here.", ". بدفع بإنستاباي — وهبعت صورة التحويل هنا.")), "_blank", "noopener")}>{T("Message us on WhatsApp", "كلّمينا على واتساب")}</Button>}
             {pay === "instapay" && <Button fullWidth variant="quiet" onClick={() => window.open(INSTAPAY_URL, "_blank", "noopener")}>{T("Open InstaPay to pay", "افتحي إنستاباي للدفع")} {money(done.total)}</Button>}
@@ -483,10 +490,11 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                 {payOptions.includes("cod") && <PayOption active={pay === "cod"} onClick={() => setPay("cod")} title={T("Cash on delivery", "الدفع عند الاستلام")} sub={T("Pay the courier", "ادفعي للمندوب")} />}
                 {payOptions.includes("instapay") && <PayOption active={pay === "instapay"} onClick={() => setPay("instapay")} title={T("InstaPay", "إنستاباي")} sub={T("Pay now, send proof", "ادفعي وابعتي الإيصال")} />}
                 {payOptions.includes("bank") && (payOnWa
-                  ? <PayOption active={pay === "bank"} onClick={() => setPay("bank")} title={T("Transfer via WhatsApp", "تحويل عن طريق واتساب")} sub={T("Message us to send the money", "كلّمينا عشان تحوّلي المبلغ")} />
+                  ? <PayOption active={pay === "bank"} onClick={() => setPay("bank")} title={T("Transfer via WhatsApp", "تحويل عن طريق واتساب")} sub={(payTo ? T("Transfer, then send the screenshot", "حوّلي وابعتي صورة التحويل") : T("Message us to send the money", "كلّمينا عشان تحوّلي المبلغ"))} />
                   : <PayOption active={pay === "bank"} onClick={() => setPay("bank")} title={T("Bank transfer", "تحويل بنكي")} sub={T("Pay now, send proof", "حوّلي وابعتي الإيصال")} />)}
               </div>
-              {pay === "bank" && payOnWa && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("After you place the order, WhatsApp opens with your order ready to send to", "بعد ما تعملي الطلب، هيفتح واتساب ورسالة طلبك جاهزة تتبعت لـ")} <span style={{ direction: "ltr", unicodeBidi: "isolate" }}>{fmtWa(waNumber)}</span>{T(". Send it, transfer the total, and we confirm your order once the money arrives.", ". ابعتيها وحوّلي الإجمالي، وبنأكد طلبك أول ما المبلغ يوصل.")}</p>}
+              {pay === "bank" && payOnWa && payTo && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("Transfer the total to", "حوّلي الإجمالي على")} <strong style={{ color: "var(--ink)", direction: "ltr", unicodeBidi: "isolate" }}>{payTo}</strong>{T(". After you place the order, WhatsApp opens with your order ready to send to", ". بعد ما تعملي الطلب، هيفتح واتساب ورسالة طلبك جاهزة تتبعت لـ")} <span style={{ direction: "ltr", unicodeBidi: "isolate" }}>{fmtWa(waNumber)}</span>{T(" — send it with the transfer screenshot and we confirm your order.", " — ابعتيها مع صورة التحويل وبنأكد طلبك.")}</p>}
+              {pay === "bank" && payOnWa && !payTo && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("After you place the order, WhatsApp opens with your order ready to send to", "بعد ما تعملي الطلب، هيفتح واتساب ورسالة طلبك جاهزة تتبعت لـ")} <span style={{ direction: "ltr", unicodeBidi: "isolate" }}>{fmtWa(waNumber)}</span>{T(". Send it, transfer the total, and we confirm your order once the money arrives.", ". ابعتيها وحوّلي الإجمالي، وبنأكد طلبك أول ما المبلغ يوصل.")}</p>}
               {pay === "bank" && !payOnWa && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("After you place the order you’ll see our bank details. Transfer the total, then send us a screenshot on WhatsApp with your order number.", "بعد ما تعملي الطلب هتظهرلك بيانات الحساب. حوّلي الإجمالي وابعتيلنا صورة التحويل على واتساب مع رقم الطلب.")}</p>}
               {pay === "instapay" && <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: 0 }}>{T("After you place the order you’ll get the InstaPay link. Pay, then send us a screenshot on WhatsApp with your order number.", "بعد ما تعملي الطلب هيظهرلك لينك إنستاباي. ادفعي وابعتيلنا صورة التحويل على واتساب مع رقم الطلب.")}</p>}
             </section>
