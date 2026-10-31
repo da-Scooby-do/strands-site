@@ -129,7 +129,10 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   // Countries can offer delivery choices with their own fee (Saudi Arabia: nearest RedBox or to the door).
   const deliveryOptions = (!isEG && Array.isArray(mkt.delivery_options)) ? mkt.delivery_options : [];
   const [deliveryKey, setDeliveryKey] = React.useState("");
-  const delivery = deliveryOptions.find((o) => o.key === deliveryKey) || deliveryOptions[0] || null;
+  // A long list (a dropdown) starts empty so nobody ships to its first city by mistake;
+  // a few tiles start on the first one.
+  const pickCity = deliveryOptions.length > 6;
+  const delivery = deliveryOptions.find((o) => o.key === deliveryKey) || (pickCity ? null : deliveryOptions[0]) || null;
   // Sudan: Weslat's own price for this many jars, asked through our server (the order is
   // charged the same saved price). Until it answers, or if it can't, the saved fee shows.
   const jarsInCart = (cart || []).reduce((a, c) => { const v = (variants || []).find((x) => x.key === c.key) || {}; return a + c.qty * Math.max(1, Number(v.jars) || 1); }, 0);
@@ -176,11 +179,12 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   const count = lines.reduce((a, l) => a + l.qty, 0);
   const zonePrice = (gov) => { if (!gov) return null; const z = zones.find((z) => (z.governorates || []).includes(gov)); return z ? z.price_egp : (shipCfg.flat_egp || 80); };
   // Egypt: by governorate zone (unknown until one is chosen). Elsewhere: the country's flat fee.
-  let shipping = isEG ? zonePrice(form.governorate) : delivery ? feeOf(delivery) : (mkt.shipping_fee || 0);
+  let shipping = isEG ? zonePrice(form.governorate) : delivery ? feeOf(delivery) : deliveryOptions.length ? null : (mkt.shipping_fee || 0);
   if (isEG && promo && promo.free_shipping) shipping = 0;
   else if (isEG && shipping != null && shipCfg.free_over_egp && subtotal >= shipCfg.free_over_egp) shipping = 0;
   else if (!isEG && mkt.free_over != null && subtotal >= mkt.free_over) shipping = 0;
   const shipKnown = shipping != null;
+  const shipTbd = pickCity && !delivery ? T("Choose your city", "اختاري مدينتك") : window.copy("co.shipping.tbd", "Set at checkout", "تُحسب عند الطلب");
   const discount = isEG && promo ? (promo.discount || 0) : 0;
   // Switching country: clear a region that isn't in the new country's list, and any promo (Egypt only).
   React.useEffect(() => {
@@ -271,6 +275,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   async function placeOrder() {
     if (busy) return; setErr("");
     if (!form.phone2 || !form.phone2.trim()) { setErr(T("Enter your WhatsApp number.", "اكتبي رقم الواتساب.")); return; }
+    if (deliveryOptions.length && !delivery) { setErr(T("Choose your city for delivery.", "اختاري مدينتك للتوصيل.")); return; }
     if (!(minfo.regions || []).some((g) => g[0] === form.governorate)) { setErr(isEG ? T("Choose your governorate.", "اختاري المحافظة.") : T("Choose your region.", "اختاري المنطقة.")); return; }
     // If a code was typed but "Apply" wasn't pressed, validate it now so the discount still counts.
     const typedCode = isEG ? promoInput.trim() : "";
@@ -405,7 +410,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             </div>
             <section style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", display: "grid", gap: 8, fontSize: "var(--text-small)" }}>
               <Row k={window.copy("co.subtotal", "Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
-              <Row k={window.copy("co.shipping", "Shipping", "الشحن") + (delivery ? " · " + (ar ? (delivery.name_ar || delivery.name_en) : delivery.name_en) : "")} v={shipKnown ? (shipping ? money(shipping) : window.copy("co.free", "Free", "مجاني")) : window.copy("co.shipping.tbd", "Set at checkout", "تُحسب عند الطلب")} />
+              <Row k={window.copy("co.shipping", "Shipping", "الشحن") + (delivery ? " · " + (ar ? (delivery.name_ar || delivery.name_en) : delivery.name_en) : "")} v={shipKnown ? (shipping ? money(shipping) : window.copy("co.free", "Free", "مجاني")) : shipTbd} />
               <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={window.copy("co.total", "Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(subtotal + (shipKnown ? shipping : 0))} bold /></div>
             </section>
             <Button fullWidth onClick={() => setStep("checkout")}>{window.copy("co.checkout.title", "Checkout", "إتمام الطلب")} — {money(subtotal + (shipKnown ? shipping : 0))}</Button>
@@ -461,10 +466,10 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             {deliveryOptions.length > 0 && (
               <section style={field}>
                 <strong style={{ fontSize: 15 }}>{T("Delivery", "التوصيل")}</strong>
-                {deliveryOptions.length > 6
+                {pickCity
                   // A long list (e.g. every city Weslat serves) reads better as a dropdown.
                   ? <Select label={T("City", "المدينة")} value={delivery ? delivery.key : ""} onChange={setDeliveryKey}
-                      options={deliveryOptions.map((o) => ({ value: o.key, label: (ar ? (o.name_ar || o.name_en) : o.name_en) + " — " + money(feeOf(o)) }))} />
+                      options={[{ value: "", label: T("Choose your city…", "اختاري مدينتك…") }].concat(deliveryOptions.map((o) => ({ value: o.key, label: (ar ? (o.name_ar || o.name_en) : o.name_en) + " — " + money(feeOf(o)) })))} />
                   : <div style={{ display: "grid", gridTemplateColumns: "repeat(" + Math.min(2, deliveryOptions.length) + ", minmax(0,1fr))", gap: "var(--space-3)" }}>
                       {deliveryOptions.map((o) => <PayOption key={o.key} active={!!delivery && delivery.key === o.key} onClick={() => setDeliveryKey(o.key)} title={ar ? (o.name_ar || o.name_en) : o.name_en} sub={money(feeOf(o))} />)}
                     </div>}
@@ -490,7 +495,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
             <section style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", display: "grid", gap: 8, fontSize: "var(--text-small)" }}>
               <Row k={window.copy("co.subtotal", "Subtotal", "الإجمالي الفرعي")} v={money(subtotal)} />
               {discount ? <Row k={window.copy("co.discount", "Discount", "خصم") + " (" + promo.code + ")"} v={"– " + money(discount)} green /> : null}
-              <Row k={window.copy("co.shipping", "Shipping", "الشحن") + (delivery ? " · " + (ar ? (delivery.name_ar || delivery.name_en) : delivery.name_en) : "")} v={shipKnown ? (shipping ? money(shipping) : window.copy("co.free", "Free", "مجاني")) : window.copy("co.shipping.tbd", "Set at checkout", "تُحسب عند الطلب")} />
+              <Row k={window.copy("co.shipping", "Shipping", "الشحن") + (delivery ? " · " + (ar ? (delivery.name_ar || delivery.name_en) : delivery.name_en) : "")} v={shipKnown ? (shipping ? money(shipping) : window.copy("co.free", "Free", "مجاني")) : shipTbd} />
               <div style={{ borderTop: "1px solid var(--rule)", marginTop: 4, paddingTop: 8 }}><Row k={pay === "instapay" ? T("Total (pay by InstaPay)", "الإجمالي (الدفع بإنستاباي)") : pay === "bank" ? (payOnWa ? T("Total (transfer via WhatsApp)", "الإجمالي (تحويل عن طريق واتساب)") : T("Total (bank transfer)", "الإجمالي (تحويل بنكي)")) : window.copy("co.total", "Total (cash on delivery)", "الإجمالي (الدفع عند الاستلام)")} v={money(total)} bold /></div>
             </section>
             {user && <Button fullWidth onClick={placeOrder} disabled={busy}>{busy ? T("Placing…", "بنكمّل…") : window.copy("co.placeOrder", "Place order — ", "إتمام الطلب — ") + money(total)}</Button>}
