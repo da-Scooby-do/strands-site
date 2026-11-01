@@ -103,7 +103,7 @@
   /* Countries we sell in. Saudi and Sudan open on the site once the owner
      enables them and sets prices in the dashboard (public.markets). */
   window.SA_REGIONS = [
-    ["Riyadh", "الرياض"], ["Makkah", "مكة المكرمة"], ["Madinah", "المدينة المنورة"],
+    ["Riyadh", "الرياض"], ["Jeddah", "جدة"], ["Makkah", "مكة المكرمة"], ["Madinah", "المدينة المنورة"],
     ["Eastern Province", "المنطقة الشرقية"], ["Qassim", "القصيم"], ["Asir", "عسير"],
     ["Tabuk", "تبوك"], ["Hail", "حائل"], ["Northern Borders", "الحدود الشمالية"],
     ["Jazan", "جازان"], ["Najran", "نجران"], ["Al Bahah", "الباحة"], ["Al Jawf", "الجوف"],
