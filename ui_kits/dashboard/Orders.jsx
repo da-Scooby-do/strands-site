@@ -1,5 +1,8 @@
 const { PageHeader, DataTable, StatusPill, SearchField, Button, InlineAlert } = window.StrandsDesignSystem_6d0a65;
-const FILTERS = ["To action", "All", "Confirmed", "With courier", "Delivered", "Returned", "Cancelled"];
+const FILTERS = ["To action", "All", "Paid", "Unpaid", "Confirmed", "With courier", "Delivered", "Returned", "Cancelled"];
+// Paid / Unpaid are for orders paid first (InstaPay, transfer) — the same orders that
+// carry the Paid / Unpaid tag. Unpaid leaves out cancelled and returned orders: nothing to chase.
+const PREPAID = (o) => o.pay === "instapay" || o.pay === "bank";
 const BULK_ACTIONS = [
   { key: "confirmed", label: "Confirm" },
   { key: "with_courier", label: "Out for delivery" },
@@ -39,6 +42,8 @@ function Orders({ orders, onOpen, onReload, onBulkAction, market, markets, fxCfg
     // While searching, look across every order regardless of the status tab, so an
     // order number is always findable — even if it's Delivered or Cancelled.
     if (query) return s;
+    if (filter === "Paid") return PREPAID(o) && o.paid;
+    if (filter === "Unpaid") return PREPAID(o) && !o.paid && !["Cancelled", "Returned"].includes(o.status);
     return filter === "All" ? true : filter === "To action" ? !["Delivered", "Cancelled", "Returned"].includes(o.status) : o.status === filter;
   });
   // Actionable = anything not already finished (Delivered/Cancelled are terminal).
