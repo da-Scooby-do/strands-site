@@ -10,8 +10,12 @@ const SHOP_WA = "201023789109";  // shop WhatsApp for InstaPay payment screensho
 // Normalise a phone number to international form. A number that already carries a
 // "+" country code (from the picker) is kept as-is; a bare Egyptian number gets +20.
 function egPhone(n) {
-  const s = String(n || "").trim();
-  if (s[0] === "+") return "+" + s.slice(1).replace(/[^\d]/g, "");
+  const s = asciiDigits(n).trim();
+  if (s[0] === "+") {
+    // "+20 0101…" → "+20101…": a trunk 0 typed after the country code is dropped.
+    const { code, local } = splitPhone(s);
+    return code + local.replace(/^0+/, "");
+  }
   const d = s.replace(/[^\d]/g, "");
   if (!d) return s;
   if (d.slice(0, 2) === "20") return "+" + d;
@@ -32,8 +36,10 @@ const DIAL_CODES = DIAL_RAW.split(" ").map((t) => {
   return { iso, f: flagOf(iso), d, n, a };
 }).sort((x, y) => (x.iso === "EG" ? -1 : y.iso === "EG" ? 1 : x.n.localeCompare(y.n)));
 const DIAL_BY_LEN = DIAL_CODES.slice().sort((a, b) => b.d.length - a.d.length);
+// Arabic-keyboard digits (٠١٢ / ۰۱۲) → 0-9, so they aren't thrown away as "not a digit".
+const asciiDigits = (s) => String(s || "").replace(/[٠-٩]/g, (c) => c.charCodeAt(0) - 0x660).replace(/[۰-۹]/g, (c) => c.charCodeAt(0) - 0x6f0);
 function splitPhone(value) {
-  const v = String(value || "").replace(/[^\d+]/g, "");
+  const v = asciiDigits(value).replace(/[^\d+]/g, "");
   if (v[0] === "+") {
     const m = DIAL_BY_LEN.find((x) => v.startsWith(x.d));
     if (m) return { code: m.d, local: v.slice(m.d.length) };
@@ -42,6 +48,32 @@ function splitPhone(value) {
   if (v && v[0] === "0") return { code: "+20", local: v.slice(1) };
   return { code: "+20", local: v };
 }
+// The exact national number each country's mobiles have, after the country code
+// (a leading 0 is ignored). The same rules run in place_order (phone_ok), so keep them in step.
+// [digits, pattern, example] — the example is the placeholder and the hint in the error.
+const PHONE_RULES = {
+  "+20":  [10, /^1[0125]\d{8}$/, "10 1234 5678"],   // Egypt: 010 / 011 / 012 / 015
+  "+966": [9,  /^5\d{8}$/,        "51 234 5678"],    // Saudi Arabia: 05x
+  "+249": [9,  /^[19]\d{8}$/,     "91 234 5678"],    // Sudan: 09x / 01x
+  "+971": [9,  /^5\d{8}$/,        "50 123 4567"],    // UAE
+  "+965": [8,  /^[569]\d{7}$/,    "5012 3456"],      // Kuwait
+  "+974": [8,  /^[3567]\d{7}$/,   "3312 3456"],      // Qatar
+  "+973": [8,  /^[36]\d{7}$/,     "3612 3456"],      // Bahrain
+  "+968": [8,  /^[79]\d{7}$/,     "9212 3456"],      // Oman
+  "+962": [9,  /^7\d{8}$/,        "79 123 4567"],    // Jordan
+  "+218": [9,  /^9\d{8}$/,        "91 234 5678"],    // Libya
+  "+44":  [10, /^7\d{9}$/,        "7400 123456"],    // UK
+  "+1":   [10, /^[2-9]\d{9}$/,    "201 555 0123"],   // US / Canada
+};
+// null when the number is fine, else the rule it broke (so the message can say what's expected).
+function phoneProblem(value) {
+  const { code, local } = splitPhone(value);
+  const d = local.replace(/^0+/, "");
+  const rule = PHONE_RULES[code];
+  if (rule) return rule[1].test(d) ? null : { digits: rule[0], example: rule[2] };
+  return d.length >= 7 && d.length <= 12 ? null : { digits: 0, example: "" };
+}
+const phonePlaceholder = (code) => (PHONE_RULES[code] || [0, null, ""])[2];
 const defaultIso = (code) => DIAL_PREFERRED[code] || ((DIAL_CODES.find((c) => c.d === code) || {}).iso) || "EG";
 const norm = (t) => String(t || "").toLowerCase().normalize("NFKD").replace(/[̀-ًͯ-ٟ]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي");
 
@@ -95,7 +127,7 @@ function DialPicker({ iso, onPick, ar }) {
     </div>
   );
 }
-function PhoneField({ label, value, onChange, hint, placeholder, defaultCode }) {
+function PhoneField({ label, value, onChange, hint, placeholder, defaultCode, error }) {
   const ar = window.useLang() === "AR";
   const { code, local } = value ? splitPhone(value) : { code: defaultCode || "+20", local: "" };
   // Remember the exact country picked (several share +1, +7, +44…); fall back to the code's usual one.
@@ -108,9 +140,10 @@ function PhoneField({ label, value, onChange, hint, placeholder, defaultCode }) 
       <label style={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--ink-2)", fontFamily: "var(--font-sans)" }}>{label}</label>
       <div style={{ display: "flex", gap: 8 }}>
         <DialPicker iso={shownIso} ar={ar} onPick={(c) => { setIso(c.iso); onChange(c.d + local); }} />
-        <input type="tel" inputMode="tel" value={local} onChange={(e) => onChange(code + e.target.value.replace(/\D/g, ""))} placeholder={placeholder} style={{ ...box, flex: 1, minWidth: 0, width: 0 }} />
+        <input type="tel" inputMode="tel" value={local} onChange={(e) => onChange(code + asciiDigits(e.target.value).replace(/\D/g, ""))} placeholder={phonePlaceholder(code) || placeholder} aria-invalid={!!error} style={{ ...box, flex: 1, minWidth: 0, width: 0, borderColor: error ? "#8A2B2B" : "var(--rule)" }} />
       </div>
-      {hint && <span style={{ fontSize: 12, color: "var(--ink-2)" }}>{hint}</span>}
+      {hint && !error && <span style={{ fontSize: 12, color: "var(--ink-2)" }}>{hint}</span>}
+      <FieldError text={error} />
     </div>
   );
 }
@@ -166,7 +199,10 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   const [email, setEmail] = React.useState("");
   const [pw, setPw] = React.useState("");
 
-  const [form, setForm] = React.useState({ full_name: "", phone: "", phone2: "", governorate: "", area: "", street: "", landmark: "" });
+  const [form, setForm] = React.useState({ full_name: "", phone: "", phone2: "", governorate: "", area: "", building: "", street: "", landmark: "" });
+  // Per-field messages, shown under each box after "Place order"; typing in a box clears its own.
+  const [fieldErr, setFieldErr] = React.useState({});
+  const setField = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setFieldErr((e) => (e[k] ? { ...e, [k]: "" } : e)); };
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState("");
   const [done, setDone] = React.useState(null);
@@ -211,12 +247,18 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
 
   function hydrateUser(u) {
     setUser(u); setEmail(u.email || "");
-    window.sb.from("profiles").select("full_name,phone,governorate,area,street,landmark").eq("user_id", u.id).maybeSingle().then(({ data }) => {
-      if (data) setForm((f) => ({
+    window.sb.from("profiles").select("*").eq("user_id", u.id).maybeSingle().then(({ data }) => {
+      if (!data) return;
+      // Orders save the street as "<building>, <street>" so couriers see it in one line;
+      // the profile keeps the building on its own too, so split it back out here.
+      const b = data.building || "";
+      let st = data.street || "";
+      if (b && st.startsWith(b + ", ")) st = st.slice(b.length + 2);
+      setForm((f) => ({
         ...f,
         full_name: f.full_name || data.full_name || "", phone: f.phone || data.phone || "",
         governorate: f.governorate || data.governorate || "", area: f.area || data.area || "",
-        street: f.street || data.street || "", landmark: f.landmark || data.landmark || "",
+        building: f.building || b, street: f.street || st, landmark: f.landmark || data.landmark || "",
       }));
     });
     // profiles has no WhatsApp column, so restore phone2 from the customer's most recent order.
@@ -288,9 +330,28 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
 
   async function placeOrder() {
     if (busy) return; setErr("");
-    if (!form.phone2 || !form.phone2.trim()) { setErr(T("Enter your WhatsApp number.", "اكتبي رقم الواتساب.")); return; }
+    // Check every field at once, so the customer sees all that's missing in one go.
+    const phoneMsg = (v, emptyMsg) => {
+      if (!splitPhone(v).local) return emptyMsg;
+      const p = phoneProblem(v);
+      if (!p) return "";
+      return p.digits
+        ? T("This number should be " + p.digits + " digits after the country code, like " + p.example + ".",
+            "الرقم لازم يكون " + p.digits + " أرقام بعد كود الدولة، زي " + p.example + ".")
+        : T("Check this number — it doesn’t look complete.", "راجعي الرقم — شكله مش كامل.");
+    };
+    const fe = {
+      full_name: form.full_name.trim().length < 2 ? T("Enter your full name.", "اكتبي اسمك كامل.") : "",
+      phone: form.phone ? phoneMsg(form.phone, T("Enter your phone number.", "اكتبي رقم التليفون.")) : T("Enter your phone number.", "اكتبي رقم التليفون."),
+      phone2: form.phone2 ? phoneMsg(form.phone2, T("Enter your WhatsApp number.", "اكتبي رقم الواتساب.")) : T("Enter your WhatsApp number.", "اكتبي رقم الواتساب."),
+      governorate: (minfo.regions || []).some((g) => g[0] === form.governorate) ? "" : isEG ? T("Choose your governorate.", "اختاري المحافظة.") : T("Choose your region.", "اختاري المنطقة."),
+      area: form.area.trim().length < 2 ? (isEG ? T("Enter your area.", "اكتبي المنطقة.") : T("Enter your city / district.", "اكتبي المدينة / الحي.")) : "",
+      building: form.building.trim() ? "" : T("Enter the building number or name.", "اكتبي رقم أو اسم العمارة."),
+      street: form.street.trim().length < 3 ? T("Enter your street name.", "اكتبي اسم الشارع.") : "",
+    };
+    setFieldErr(fe);
+    if (Object.values(fe).some(Boolean)) { setErr(T("Please fix the highlighted fields.", "من فضلك راجعي الخانات اللي عليها ملاحظة.")); return; }
     if (deliveryOptions.length && !delivery) { setErr(T("Choose your city for delivery.", "اختاري مدينتك للتوصيل.")); return; }
-    if (!(minfo.regions || []).some((g) => g[0] === form.governorate)) { setErr(isEG ? T("Choose your governorate.", "اختاري المحافظة.") : T("Choose your region.", "اختاري المنطقة.")); return; }
     // If a code was typed but "Apply" wasn't pressed, validate it now so the discount still counts.
     const typedCode = isEG ? promoInput.trim() : "";
     let usePromo = promo;
@@ -301,7 +362,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
     try {
       const payload = {
         lang: ar ? "ar" : "en", full_name: form.full_name, phone: egPhone(form.phone), phone2: egPhone(form.phone2),
-        governorate: form.governorate, area: form.area, street: form.street, landmark: form.landmark,
+        governorate: form.governorate, area: form.area.trim(), landmark: form.landmark,
+        // The courier gets one address line, so the building leads the street.
+        building: form.building.trim(), street: form.building.trim() + ", " + form.street.trim(),
         promo_code: isEG && usePromo ? usePromo.code : null,
         payment_method: pay,
         country: mkt.code,
@@ -340,6 +403,9 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
           phone_invalid: T("Enter a valid phone number.", "اكتبي رقم تليفون صحيح."),
           governorate_required: T("Choose your governorate.", "اختاري المحافظة."),
           address_required: T("Enter your street address.", "اكتبي عنوان الشارع."),
+          area_required: T("Enter your area.", "اكتبي المنطقة."),
+          building_required: T("Enter the building number or name.", "اكتبي رقم أو اسم العمارة."),
+          phone2_invalid: T("Enter a valid WhatsApp number.", "اكتبي رقم واتساب صحيح."),
           cart_empty: window.copy("co.empty", "Your cart is empty.", "سلتك فاضية."),
           promo_already_used: T("You’ve already used this code — remove it to continue.", "استخدمتي الكود ده قبل كده — شيليه عشان تكملي."),
           too_fast: T("You just placed an order — give it a moment before trying again.", "لسه دلوقتي عملتي طلب — استني شوية قبل ما تحاولي تاني."),
@@ -361,6 +427,7 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   // child's max-content, which in RTL overflowed the drawer to the left (clipped).
   const field = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "var(--space-3)" };
   const row2 = { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "var(--space-3)" };
+  const errWrap = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 4, alignContent: "start" };
   const heading = done ? T("Order placed", "تم الطلب") : step === "cart" ? window.copy("co.cart.title", "Your cart", "سلتك") : window.copy("co.checkout.title", "Checkout", "إتمام الطلب");
 
   return (
@@ -467,15 +534,16 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                   <span style={{ fontSize: "var(--text-small)", color: "var(--ink-2)" }}>{T("Signed in as", "داخلة باسم")} {user.email}</span>
                   <button type="button" onClick={() => window.sb.auth.signOut()} style={{ font: "inherit", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", color: "var(--green)", fontSize: "var(--text-small)" }}>{T("Sign out", "خروج")}</button>
                 </div>
-                <Input label={window.copy("co.fullName", "Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
-                <PhoneField defaultCode={minfo.dial} label={window.copy("co.phone", "Phone", "التليفون")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="10 1234 5678" />
-                <PhoneField defaultCode={minfo.dial} label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} value={form.phone2} onChange={(v) => setForm({ ...form, phone2: v })} placeholder="10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} />
-                <Select label={isEG ? window.copy("co.gov", "Governorate", "المحافظة") : (ar ? minfo.region[1] : minfo.region[0])} value={form.governorate} onChange={(v) => setForm({ ...form, governorate: v })} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((minfo.regions || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} />
-                <Input label={window.copy("co.street", "Street address", "عنوان الشارع")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} placeholder={T("Building, street", "العمارة، الشارع")} />
+                <div style={errWrap}><Input label={window.copy("co.fullName", "Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setField("full_name", v)} /><FieldError text={fieldErr.full_name} /></div>
+                <PhoneField defaultCode={minfo.dial} label={window.copy("co.phone", "Phone", "التليفون")} value={form.phone} onChange={(v) => setField("phone", v)} placeholder="10 1234 5678" error={fieldErr.phone} />
+                <PhoneField defaultCode={minfo.dial} label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} value={form.phone2} onChange={(v) => setField("phone2", v)} placeholder="10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} error={fieldErr.phone2} />
+                <div style={errWrap}><Select label={isEG ? window.copy("co.gov", "Governorate", "المحافظة") : (ar ? minfo.region[1] : minfo.region[0])} value={form.governorate} onChange={(v) => setField("governorate", v)} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((minfo.regions || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} /><FieldError text={fieldErr.governorate} /></div>
+                <div style={errWrap}><Input label={isEG ? window.copy("co.area", "Area", "المنطقة") : T("City / district", "المدينة / الحي")} value={form.area} onChange={(v) => setField("area", v)} placeholder={isEG ? T("e.g. Nasr City", "مثال: مدينة نصر") : ""} /><FieldError text={fieldErr.area} /></div>
                 <div style={row2}>
-                  <Input label={isEG ? window.copy("co.area", "Area (optional)", "المنطقة (اختياري)") : T("City / district", "المدينة / الحي")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} />
-                  <Input label={window.copy("co.landmark", "Landmark (optional)", "علامة مميزة (اختياري)")} value={form.landmark} onChange={(v) => setForm({ ...form, landmark: v })} />
+                  <div style={errWrap}><Input label={window.copy("co.building", "Building no. / name", "رقم / اسم العمارة")} value={form.building} onChange={(v) => setField("building", v)} placeholder={T("e.g. 12 or Nile Tower", "مثال: ١٢ أو برج النيل")} /><FieldError text={fieldErr.building} /></div>
+                  <div style={errWrap}><Input label={window.copy("co.street", "Street", "الشارع")} value={form.street} onChange={(v) => setField("street", v)} placeholder={T("Street name", "اسم الشارع")} /><FieldError text={fieldErr.street} /></div>
                 </div>
+                <Input label={window.copy("co.landmark", "Landmark (optional)", "علامة مميزة (اختياري)")} value={form.landmark} onChange={(v) => setField("landmark", v)} />
               </section>
             )}
 
@@ -529,6 +597,9 @@ function PayOption({ active, onClick, title, sub }) {
     <span style={{ fontWeight: 600, fontSize: 14 }}>{title}</span>
     <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{sub}</span>
   </button>;
+}
+function FieldError({ text }) {
+  return text ? <span role="alert" style={{ fontSize: 12, color: "#8A2B2B" }}>{text}</span> : null;
 }
 function Row({ k, v, bold, green }) {
   return <div style={{ display: "flex", justifyContent: "space-between" }}>
