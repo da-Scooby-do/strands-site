@@ -203,6 +203,13 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
   // Per-field messages, shown under each box after "Place order"; typing in a box clears its own.
   const [fieldErr, setFieldErr] = React.useState({});
   const setField = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setFieldErr((e) => (e[k] ? { ...e, [k]: "" } : e)); };
+  // Egypt: Area is a list of Flextock's areas for the chosen governorate.
+  const egAreas = (gov) => (window.EG_AREAS && window.EG_AREAS[gov]) || [];
+  const areaOk = (gov, a) => egAreas(gov).some((x) => x[0] === a);
+  const setGov = (v) => {
+    setForm((f) => ({ ...f, governorate: v, area: isEG && !areaOk(v, f.area) ? "" : f.area }));
+    setFieldErr((e) => (e.governorate ? { ...e, governorate: "" } : e));
+  };
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState("");
   const [done, setDone] = React.useState(null);
@@ -257,7 +264,8 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
       setForm((f) => ({
         ...f,
         full_name: f.full_name || data.full_name || "", phone: f.phone || data.phone || "",
-        governorate: f.governorate || data.governorate || "", area: f.area || data.area || "",
+        governorate: f.governorate || data.governorate || "",
+        area: f.area || (!isEG || areaOk(f.governorate || data.governorate, data.area) ? data.area || "" : ""),
         building: f.building || b, street: f.street || st, landmark: f.landmark || data.landmark || "",
       }));
     });
@@ -345,7 +353,8 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
       phone: form.phone ? phoneMsg(form.phone, T("Enter your phone number.", "اكتبي رقم التليفون.")) : T("Enter your phone number.", "اكتبي رقم التليفون."),
       phone2: form.phone2 ? phoneMsg(form.phone2, T("Enter your WhatsApp number.", "اكتبي رقم الواتساب.")) : T("Enter your WhatsApp number.", "اكتبي رقم الواتساب."),
       governorate: (minfo.regions || []).some((g) => g[0] === form.governorate) ? "" : isEG ? T("Choose your governorate.", "اختاري المحافظة.") : T("Choose your region.", "اختاري المنطقة."),
-      area: form.area.trim().length < 2 ? (isEG ? T("Enter your area.", "اكتبي المنطقة.") : T("Enter your city / district.", "اكتبي المدينة / الحي.")) : "",
+      area: isEG ? (areaOk(form.governorate, form.area) ? "" : T("Choose your area.", "اختاري المنطقة."))
+        : form.area.trim().length < 2 ? T("Enter your city / district.", "اكتبي المدينة / الحي.") : "",
       building: form.building.trim() ? "" : T("Enter the building number or name.", "اكتبي رقم أو اسم العمارة."),
       street: form.street.trim().length < 3 ? T("Enter your street name.", "اكتبي اسم الشارع.") : "",
     };
@@ -537,8 +546,14 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                 <div style={errWrap}><Input label={window.copy("co.fullName", "Full name", "الاسم بالكامل")} value={form.full_name} onChange={(v) => setField("full_name", v)} /><FieldError text={fieldErr.full_name} /></div>
                 <PhoneField defaultCode={minfo.dial} label={window.copy("co.phone", "Phone", "التليفون")} value={form.phone} onChange={(v) => setField("phone", v)} placeholder="10 1234 5678" error={fieldErr.phone} />
                 <PhoneField defaultCode={minfo.dial} label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} value={form.phone2} onChange={(v) => setField("phone2", v)} placeholder="10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} error={fieldErr.phone2} />
-                <div style={errWrap}><Select label={isEG ? window.copy("co.gov", "Governorate", "المحافظة") : (ar ? minfo.region[1] : minfo.region[0])} value={form.governorate} onChange={(v) => setField("governorate", v)} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((minfo.regions || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} /><FieldError text={fieldErr.governorate} /></div>
-                <div style={errWrap}><Input label={isEG ? window.copy("co.area", "Area", "المنطقة") : T("City / district", "المدينة / الحي")} value={form.area} onChange={(v) => setField("area", v)} placeholder={isEG ? T("e.g. Nasr City", "مثال: مدينة نصر") : ""} /><FieldError text={fieldErr.area} /></div>
+                <div style={errWrap}><Select label={isEG ? window.copy("co.gov", "Governorate", "المحافظة") : (ar ? minfo.region[1] : minfo.region[0])} value={form.governorate} onChange={setGov} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((minfo.regions || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} /><FieldError text={fieldErr.governorate} /></div>
+                <div style={errWrap}>{isEG
+                  ? <Select label={window.copy("co.area", "Area", "المنطقة")} value={form.area} onChange={(v) => setField("area", v)}
+                      options={[{ value: "", label: form.governorate ? window.copy("co.choose", "Choose…", "اختاري…") : T("Choose your governorate first", "اختاري المحافظة الأول") }]
+                        .concat(egAreas(form.governorate).map((a) => ({ value: a[0], label: ar ? a[1] : a[0] }))
+                          .sort((x, y) => x.label.localeCompare(y.label, ar ? "ar" : "en")))} />
+                  : <Input label={T("City / district", "المدينة / الحي")} value={form.area} onChange={(v) => setField("area", v)} />}
+                  <FieldError text={fieldErr.area} /></div>
                 <div style={row2}>
                   <div style={errWrap}><Input label={window.copy("co.building", "Building no. / name", "رقم / اسم العمارة")} value={form.building} onChange={(v) => setField("building", v)} placeholder={T("e.g. 12 or Nile Tower", "مثال: ١٢ أو برج النيل")} /><FieldError text={fieldErr.building} /></div>
                   <div style={errWrap}><Input label={window.copy("co.street", "Street", "الشارع")} value={form.street} onChange={(v) => setField("street", v)} placeholder={T("Street name", "اسم الشارع")} /><FieldError text={fieldErr.street} /></div>

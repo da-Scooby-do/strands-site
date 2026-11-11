@@ -42,7 +42,7 @@ const KITS = {
     mode: "esbuild",  // each file in its own scope (its components export via window)
     files: ["responsive.jsx", "Header.jsx", "Hero.jsx", "Statement.jsx", "PhotoStrip.jsx",
       "OverTime.jsx", "Science.jsx", "Standards.jsx", "Reviews.jsx", "Footer.jsx",
-      "Checkout.jsx", "page.jsx"],
+      "EgAreas.jsx", "Checkout.jsx", "page.jsx"],
   },
   account: {
     mode: "babel",    // files share top-level names, exactly as in-browser Babel ran them
