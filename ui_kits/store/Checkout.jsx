@@ -548,10 +548,12 @@ function Checkout({ open, onClose, cart, variants, ship, onSetQty, onRemove, onC
                 <PhoneField defaultCode={minfo.dial} label={window.copy("co.whatsapp", "WhatsApp", "واتساب")} value={form.phone2} onChange={(v) => setField("phone2", v)} placeholder="10 1234 5678" hint={T("we’ll confirm your order on WhatsApp", "هنأكد طلبك على واتساب")} error={fieldErr.phone2} />
                 <div style={errWrap}><Select label={isEG ? window.copy("co.gov", "Governorate", "المحافظة") : (ar ? minfo.region[1] : minfo.region[0])} value={form.governorate} onChange={setGov} options={[{ value: "", label: window.copy("co.choose", "Choose…", "اختاري…") }].concat((minfo.regions || []).map((g) => ({ value: g[0], label: ar ? g[1] : g[0] })))} /><FieldError text={fieldErr.governorate} /></div>
                 <div style={errWrap}>{isEG
-                  ? <Select label={window.copy("co.area", "Area", "المنطقة")} value={form.area} onChange={(v) => setField("area", v)}
-                      options={[{ value: "", label: form.governorate ? window.copy("co.choose", "Choose…", "اختاري…") : T("Choose your governorate first", "اختاري المحافظة الأول") }]
-                        .concat(egAreas(form.governorate).map((a) => ({ value: a[0], label: ar ? a[1] : a[0] }))
-                          .sort((x, y) => x.label.localeCompare(y.label, ar ? "ar" : "en")))} />
+                  ? <SearchSelect label={window.copy("co.area", "Area", "المنطقة")} value={form.area} onChange={(v) => setField("area", v)}
+                      disabled={!form.governorate} error={!!fieldErr.area}
+                      placeholder={form.governorate ? T("Type to search your area", "اكتبي اسم المنطقة للبحث") : T("Choose your governorate first", "اختاري المحافظة الأول")}
+                      emptyText={T("No area matches. Try another spelling.", "مفيش منطقة بالاسم ده. جربي كتابة تانية.")}
+                      options={egAreas(form.governorate).map((a) => ({ value: a[0], label: ar ? a[1] : a[0], alt: ar ? a[0] : a[1] }))
+                        .sort((x, y) => x.label.localeCompare(y.label, ar ? "ar" : "en"))} />
                   : <Input label={T("City / district", "المدينة / الحي")} value={form.area} onChange={(v) => setField("area", v)} />}
                   <FieldError text={fieldErr.area} /></div>
                 <div style={row2}>
@@ -612,6 +614,56 @@ function PayOption({ active, onClick, title, sub }) {
     <span style={{ fontWeight: 600, fontSize: 14 }}>{title}</span>
     <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{sub}</span>
   </button>;
+}
+// Arabic/English search: ignore case, hamza forms, ta marbuta, alef maqsura, "Al-"/"ال", dashes and spaces.
+function normSearch(t) {
+  return String(t || "").toLowerCase().replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
+    .replace(/[ً-ْ]/g, "").replace(/(^|\s)(al|el)[-\s]/g, "$1").replace(/(^|\s)ال/g, "$1").replace(/[\s\-'’.\/]+/g, "");
+}
+/* A required pick-from-the-list field the customer can type into to search.
+   options: [{ value, label, alt }] — alt is the other language's name, also searchable. */
+function SearchSelect({ label, value, onChange, options, placeholder, emptyText, disabled, error }) {
+  const uid = React.useId();
+  const [q, setQ] = React.useState(null);  // null = not typing, show the chosen label
+  const [open, setOpen] = React.useState(false);
+  const [hi, setHi] = React.useState(0);
+  const listRef = React.useRef(null);
+  const chosen = options.find((o) => o.value === value);
+  const nq = normSearch(q || "");
+  const shown = nq ? options.filter((o) => normSearch(o.label).includes(nq) || normSearch(o.alt).includes(nq)) : options;
+  const pick = (o) => { onChange(o.value); setQ(null); setOpen(false); };
+  React.useEffect(() => { const el = listRef.current && listRef.current.children[hi]; if (el) el.scrollIntoView({ block: "nearest" }); }, [hi, open]);
+  const onKey = (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setOpen(true); setHi((h) => Math.min(h + 1, shown.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setHi((h) => Math.max(h - 1, 0)); }
+    else if (e.key === "Enter" && open && shown[hi]) { e.preventDefault(); pick(shown[hi]); }
+    else if (e.key === "Escape") { setQ(null); setOpen(false); }
+  };
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 6, position: "relative" }}>
+      {label && <label htmlFor={uid} style={{ fontSize: "var(--text-fine-size)", letterSpacing: ".08em", textTransform: "uppercase", color: "var(--ink-2)" }}>{label}</label>}
+      <div style={{ position: "relative", display: "grid" }}>
+        <input id={uid} role="combobox" aria-expanded={open} aria-controls={uid + "-list"} aria-autocomplete="list" autoComplete="off"
+          disabled={disabled} value={q != null ? q : chosen ? chosen.label : ""} placeholder={placeholder}
+          onChange={(e) => { setQ(e.target.value); setOpen(true); setHi(0); }}
+          onFocus={(e) => { setOpen(true); setHi(0); e.target.select(); }}
+          onBlur={() => setTimeout(() => { setOpen(false); setQ(null); }, 150)}
+          onKeyDown={onKey}
+          style={{ font: "inherit", fontFamily: "var(--font-sans)", fontSize: "var(--text-small)", height: "var(--input-h)", padding: "0 40px 0 14px", paddingInlineStart: 14, paddingInlineEnd: 40, background: disabled ? "var(--paper, #f6f3ee)" : "var(--white)", color: "var(--ink)", border: "1px solid " + (error ? "#8A2B2B" : "var(--rule)"), borderRadius: "var(--radius-control)", outlineOffset: 2 }} />
+        <span style={{ position: "absolute", insetInlineEnd: 12, top: 0, bottom: 0, display: "grid", alignItems: "center", pointerEvents: "none", color: "var(--ink-2)" }}><Icon name="chevron-down" size={15} /></span>
+      </div>
+      {open && !disabled && (
+        <div id={uid + "-list"} role="listbox" ref={listRef}
+          style={{ position: "absolute", top: "100%", insetInlineStart: 0, insetInlineEnd: 0, marginTop: 4, zIndex: 20, maxHeight: 240, overflowY: "auto", background: "var(--white)", border: "1px solid var(--rule)", borderRadius: "var(--radius-control)", boxShadow: "0 8px 24px rgba(0,0,0,.08)" }}>
+          {shown.length ? shown.map((o, i) => (
+            <div key={o.value} role="option" aria-selected={o.value === value}
+              onMouseDown={(e) => { e.preventDefault(); pick(o); }} onMouseEnter={() => setHi(i)}
+              style={{ padding: "10px 14px", fontSize: "var(--text-small)", cursor: "pointer", background: i === hi ? "var(--paper, #f6f3ee)" : "transparent", fontWeight: o.value === value ? 600 : 400 }}>{o.label}</div>
+          )) : <div style={{ padding: "10px 14px", fontSize: "var(--text-small)", color: "var(--ink-2)" }}>{emptyText}</div>}
+        </div>
+      )}
+    </div>
+  );
 }
 function FieldError({ text }) {
   return text ? <span role="alert" style={{ fontSize: 12, color: "#8A2B2B" }}>{text}</span> : null;
