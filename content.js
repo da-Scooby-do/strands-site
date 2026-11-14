@@ -67,6 +67,7 @@
       { key: "hero.chip", label: "Category chip (before the size)", en: "Hair masque", ar: "ماسك شعر" },
       { key: "hero.tagline", label: "Description (used when the product has no tagline set)", multiline: true, en: "A nine-ingredient mask built around mango butter and flaxseed gel. For soft, fluffy and hydrated hair — all hair types.", ar: "ماسك من تسع مكونات حول زبدة المانجو وجل بذور الكتان. لشعر ناعم ومنفوش ومرطّب — لكل أنواع الشعر." },
       { key: "hero.priceNote", label: "Line under the price", en: "Cash on delivery, 4–6 working days across Egypt.", ar: "الدفع عند الاستلام، من ٤ لـ ٦ أيام عمل في كل مصر." },
+      { key: "hero.save", label: "Discount line (before the amount saved)", en: "You save", ar: "هتوفّري" },
       { key: "hero.added", label: "Button label after adding", en: "Added to cart", ar: "تمت الإضافة" },
       { key: "hero.cod", label: "Phone bar — payment note", en: "Cash on delivery", ar: "الدفع عند الاستلام" },
       { key: "hero.row.benefits.t", label: "Row — Benefits (title)", en: "Benefits", ar: "الفوائد" },

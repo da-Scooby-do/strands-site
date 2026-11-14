@@ -117,7 +117,7 @@ function Page(){
   // Outside Egypt a variant is sold only if it has a price there, and uses that
   // country's price and stock (price_egp below holds the price in the market's currency).
   // "active" is Egypt's switch; other countries sell whatever has a price there.
-  const mVariants=market.code==="EG"?(variants&&variants.filter(v=>v.active!==false)):(variants||[]).map(v=>{ const x=marketVariants.find(m=>m.market===market.code&&m.variant_key===v.key); return x?{...v,price_egp:x.price,stock:x.stock}:null; }).filter(Boolean);
+  const mVariants=market.code==="EG"?(variants&&variants.filter(v=>v.active!==false)):(variants||[]).map(v=>{ const x=marketVariants.find(m=>m.market===market.code&&m.variant_key===v.key); return x?{...v,price_egp:x.price,compare_price_egp:x.compare_price,stock:x.stock}:null; }).filter(Boolean);
   // Keep the cart to what this country sells.
   React.useEffect(()=>{ if(!variants) return; setCart(cs=>{ const n=cs.filter(c=>(mVariants||[]).some(v=>v.key===c.key)); return n.length===cs.length?cs:n; }); /* eslint-disable-next-line */ },[market.code,variants,marketVariants]);
   // Sizes are the single-jar variants (300 ml, 500 ml…). Each can carry its own
@@ -152,7 +152,7 @@ function Page(){
     <window.StrandsReviews/>
     <window.StrandsFooter/>
     {phone && <div style={{position:'fixed',insetInline:0,bottom:0,zIndex:30,background:'var(--cream)',borderTop:'1px solid var(--rule)',padding:'10px var(--gutter)',display:'flex',alignItems:'center',gap:'var(--space-4)'}}>
-      <div style={{display:'grid'}}><span style={{fontFamily:'var(--font-numeric)',fontSize:18,fontWeight:500}}>{sel?window.money(sel.price_egp):(dataStatus==="error"?'—':'…')}</span><span style={{fontSize:11,color:'var(--ink-2)'}}>{market.pay_cod===false?(lang==="AR"?market.name_ar:market.name_en):window.copy('hero.cod','Cash on delivery','الدفع عند الاستلام')}</span></div>
+      <div style={{display:'grid'}}><span style={{fontFamily:'var(--font-numeric)',fontSize:18,fontWeight:500,display:'flex',gap:6,alignItems:'baseline'}}>{sel?window.money(sel.price_egp):(dataStatus==="error"?'—':'…')}{sel&&window.StrandsOldPrice&&<window.StrandsOldPrice v={sel} size={12}/>}</span><span style={{fontSize:11,color:'var(--ink-2)'}}>{market.pay_cod===false?(lang==="AR"?market.name_ar:market.name_en):window.copy('hero.cod','Cash on delivery','الدفع عند الاستلام')}</span></div>
       <div style={{flex:1}}><window.DSButton fullWidth disabled={!sel||outOfStock} onClick={()=>add(sel?sel.key:"1jar")}>{outOfStock?window.copy('cta.outofstock','Out of stock','خلص من المخزون'):window.copy('cta.add','Add to cart','أضيفي للسلة')}</window.DSButton></div>
     </div>}
     {phone && <div style={{height:76}}/>}

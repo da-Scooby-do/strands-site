@@ -36,6 +36,8 @@ function Product() {
     if (!numOk(product.stock)) return setSaved({ ok: false, msg: "Nothing saved — jars in stock must be a whole number." });
     for (const v of variants) {
       if (!numOk(v.price_egp)) return setSaved({ ok: false, msg: "Nothing saved — every bundle price must be a whole number." });
+      if (v.compare_price_egp != null && String(v.compare_price_egp).trim() !== "" && (!numOk(v.compare_price_egp) || Number(v.compare_price_egp) <= Number(v.price_egp)))
+        return setSaved({ ok: false, msg: "Nothing saved — “Price before” must be a whole number higher than the price (or blank for no discount)." });
       if (v.size_ml != null && String(v.size_ml).trim() !== "" && !numOk(v.size_ml)) return setSaved({ ok: false, msg: "Nothing saved — every size (ml) must be a whole number." });
       if (v.stock != null && String(v.stock).trim() !== "" && !numOk(v.stock)) return setSaved({ ok: false, msg: "Nothing saved — every size's stock must be a whole number, or blank to share the main stock." });
     }
@@ -57,6 +59,7 @@ function Product() {
         const vUpd = await window.sb.from("product_variants").update({
           label_en: v.label_en, label_ar: v.label_ar,
           price_egp: Number(v.price_egp), save_egp: Number(v.save_egp || 0),
+          compare_price_egp: v.compare_price_egp != null && String(v.compare_price_egp).trim() !== "" ? Number(v.compare_price_egp) : null,
           badge_en: v.badge_en || null, badge_ar: v.badge_ar || null, active: !!v.active,
           size_ml: v.size_ml != null && String(v.size_ml).trim() !== "" ? Number(v.size_ml) : null,
           stock: v.stock != null && String(v.stock).trim() !== "" ? Number(v.stock) : null,
@@ -109,12 +112,13 @@ function Product() {
 
         <Card pad="var(--space-5)" style={{ display: "grid", gap: "var(--space-4)" }}>
           <h2 style={{ fontSize: 22 }}>Sizes and bundles.</h2>
-          <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: "calc(var(--space-3) * -1) 0 0" }}>These <strong>Price</strong> fields are what customers pay on the shop. Every active 1-jar row is a size customers can pick. Leave <strong>Stock</strong> blank to share the main “Jars in stock”; set a number to give that size its own stock.</p>
+          <p style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", margin: "calc(var(--space-3) * -1) 0 0" }}>These <strong>Price</strong> fields are what customers pay on the shop. Put a higher <strong>Price before</strong> to show a discount: the old price crossed out, a −% badge and “You save”. Leave it blank for no discount. Every active 1-jar row is a size customers can pick. Leave <strong>Stock</strong> blank to share the main “Jars in stock”; set a number to give that size its own stock.</p>
           {variants.map((b, i) => (
-            <div key={b.id} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr 90px 90px 90px 110px 120px auto"), gap: "var(--space-3)", alignItems: "end", paddingTop: i ? "var(--space-4)" : 0, borderTop: i ? "1px solid var(--rule)" : "none" }}>
+            <div key={b.id} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1fr 1fr 90px 100px 90px 90px 110px 120px auto"), gap: "var(--space-3)", alignItems: "end", paddingTop: i ? "var(--space-4)" : 0, borderTop: i ? "1px solid var(--rule)" : "none" }}>
               <Input label={i === 0 ? "Label (EN)" : ""} value={b.label_en || ""} onChange={(v) => setV(i, "label_en", v)} />
               <Input label={i === 0 ? "Label (AR)" : ""} value={b.label_ar || ""} onChange={(v) => setV(i, "label_ar", v)} />
               <Input label={i === 0 ? "Price" : ""} value={String(b.price_egp ?? "")} onChange={(v) => setV(i, "price_egp", v)} />
+              <Input label={i === 0 ? "Price before" : ""} value={String(b.compare_price_egp ?? "")} onChange={(v) => setV(i, "compare_price_egp", v)} placeholder="none" />
               <Input label={i === 0 ? "Size (ml)" : ""} value={String(b.size_ml ?? "")} onChange={(v) => setV(i, "size_ml", v)} />
               <Input label={i === 0 ? "Stock" : ""} value={String(b.stock ?? "")} onChange={(v) => setV(i, "stock", v)} placeholder="shared" />
               <Input label={i === 0 ? "Saving (EGP)" : ""} value={String(b.save_egp ?? "0")} onChange={(v) => setV(i, "save_egp", v)} />

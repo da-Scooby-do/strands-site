@@ -26,12 +26,13 @@ function MarketCard({ m, variants, rows, onChange, onRowChange, onSave, busy, ms
         {variants.map((v, i) => {
           const r = rows[v.key] || {};
           return (
-            <div key={v.key} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1.4fr 1fr 1fr"), gap: "var(--space-3)", alignItems: "end" }}>
+            <div key={v.key} style={{ display: "grid", gridTemplateColumns: window.cols(phone, "1.4fr 1fr 1fr 1fr"), gap: "var(--space-3)", alignItems: "end" }}>
               <div style={{ height: "var(--input-h)", display: "grid", alignContent: "center", fontSize: "var(--text-small)" }}>
                 <span>{(v.size_ml ? v.size_ml + " ml · " : "") + v.label_en}</span>
                 {v.active === false && <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>off in Egypt — still sold here if priced</span>}
               </div>
               <Input label={i === 0 ? "Price (" + cur + ")" : ""} value={r.price == null ? "" : String(r.price)} onChange={(x) => onRowChange(v.key, "price", x)} placeholder="not sold" />
+              <Input label={i === 0 ? "Price before" : ""} value={r.compare_price == null ? "" : String(r.compare_price)} onChange={(x) => onRowChange(v.key, "compare_price", x)} placeholder="none" />
               <Input label={i === 0 ? "Jars in stock" : ""} value={r.stock == null ? "" : String(r.stock)} onChange={(x) => onRowChange(v.key, "stock", x)} placeholder="0" />
             </div>
           );
@@ -100,7 +101,7 @@ function Countries({ onSaved }) {
     setMarkets((m.data || []).filter((x) => x.code !== "EG"));
     setVariants(v.data || []);
     const r = {};
-    (mv.data || []).forEach((x) => { (r[x.market] = r[x.market] || {})[x.variant_key] = { price: x.price, stock: x.stock }; });
+    (mv.data || []).forEach((x) => { (r[x.market] = r[x.market] || {})[x.variant_key] = { price: x.price, compare_price: x.compare_price, stock: x.stock }; });
     setRows(r);
   }
 
@@ -114,6 +115,7 @@ function Countries({ onSaved }) {
       const x = r[v.key] || {};
       if (!blank(x.price) && !cNum(x.price)) return fail("every price must be a whole number (or blank).");
       if (!blank(x.stock) && !cNum(x.stock)) return fail("every stock must be a whole number.");
+      if (!blank(x.compare_price) && (!cNum(x.compare_price) || blank(x.price) || Number(x.compare_price) <= Number(x.price))) return fail("“Price before” must be a whole number higher than the price (or blank for no discount).");
     }
     if (!blank(m.shipping_fee) && !cNum(m.shipping_fee)) return fail("the delivery fee must be a whole number.");
     if (!blank(m.free_over) && !cNum(m.free_over)) return fail("“free delivery over” must be a whole number, or blank for never.");
@@ -146,7 +148,7 @@ function Countries({ onSaved }) {
         delivery_options, whatsapp: wa || null,
       }).eq("code", m.code);
       if (up.error) return fail(up.error.message + ". Are you signed in as the owner?");
-      const list = variants.map((v) => { const x = r[v.key] || {}; return { market: m.code, variant_key: v.key, price: blank(x.price) ? null : Number(x.price), stock: blank(x.stock) ? 0 : Number(x.stock) }; });
+      const list = variants.map((v) => { const x = r[v.key] || {}; return { market: m.code, variant_key: v.key, price: blank(x.price) ? null : Number(x.price), compare_price: blank(x.compare_price) ? null : Number(x.compare_price), stock: blank(x.stock) ? 0 : Number(x.stock) }; });
       const vu = await window.sb.from("market_variants").upsert(list, { onConflict: "market,variant_key" });
       if (vu.error) return fail(vu.error.message);
       await load();  // new delivery choices come back with their keys

@@ -1,4 +1,15 @@
 const { ProductGallery, Chip, StarRating, PriceBlock, Button, CollapsibleRow, BundleCard } = window.StrandsDesignSystem_6d0a65;
+/* "Price before" set on the dashboard: only shown when it is higher than the price. */
+window.wasOf = function (v) {
+  const p = Number(v && v.price_egp), w = Number(v && v.compare_price_egp);
+  if (!(p > 0) || !(w > p)) return null;
+  return { was: w, save: w - p, pct: Math.round(((w - p) / w) * 100) };
+};
+function OldPrice({ v, size = 13 }) {
+  const d = window.wasOf(v);
+  return d ? <s style={{ fontFamily: "var(--font-numeric)", fontSize: size, color: "var(--ink-2)", fontWeight: 400 }}>{window.money(d.was)}</s> : null;
+}
+window.StrandsOldPrice = OldPrice;
 
 /* product + variants come from the database (owner-controlled in the dashboard).
    Nothing here is a hardcoded price; copy switches EN/AR with the language toggle. */
@@ -18,6 +29,7 @@ function Hero({ onAdd, added, product, variants, status, sizes, selected, onSele
   const v1 = selected || (variants || []).find((v) => v.jars === 1) || (variants || [])[0];
   const v2 = (variants || []).find((v) => v.jars === 2);
   const price1 = v1 ? v1.price_egp : (product ? product.price_egp : null);
+  const deal1 = window.wasOf(v1);
   const outOfStock = soldOut ? soldOut(v1) : !!(product && (product.in_stock === false || (product.stock != null && product.stock <= 0)));
   const sizeOf = (v) => (v && v.size_ml) || (product && product.size_ml) || 300;
   const size = sizeOf(v1);
@@ -56,9 +68,15 @@ function Hero({ onAdd, added, product, variants, status, sizes, selected, onSele
         </p>
         {window.StrandsMarketSelect && <div><window.StrandsMarketSelect markets={markets} value={market ? market.code : "EG"} onChange={onMarket} /></div>}
         {price1 != null
-          ? <PriceBlock price={price1} currency={market && market.code !== "EG" && window.CURRENCY_LABEL[market.currency] ? window.CURRENCY_LABEL[market.currency][ar ? 1 : 0] : "EGP"} note={!market || market.code === "EG"
+          ? <div style={{ display: "grid", gap: 8 }}>
+            {deal1 && <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
+              <span style={{ background: "var(--purple)", color: "var(--cream)", borderRadius: 999, padding: "3px 10px", fontSize: 13, fontWeight: 600, fontFamily: "var(--font-numeric)" }}><bdi dir="ltr">-{deal1.pct}%</bdi></span>
+              <span style={{ fontSize: "var(--text-small)", color: "var(--green)", fontWeight: 500 }}>{window.copy("hero.save", "You save", "هتوفّري") + " " + window.money(deal1.save)}</span>
+            </div>}
+            <PriceBlock price={price1} was={deal1 ? deal1.was : null} currency={market && market.code !== "EG" && window.CURRENCY_LABEL[market.currency] ? window.CURRENCY_LABEL[market.currency][ar ? 1 : 0] : "EGP"} note={!market || market.code === "EG"
               ? window.copy("hero.priceNote", "Cash on delivery, 4–6 working days across Egypt.", "الدفع عند الاستلام، من ٤ لـ ٦ أيام عمل في كل مصر.")
               : ((ar ? market.eta_ar : market.eta_en) || ((ar ? "التوصيل إلى " + market.name_ar : "Delivery to " + market.name_en) + "."))} />
+            </div>
           : status === "error"
             ? <div style={{ fontSize: "var(--text-body-size)", color: "var(--ink-2)" }}>{window.copy("hero.priceError", "Price couldn’t load — tap Retry at the top of the page.", "السعر ماحمّلش — دوسي إعادة المحاولة فوق.")}</div>
             : <div aria-live="polite" style={{ fontFamily: "var(--font-numeric)", fontSize: 32, fontWeight: 500, color: "var(--ink-2)" }}>{window.copy("hero.priceLoading", "Loading price…", "بيحمّل السعر…")}</div>}
@@ -72,7 +90,7 @@ function Hero({ onAdd, added, product, variants, status, sizes, selected, onSele
                 return (
                   <button key={s.key} type="button" role="radio" aria-checked={on} onClick={() => onSelect && onSelect(s.key)} style={{ textAlign: "start", cursor: "pointer", font: "inherit", fontFamily: "var(--font-sans)", background: on ? "var(--purple-tint)" : "var(--white)", border: "1.5px solid " + (on ? "var(--purple)" : "var(--rule)"), borderRadius: "var(--radius-card)", padding: "12px 14px", display: "grid", gap: 3, color: "var(--ink)" }}>
                     <span style={{ fontWeight: 600, fontSize: 15, fontFamily: "var(--font-numeric)" }}>{sizeOf(s) + ml}</span>
-                    <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)" }}>{out ? window.copy("cta.outofstock", "Out of stock", "خلص من المخزون") : window.money(s.price_egp)}</span>
+                    <span style={{ fontSize: "var(--text-fine-size)", color: "var(--ink-2)", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "baseline" }}>{out ? window.copy("cta.outofstock", "Out of stock", "خلص من المخزون") : <>{window.money(s.price_egp)}<OldPrice v={s} size={11} /></>}</span>
                   </button>
                 );
               })}
@@ -94,7 +112,7 @@ function Hero({ onAdd, added, product, variants, status, sizes, selected, onSele
           title={market && market.code !== "EG" ? (ar ? "علبتين" : "2 jars")  /* the saving is set in EGP */
             : ar ? ("علبتين — وفّري " + (v2.save_egp || 0) + " ج.م") : ("2 jars — save " + (v2.save_egp || 0) + " EGP")}
           saving={(ar ? v2.badge_ar : v2.badge_en) || (ar ? "الأكثر طلبًا" : "Bundle")}
-          price={window.money(v2.price_egp)} onAdd={() => onAdd(v2.key)} />}
+          price={<span style={{ display: "grid", justifyItems: "end", gap: 2 }}>{window.money(v2.price_egp)}<OldPrice v={v2} size={11} /></span>} onAdd={() => onAdd(v2.key)} />}
       </div>
     </section>
   );
